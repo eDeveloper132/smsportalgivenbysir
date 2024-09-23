@@ -204,7 +204,7 @@ router.post("/buy", async (req, res) => {
                 after_completion: {
                     type: "redirect",
                     redirect: {
-                        url: "https://27f9-203-101-187-89.ngrok-free.app/buypackage/succeed",
+                        url: "https://smsportalgivenbysir.vercel.app/buypackage/succeed",
                     },
                 },
             });
