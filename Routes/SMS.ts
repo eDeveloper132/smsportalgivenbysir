@@ -143,7 +143,7 @@ router.get("/api/messages", async (req: Request, res: AppRes) => {
 
     // Find the user by their ID and populate the messages field
     const user = await SignModel.findById(userId).populate("messages").exec();
-
+    console.log(user, "User data we are getting");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
