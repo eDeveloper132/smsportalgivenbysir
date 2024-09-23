@@ -1,7 +1,6 @@
 import express, { Request, Response } from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { SignModel } from "../Schema/Post.js";
 import bcrypt from "bcrypt";
 import axios from "axios";
 import { AppRes } from "../index.js";
@@ -112,31 +111,4 @@ router.post("/changepass", async (req: Request, res: AppRes) => {
   }
 });
 
-router.get("https://smsportalgivenbysir.vercel.app/api/messages", async (req: Request, res: AppRes) => {
-  try {
-    const useri = res.locals.user;
-    if (!useri) {
-      return res.status(404).send("User not found.");
-    }
-    console.log(useri);
-    
-    const userId = useri._id;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    // Find the user by their ID and populate the messages field
-    const user = await SignModel.findById(userId).populate("messages").exec();
-    console.log(user, "User data we are getting");
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Send the user's messages as a response
-    res.status(200).json({ messages: user.messages });
-  } catch (error: any) {
-    console.error("Error fetching messages:", error.message, error.stack);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
 export default router;

@@ -102,4 +102,29 @@ router.get("/messages", (req, res) => {
     res.sendFile(path.resolve(__dirname, "../Views/messageslist.html"));
 });
 // API endpoint to fetch messages
+router.get("/api/messages", async (req, res) => {
+    try {
+        const useri = res.locals.user;
+        if (!useri) {
+            return res.status(404).send("User not found.");
+        }
+        console.log(useri);
+        const userId = useri._id;
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        // Find the user by their ID and populate the messages field
+        const user = await SignModel.findById(userId).populate("messages").exec();
+        console.log(user, "User data we are getting");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        // Send the user's messages as a response
+        res.status(200).json({ messages: user.messages });
+    }
+    catch (error) {
+        console.error("Error fetching messages:", error.message, error.stack);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
 export default router;

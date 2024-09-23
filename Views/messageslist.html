@@ -489,7 +489,7 @@
             // Fetch messages when the page loads
             document.addEventListener('DOMContentLoaded', async () => {
               try {
-                const response = await fetch('https://smsportalgivenbysir.vercel.app/api/messages');
+                const response = await fetch('/sms/api/messages');
                 if (!response.ok) {
                   showToast('error', 'Failed to fetch messages.');
                   throw new Error('Failed to fetch messages');
