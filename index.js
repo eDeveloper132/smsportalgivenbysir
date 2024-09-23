@@ -156,6 +156,7 @@ app.post("/user", async (req, res) => {
     }
     const user = res.locals.user;
     const data = {
+        id: user._id,
         Name: user.Name,
         Email: user.Email,
         PackageName: user.Details?.PackageName,

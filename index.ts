@@ -193,6 +193,7 @@ app.post("/user", async (req: Request, res: AppRes) => {
   }
   const user = res.locals.user as unknown as ISign;
   const data = {
+    id: user._id,
     Name: user.Name,
     Email: user.Email,
     PackageName: user.Details?.PackageName,
