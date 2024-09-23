@@ -152,9 +152,9 @@ router.get("/api/messages", async (req: Request, res: AppRes) => {
 
     // Send the user's messages as a response
     res.status(200).json({ messages: user.messages });
-  } catch (error) {
-    console.error("Error fetching messages:", error);
-    res.status(500).json({ message: "Server error" });
+  } catch (error: any) {
+    console.error("Error fetching messages:", error.message, error.stack);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
