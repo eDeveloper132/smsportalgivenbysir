@@ -197,6 +197,7 @@ app.post("/user", async (req: Request, res: AppRes) => {
     Email: user.Email,
     PackageName: user.Details?.PackageName,
     Coins: user.Details?.Coins,
+    messages: user.messages
   };
 
   res.send(data);
