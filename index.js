@@ -160,6 +160,7 @@ app.post("/user", async (req, res) => {
         Email: user.Email,
         PackageName: user.Details?.PackageName,
         Coins: user.Details?.Coins,
+        messages: user.messages
     };
     res.send(data);
 });

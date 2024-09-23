@@ -136,6 +136,8 @@ router.get("/api/messages", async (req: Request, res: AppRes) => {
     if (!useri) {
       return res.status(404).send("User not found.");
     }
+    console.log(useri);
+    
     const userId = useri._id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });

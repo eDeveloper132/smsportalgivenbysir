@@ -499,7 +499,7 @@
                 const container = document.getElementById('data-container');
                 if (data.messages && data.messages.length > 0) {
                   container.innerHTML = ''; // Clear any previous data
-                  data.messages.messages.forEach(doc => {
+                  data.messages.forEach(doc => {
                     const item = document.createElement('tr');
                     item.className = 'data-item';
                     item.innerHTML = `
