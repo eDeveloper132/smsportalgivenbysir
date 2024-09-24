@@ -403,6 +403,29 @@
               </div>
             </div>
           </div>
+          
+          <style>
+          .table {
+            width: 100%; /* Ensure the table takes the full width */
+            border-collapse: collapse; /* Optional: makes borders collapse for a cleaner look */
+          }
+          
+          th, td {
+            padding: 8px; /* Add padding for spacing */
+            text-align: left; /* Left align text for readability */
+            vertical-align: top; /* Align text to the top */
+            border: 1px solid #ddd; /* Add border for better visibility */
+          }
+          
+          .message-cell {
+            word-wrap: break-word; /* Allows long words to break onto the next line */
+            white-space: normal;   /* Makes sure text can wrap to the next line */
+            max-width: 250px;      /* Adjust this value to your needs */
+            overflow: hidden;      /* Prevents overflow */
+            text-align: left;      /* Align text to the left for better readability */
+          }
+          </style>
+          
           <!-- Include Bootstrap JS and Popper.js -->
           <script>
             document.addEventListener('DOMContentLoaded', () => {
