@@ -5,12 +5,11 @@
       float: left;
     }
     .message-truncate {
-  max-width: 199px;      /* Limit the width to 199px */
-  white-space: nowrap;   /* Prevent wrapping */
-  overflow: hidden;      /* Hide the overflowing text */
-  text-overflow: ellipsis; /* Show ellipsis (...) for truncated text */
-}
-
+      max-width: 199px;      /* Set maximum width to 199px */
+      white-space: nowrap;   /* Prevent wrapping of text */
+      overflow: hidden;      /* Hide any text that overflows */
+      text-overflow: ellipsis; /* Show ellipsis (...) for truncated text */
+    }
   </style>
   <head>
     <meta charset="UTF-8">
@@ -510,12 +509,11 @@
                     const item = document.createElement('tr');
                     item.className = 'data-item';
                     item.innerHTML = `
-  <td class="text-wrap">${doc.from || 'N/A'}</td>
-  <td class="text-wrap">${doc.to || 'N/A'}</td>
-  <td class="message-truncate">${doc.message || 'N/A'}</td>
-  <td class="text-wrap">${doc.status || 'N/A'}</td>
-`;
-
+      <td>${doc.from || 'N/A'}</td>
+      <td>${doc.to || 'N/A'}</td>
+      <td class="message-truncate">${doc.message || 'N/A'}</td>
+      <td>${doc.status || 'N/A'}</td>
+    `;
                     container.appendChild(item);
                   });
                   showToast('success', 'Messages loaded successfully.');
