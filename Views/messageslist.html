@@ -488,38 +488,37 @@
             }
             // Fetch messages when the page loads
             document.addEventListener('DOMContentLoaded', async () => {
-              try {
-                const response = await fetch('/sms/api/messages');
-                if (!response.ok) {
-                  showToast('error', 'Failed to fetch messages.');
-                  throw new Error('Failed to fetch messages');
-                }
-                const data = await response.json();
-                console.log('Messages Data:', data); // Debug output
-                const container = document.getElementById('data-container');
-                if (data.messages && data.messages.length > 0) {
-                  container.innerHTML = ''; // Clear any previous data
-                  data.messages.forEach(doc => {
-                    const item = document.createElement('tr');
-                    item.className = 'data-item';
-                    item.innerHTML = `
-                            
-																				<td>${doc.from || 'N/A'}</td>
-																				<td>${doc.to || 'N/A'}</td>
-																				<td>${doc.message || 'N/A'}</td>
-																				<td>${doc.status || 'N/A'}</td>
-                        `;
-                    container.appendChild(item);
-                  });
-                  showToast('success', 'Messages loaded successfully.');
-                } else {
-                  showToast('info', 'No messages found.');
-                }
-              } catch (error) {
-                console.error('Error loading messages:', error);
-                showToast('error', 'Error loading messages.');
-              }
-            });
+  try {
+    const response = await fetch('/sms/api/messages');
+    if (!response.ok) {
+      showToast('error', 'Failed to fetch messages.');
+      throw new Error('Failed to fetch messages');
+    }
+    const data = await response.json();
+    console.log('Messages Data:', data); // Debug output
+    const container = document.getElementById('data-container');
+    if (data.messages && data.messages.length > 0) {
+      container.innerHTML = ''; // Clear any previous data
+      data.messages.forEach(doc => {
+        const item = document.createElement('tr');
+        item.className = 'data-item';
+        item.innerHTML = `
+          <td>${doc.from || 'N/A'}</td>
+          <td>${doc.to || 'N/A'}</td>
+          <td class="message-cell">${doc.message || 'N/A'}</td>
+          <td>${doc.status || 'N/A'}</td>
+        `;
+        container.appendChild(item);
+      });
+      showToast('success', 'Messages loaded successfully.');
+    } else {
+      showToast('info', 'No messages found.');
+    }
+  } catch (error) {
+    console.error('Error loading messages:', error);
+    showToast('error', 'Error loading messages.');
+  }
+});
           </script>
           <!--//Page content End//-->
           <!--//Page-footer//-->
