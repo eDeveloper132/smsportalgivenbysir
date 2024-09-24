@@ -116,7 +116,7 @@ router.get("/api/messages", async (req, res) => {
             return res.status(401).json({ message: "Unauthorized" });
         }
         // Fetch the user and populate messages
-        const user = await SignModel.findById(userId).populate("messages").exec();
+        const user = await SignModel.findById(userId).populate("messages", null, 'MessageHandler').exec();
         if (!user) {
             console.warn(`User with ID ${userId} not found.`);
             return res.status(404).json({ message: "User not found" });
