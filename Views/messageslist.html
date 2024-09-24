@@ -504,10 +504,10 @@
                     item.className = 'data-item';
                     item.innerHTML = `
                             
-																				<td>${doc.from || 'N/A'}</td>
-																				<td>${doc.to || 'N/A'}</td>
-																				<td class="text-truncate">${doc.message || 'N/A'}</td>
-																				<td>${doc.status || 'N/A'}</td>
+  <td class="text-wrap">${doc.from || 'N/A'}</td>
+  <td class="text-wrap">${doc.to || 'N/A'}</td>
+  <td class="text-wrap">${doc.message || 'N/A'}</td>
+  <td class="text-wrap">${doc.status || 'N/A'}</td>
                         `;
                     container.appendChild(item);
                   });
