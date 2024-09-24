@@ -106,18 +106,26 @@ router.get("/api/messages", async (req, res) => {
     try {
         const useri = res.locals.user;
         if (!useri) {
+            console.warn("User not found in res.locals.");
             return res.status(404).send("User not found.");
         }
-        console.log(useri);
+        console.log("Authenticated User:", useri);
         const userId = useri._id;
         if (!userId) {
+            console.warn("User ID not found.");
             return res.status(401).json({ message: "Unauthorized" });
         }
-        // Find the user by their ID and populate the messages field
+        // Fetch the user and populate messages
         const user = await SignModel.findById(userId).populate("messages").exec();
-        console.log(user, "User data we are getting");
         if (!user) {
+            console.warn(`User with ID ${userId} not found.`);
             return res.status(404).json({ message: "User not found" });
+        }
+        console.log("User Data with Populated Messages:", user);
+        // Check if messages are populated
+        if (!user.messages || user.messages.length === 0) {
+            console.info("No messages found for this user.");
+            return res.status(200).json({ messages: [] });
         }
         // Send the user's messages as a response
         res.status(200).json({ messages: user.messages });
