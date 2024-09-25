@@ -384,7 +384,7 @@
             <div class="container-fluid px-0">
               <div class="row">
                 <div class="col-12 mb-3 mb-lg-5">
-                  <div class="card">
+                  <div class="card shadow-sm">
                     <div class="table-responsive">
                       <table id="message-table" class="table mt-0 table-striped table-card table-nowrap">
                         <thead class="text-uppercase small text-muted">
@@ -393,7 +393,6 @@
                             <th>To</th>
                             <th>Status</th>
                             <th>Message</th>
-                            
                           </tr>
                         </thead>
                         <tbody id="data-container">
@@ -404,13 +403,61 @@
                   </div>
                 </div>
               </div>
+          
               <!-- Toast Container -->
               <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
                 <div id="toast-container" class="toast-container"></div>
               </div>
             </div>
           </div>
-          <!-- Include Bootstrap JS and Popper.js -->
+          
+          <!-- Custom CSS -->
+          <style>
+            .card {
+              border: 1px solid #e3e6f0;
+              border-radius: 0.75rem;
+              box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            }
+            
+            .table {
+              margin-bottom: 0;
+            }
+          
+            .table-striped tbody tr:nth-of-type(odd) {
+              background-color: #f8f9fc;
+            }
+          
+            .table-card tbody tr {
+              border-top: 1px solid #e3e6f0;
+            }
+          
+            .table-card tbody tr:first-child {
+              border-top: none;
+            }
+          
+            .table th, .table td {
+              padding: 1rem;
+              vertical-align: middle;
+            }
+          
+            .text-muted {
+              color: #6c757d !important;
+            }
+          
+            .message-truncate {
+              max-width: 300px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+          
+            @media (max-width: 768px) {
+              .table {
+                font-size: 14px;
+              }
+            }
+          </style>
+          
           <script>
             document.addEventListener('DOMContentLoaded', () => {
               // Function to determine the greeting based on the current time
@@ -418,6 +465,7 @@
                 const now = new Date();
                 const hours = now.getHours();
                 let greeting = 'Good evening'; // Default greeting
+          
                 if (hours >= 20 || hours < 6) {
                   greeting = 'Good night';
                 } else if (hours >= 6 && hours < 12) {
@@ -429,7 +477,8 @@
                 }
                 return greeting;
               }
-              // Update the greeting in the HTML
+          
+              // Update greeting in the HTML
               function updateGreeting() {
                 const greetingElement = document.getElementById('greeting');
                 const userGreetingElement = document.getElementById('userGreeting');
@@ -437,14 +486,13 @@
                 if (greetingElement) {
                   greetingElement.textContent = greeting;
                 }
-                // Optionally update user name if needed
                 if (userGreetingElement) {
                   userGreetingElement.textContent = 'Noah';
                 }
               }
-              // Call the function to set the greeting when the page loads
               updateGreeting();
             });
+          
             // Fetch user data
             document.addEventListener('DOMContentLoaded', async () => {
               try {
@@ -455,9 +503,12 @@
                   },
                   body: JSON.stringify({})
                 });
+          
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                
                 const data = await response.json();
                 console.log('User Data:', data); // Debug output
+          
                 if (data) {
                   document.getElementById('userName').textContent = data.Name || 'Default Name';
                   document.getElementById('userFullName').textContent = data.Name || 'Default Name';
@@ -469,53 +520,34 @@
                 console.error('Error fetching user data:', error);
               }
             });
-
-            function showToast(type, message) {
-              const toastContainer = document.getElementById('toast-container');
-              const toastId = 'toast-' + new Date().getTime();
-              const toastHtml = `
-                
-																				<div id="${toastId}" class="toast align-items-center text-white ${type === 'error' ? 'bg-danger' : 'bg-success'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-																					<div class="d-flex">
-																						<div class="toast-body">
-                            ${message}
-                        </div>
-																						<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-																					</div>
-																				</div>
-            `;
-              toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-              const toastElement = document.getElementById(toastId);
-              const toast = new bootstrap.Toast(toastElement);
-              toast.show();
-              // Remove the toast element after it has been hidden
-              toastElement.addEventListener('hidden.bs.toast', () => {
-                toastElement.remove();
-              });
-            }
-            // Fetch messages when the page loads
+          
+            // Fetch messages
             document.addEventListener('DOMContentLoaded', async () => {
               try {
                 const response = await fetch('/sms/api/messages');
+          
                 if (!response.ok) {
                   showToast('error', 'Failed to fetch messages.');
                   throw new Error('Failed to fetch messages');
                 }
+          
                 const data = await response.json();
                 console.log('Messages Data:', data); // Debug output
+          
                 const container = document.getElementById('data-container');
+          
                 if (data.messages && data.messages.length > 0) {
                   container.innerHTML = ''; // Clear any previous data
+          
                   data.messages.forEach(doc => {
                     const item = document.createElement('tr');
                     item.className = 'data-item';
                     item.innerHTML = `
-      <td>${doc.from || 'N/A'}</td>
-      <td>${doc.to || 'N/A'}</td>
-      <td>${doc.status || 'N/A'}</td>
-      <td class="message-truncate">${doc.message || 'N/A'}</td>
-      
-    `;
+                      <td>${doc.from || 'N/A'}</td>
+                      <td>${doc.to || 'N/A'}</td>
+                      <td>${doc.status || 'N/A'}</td>
+                      <td class="message-truncate">${doc.message || 'N/A'}</td>
+                    `;
                     container.appendChild(item);
                   });
                   showToast('success', 'Messages loaded successfully.');
@@ -527,7 +559,30 @@
                 showToast('error', 'Error loading messages.');
               }
             });
+          
+            function showToast(type, message) {
+              const toastContainer = document.getElementById('toast-container');
+              const toastId = 'toast-' + new Date().getTime();
+              const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center text-white ${type === 'error' ? 'bg-danger' : 'bg-success'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                  <div class="d-flex">
+                    <div class="toast-body">
+                      ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                  </div>
+                </div>
+              `;
+              toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+              const toastElement = document.getElementById(toastId);
+              const toast = new bootstrap.Toast(toastElement);
+              toast.show();
+              toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+              });
+            }
           </script>
+          
           <!--//Page content End//-->
           <!--//Page-footer//-->
           <footer class="pb-3 pb-lg-5 px-3 px-lg-6">
