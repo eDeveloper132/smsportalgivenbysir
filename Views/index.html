@@ -444,6 +444,23 @@
                     <!--//Page content//-->
                     <div class="content pt-3 px-3 px-lg-6 d-flex flex-column-fluid">
                       <div class="container-fluid px-0">
+                        <div class="col-xl-3 col-md-6 mb-3 mb-lg-5">
+
+                          <!--//Card start//-->
+                          <div class="card border-0 overflow-hidden">
+                            <div
+                              class="card-body border-start border-4 border-success d-flex align-items-center justify-content-between">
+
+                              <div class="flex-grow-1 text-start">
+                                <h5 class="fs-2 d-block fw-bold mb-1" id="messagescounter">
+                                  
+                                </h5>
+                                <h6 class="mb-0 fw-normal">Total Messages sent</h6>
+                              </div>
+        
+                            </div>
+                          </div>
+                        </div>
                         <!-- Modern styled table for displaying fetched messages -->
                         <div class="table-responsive">
                           <table class="table table-striped table-hover table-bordered">
@@ -569,48 +586,60 @@
                     
                       // Fetch SMS messages and update the UI
                       document.addEventListener('DOMContentLoaded', async () => {
-                        try {
-                          const response = await fetch('/sms/api/messages');
-                          
-                          if (!response.ok) {
-                            showToast('error', 'Failed to fetch messages.');
-                            throw new Error('Failed to fetch messages');
-                          }
-                    
-                          const data = await response.json();
-                          console.log('Messages Data:', data); // Debug output
-                    
-                          const container = document.getElementById('data-container');
-                          
-                          if (data.messages && data.messages.length > 0) {
-                            container.innerHTML = ''; // Clear any previous data
-                            
-                            data.messages.forEach(doc => {
-                              const item = document.createElement('tr');
-                              item.className = 'data-item';
-                              item.innerHTML = `
-                                <td>${doc.from || 'N/A'}</td>
-                                <td>${doc.to || 'N/A'}</td>
-                                <td>${doc.status || 'N/A'}</td>
-                                <td class="message-truncate">${doc.message || 'N/A'}</td>
-                              `;
-                              container.appendChild(item);
-                            });
-                    
-                            showToast('success', 'Messages loaded successfully.');
-                          } else {
-                            showToast('info', 'No messages found.');
-                          }
-                        } catch (error) {
-                          console.error('Error loading messages:', error);
-                          showToast('error', 'Error loading messages.');
-                        }
-                      });
-                    
-                      // Utility function for showing toasts (implement as needed)
-                      function showToast(type, message) {
-                        console.log(`${type}: ${message}`); // Example implementation, replace with actual toast logic
-                      }
+    try {
+      const response = await fetch('/sms/api/messages');
+      
+      if (!response.ok) {
+        showToast('error', 'Failed to fetch messages.');
+        throw new Error('Failed to fetch messages');
+      }
+
+      const data = await response.json();
+      console.log('Messages Data:', data); // Debug output
+
+      const container = document.getElementById('data-container');
+      const messagesCounter = document.getElementById('messagescounter'); // Get the message counter element
+
+      // Initialize a counter for the number of messages with specific statuses
+      let messageCount = 0;
+
+      if (data.messages && data.messages.length > 0) {
+        container.innerHTML = ''; // Clear any previous data
+        
+        data.messages.forEach(doc => {
+          const item = document.createElement('tr');
+          item.className = 'data-item';
+          item.innerHTML = `
+            <td>${doc.from || 'N/A'}</td>
+            <td>${doc.to || 'N/A'}</td>
+            <td>${doc.status || 'N/A'}</td>
+            <td class="message-truncate">${doc.message || 'N/A'}</td>
+          `;
+          container.appendChild(item);
+
+          // Count the number of messages with a status (for instance, 'sent')
+          if (doc.status) {
+            messageCount++;
+          }
+        });
+
+        // Update the message counter
+        messagesCounter.textContent = messageCount;
+
+        showToast('success', 'Messages loaded successfully.');
+      } else {
+        showToast('info', 'No messages found.');
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      showToast('error', 'Error loading messages.');
+    }
+  });
+
+  // Utility function for showing toasts (implement as needed)
+  function showToast(type, message) {
+    console.log(`${type}: ${message}`); // Example implementation, replace with actual toast logic
+  }
                     </script>
                     <!--//Page content End//-->
             <!--//Page-footer//-->
