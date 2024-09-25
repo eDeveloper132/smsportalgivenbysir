@@ -443,76 +443,174 @@
                 </div>
                     <!--//Page content//-->
                     <div class="content pt-3 px-3 px-lg-6 d-flex flex-column-fluid">
-                        <div class="container-fluid px-0">
-                            
-
+                      <div class="container-fluid px-0">
+                        <!-- Modern styled table for displaying fetched messages -->
+                        <div class="table-responsive">
+                          <table class="table table-striped table-hover table-bordered">
+                            <thead class="table-dark">
+                              <tr>
+                                <th scope="col">From</th>
+                                <th scope="col">To</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Message</th>
+                              </tr>
+                            </thead>
+                            <tbody id="data-container">
+                              <!-- Dynamically populated rows will go here -->
+                            </tbody>
+                          </table>
                         </div>
+                      </div>
                     </div>
+                    
+                    <!-- Custom CSS for additional styling -->
+                    <style>
+                      .table {
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-size: 16px;
+                        font-family: 'Arial', sans-serif;
+                      }
+                      
+                      .table thead {
+                        background-color: #343a40; /* Dark background for header */
+                        color: white;
+                      }
+                    
+                      .table-striped tbody tr:nth-of-type(odd) {
+                        background-color: #f8f9fa; /* Light grey striping for rows */
+                      }
+                    
+                      .table-hover tbody tr:hover {
+                        background-color: #e9ecef; /* Hover effect on table rows */
+                      }
+                    
+                      .table-bordered th, .table-bordered td {
+                        border: 1px solid #dee2e6; /* Light border for table cells */
+                      }
+                    
+                      .message-truncate {
+                        max-width: 400px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                      }
+                    
+                      /* Add padding and adjust text for small screens */
+                      @media (max-width: 768px) {
+                        .table {
+                          font-size: 14px;
+                        }
+                        .table-responsive {
+                          overflow-x: auto;
+                        }
+                      }
+                    </style>
+                    
                     <script>
+                      // Function to determine the greeting based on the current time
                       document.addEventListener('DOMContentLoaded', () => {
-    // Function to determine the greeting based on the current time
-    function getGreeting() {
-      const now = new Date();
-      const hours = now.getHours();
-      
-      let greeting = 'Good evening'; // Default greeting
-
-      if (hours >= 20 && hours < 6) {
-        greeting = 'Good night';
-      } else if (hours >= 6 && hours < 12) {
-        greeting = 'Good morning';
-      } else if (hours >= 12 && hours < 17) {
-        greeting = 'Good afternoon';
-      } else if (hours >= 17 && hours < 20) {
-        greeting = 'Good evening';
-      }
-
-      return greeting;
-    }
-
-    // Update the greeting in the HTML
-    function updateGreeting() {
-      const greetingElement = document.getElementById('greeting');
-      const userGreetingElement = document.getElementById('userGreeting');
-      
-      const greeting = getGreeting();
-      greetingElement.textContent = greeting;
-
-      // Optionally update user name if needed
-      // userGreetingElement.textContent = 'Noah'; // Or dynamically set this
-    }
-
-    // Call the function to set the greeting when the page loads
-    updateGreeting();
-  });
-                       document.addEventListener('DOMContentLoaded', async () => {
-    try {
-      const response = await fetch('/user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        // Include any necessary payload if required by your API
-        body: JSON.stringify({})
-      });
-      
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      
-      const data = await response.json();
-      
-      if (data) {
-        document.getElementById('userName').textContent = data.Name;
-        document.getElementById('userFullName').textContent = data.Name;
-        document.getElementById('userGreeting').textContent = data.Name;
-        document.getElementById('packagename').textContent = data.PackageName;
-        document.getElementById('packagecoins').textContent = data.Coins;
-        // Update the avatar if needed
-        // document.getElementById('userAvatar').src = '/path/to/avatar/' + data.Avatar;
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-    }
-  });
+                        function getGreeting() {
+                          const now = new Date();
+                          const hours = now.getHours();
+                          let greeting = 'Good evening'; // Default greeting
+                    
+                          if (hours >= 20 || hours < 6) {
+                            greeting = 'Good night';
+                          } else if (hours >= 6 && hours < 12) {
+                            greeting = 'Good morning';
+                          } else if (hours >= 12 && hours < 17) {
+                            greeting = 'Good afternoon';
+                          } else if (hours >= 17 && hours < 20) {
+                            greeting = 'Good evening';
+                          }
+                          return greeting;
+                        }
+                    
+                        function updateGreeting() {
+                          const greetingElement = document.getElementById('greeting');
+                          const greeting = getGreeting();
+                          if (greetingElement) {
+                            greetingElement.textContent = greeting;
+                          }
+                        }
+                    
+                        // Call the function to set the greeting when the page loads
+                        updateGreeting();
+                      });
+                    
+                      // Fetch user data after the DOM has loaded
+                      document.addEventListener('DOMContentLoaded', async () => {
+                        try {
+                          const response = await fetch('/user', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({})
+                          });
+                    
+                          if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                          
+                          const data = await response.json();
+                          
+                          // Update user information in the UI
+                          if (data) {
+                            document.getElementById('userName').textContent = data.Name;
+                            document.getElementById('userFullName').textContent = data.Name;
+                            document.getElementById('userGreeting').textContent = data.Name;
+                            document.getElementById('packagename').textContent = data.PackageName;
+                            document.getElementById('packagecoins').textContent = data.Coins;
+                          }
+                        } catch (error) {
+                          console.error('Error fetching user data:', error);
+                        }
+                      });
+                    
+                      // Fetch SMS messages and update the UI
+                      document.addEventListener('DOMContentLoaded', async () => {
+                        try {
+                          const response = await fetch('/sms/api/messages');
+                          
+                          if (!response.ok) {
+                            showToast('error', 'Failed to fetch messages.');
+                            throw new Error('Failed to fetch messages');
+                          }
+                    
+                          const data = await response.json();
+                          console.log('Messages Data:', data); // Debug output
+                    
+                          const container = document.getElementById('data-container');
+                          
+                          if (data.messages && data.messages.length > 0) {
+                            container.innerHTML = ''; // Clear any previous data
+                            
+                            data.messages.forEach(doc => {
+                              const item = document.createElement('tr');
+                              item.className = 'data-item';
+                              item.innerHTML = `
+                                <td>${doc.from || 'N/A'}</td>
+                                <td>${doc.to || 'N/A'}</td>
+                                <td>${doc.status || 'N/A'}</td>
+                                <td class="message-truncate">${doc.message || 'N/A'}</td>
+                              `;
+                              container.appendChild(item);
+                            });
+                    
+                            showToast('success', 'Messages loaded successfully.');
+                          } else {
+                            showToast('info', 'No messages found.');
+                          }
+                        } catch (error) {
+                          console.error('Error loading messages:', error);
+                          showToast('error', 'Error loading messages.');
+                        }
+                      });
+                    
+                      // Utility function for showing toasts (implement as needed)
+                      function showToast(type, message) {
+                        console.log(`${type}: ${message}`); // Example implementation, replace with actual toast logic
+                      }
                     </script>
                     <!--//Page content End//-->
             <!--//Page-footer//-->

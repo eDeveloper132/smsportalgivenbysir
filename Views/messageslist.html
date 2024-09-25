@@ -391,8 +391,9 @@
                           <tr>
                             <th>From</th>
                             <th>To</th>
-                            <th>Message</th>
                             <th>Status</th>
+                            <th>Message</th>
+                            
                           </tr>
                         </thead>
                         <tbody id="data-container">
@@ -511,8 +512,9 @@
                     item.innerHTML = `
       <td>${doc.from || 'N/A'}</td>
       <td>${doc.to || 'N/A'}</td>
-      <td class="message-truncate">${doc.message || 'N/A'}</td>
       <td>${doc.status || 'N/A'}</td>
+      <td class="message-truncate">${doc.message || 'N/A'}</td>
+      
     `;
                     container.appendChild(item);
                   });
