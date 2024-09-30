@@ -3,7 +3,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 import bcrypt from "bcrypt";
 import axios from "axios";
+import { SignModel , ListModel } from "../Schema/Post.js";
+import { ContactListApi , ContactList } from "clicksend";
 import { AppRes } from "../index.js";
+import "dotenv/config";
 
 // Resolve file and directory paths
 const __filename = fileURLToPath(import.meta.url);
@@ -68,6 +71,72 @@ const findAndUpdateUserById = async (id: string, updateData: any) => {
 router.get("/", (req: Request, res: Response) => {
   res.sendFile(path.resolve(__dirname, "../Views/index.html"));
 });
+
+router.get("/list", (req: Request, res: Response) => {
+  res.sendFile(path.resolve(__dirname, "../Views/list.html"));
+});
+
+router.post("/list", async (req: Request, res: AppRes) => {
+  try {
+    const { listName, contacts } = req.body;
+    const userId = res.locals.user?._id;
+
+    // Validate request body
+    if (!listName || !userId || !contacts || !Array.isArray(contacts)) {
+      return res.status(400).json({ error: "Invalid request data" });
+    }
+
+    // Retrieve API credentials from environment variables
+    const username = process.env.USERNAME;
+    const apiKey = process.env.API_KEY;
+
+    if (!username || !apiKey) {
+      throw new Error("API credentials are missing.");
+    }
+
+    // Create a new contact list using the ClickSend API
+    const contactListApi = new ContactListApi(username, apiKey);
+    const contactList = new ContactList();
+    contactList.listName = listName;
+
+    // Send the request to create a new list
+    const apiResponse = await contactListApi.listsPost(contactList);
+    const parsedBody = typeof apiResponse.body === 'string' ? JSON.parse(apiResponse.body) : apiResponse.body;
+
+    // Check if the response from the ClickSend API is valid and contains the expected data
+    if (!parsedBody || parsedBody.http_code !== 200 || !parsedBody.data) {
+      throw new Error(parsedBody.response_msg || "Failed to create list on external API");
+    }
+
+    // Extract list information from the response
+    const { list_id, list_name } = parsedBody.data;
+
+    // Save the new list to your database
+    const newList = new ListModel({
+      listName: list_name, // Use the name returned from the external API if needed
+      createdBy: userId,
+      contacts, // Array of contacts
+    });
+
+    await newList.save();
+
+    // Associate the newly created list with the user in SignModel
+    await SignModel.findByIdAndUpdate(userId, {
+      $push: { lists: newList._id },
+    });
+
+    // Respond with success, including the external API response and the new list details
+    res.status(200).json({
+      message: "List created successfully",
+      externalApiResponse: parsedBody,
+      list: newList,
+    });
+  } catch (err: any) {
+    // Error handling for unexpected issues during the process
+    res.status(500).json({ error: err.message || "Internal Server Error" });
+  }
+});
+
 
 router.get("/changepass", (req, res) => {
   res.sendFile(path.resolve(__dirname, "../Views/changePass.html"));

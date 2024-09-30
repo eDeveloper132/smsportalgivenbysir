@@ -1,18 +1,16 @@
 import mongoose, { Schema } from 'mongoose';
-// Define the Message schema
 const MessageSchema = new Schema({
     id: { type: String, required: true },
-    u_id: { type: String, required: true }, // User ID to link messages to a user
-    from: { type: String, required: false },
+    u_id: { type: String, required: true },
+    from: { type: String },
     to: { type: String, required: true },
     message: { type: String, required: true },
     m_count: { type: Number, required: true },
-    cam_id: { type: String, required: false },
-    m_schedule: { type: String, required: false },
+    cam_id: { type: String },
+    m_schedule: { type: String },
     status: { type: String, required: true }
 }, { timestamps: true });
-// Define the Message model
-const MessageModel = mongoose.model('MessageHandler', MessageSchema);
+const MessageModel = mongoose.model('Message', MessageSchema);
 const SignSchema = new Schema({
     id: { type: String },
     Name: { type: String },
@@ -30,15 +28,20 @@ const SignSchema = new Schema({
         Coins: { type: Number, default: null },
         Status: { type: String, default: null }
     },
-    messages: [{ type: Schema.Types.ObjectId, ref: 'MessageModel' }],
-    package: [{ type: Schema.Types.ObjectId, ref: 'PackageModel' }]
+    messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
+    package: [{ type: Schema.Types.ObjectId, ref: 'PackageModel' }],
+    lists: [{ type: Schema.Types.ObjectId, ref: 'List' }] // Reference to the List model
 }, { timestamps: true });
-// Define the Sign model
-const SignModel = mongoose.model('SignHandler', SignSchema);
-// Define the Token schema
+const SignModel = mongoose.model('Sign', SignSchema);
+const ListSchema = new Schema({
+    listName: { type: String, required: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'Sign', required: true },
+    contacts: [{ type: String }]
+}, { timestamps: true });
+const ListModel = mongoose.model('List', ListSchema);
 const TokenSchema = new Schema({
     Token: { type: String, required: true, unique: true }
 }, { timestamps: true });
-// Define the Token model
-const TokenModel = mongoose.model('TokenHandler', TokenSchema);
-export { MessageModel, SignModel, TokenModel };
+const TokenModel = mongoose.model('Token', TokenSchema);
+// Export models and interfaces
+export { MessageModel, SignModel, ListModel, TokenModel };

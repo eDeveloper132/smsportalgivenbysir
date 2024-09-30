@@ -1,6 +1,6 @@
 import mongoose, { Document, Model, Schema, Types } from 'mongoose';
 
-// Define an interface for the Message document
+// Define the Message interface and schema
 interface IMessage extends Document {
     id: string;
     u_id: string;
@@ -13,24 +13,21 @@ interface IMessage extends Document {
     status: string;
 }
 
-// Define the Message schema
 const MessageSchema: Schema<IMessage> = new Schema({
     id: { type: String, required: true },
-    u_id: { type: String, required: true }, // User ID to link messages to a user
-    from: { type: String, required: false },
+    u_id: { type: String, required: true },
+    from: { type: String },
     to: { type: String, required: true },
     message: { type: String, required: true },
     m_count: { type: Number, required: true },
-    cam_id: { type: String, required: false },
-    m_schedule: { type: String, required: false },
+    cam_id: { type: String },
+    m_schedule: { type: String },
     status: { type: String, required: true }
 }, { timestamps: true });
 
-// Define the Message model
-const MessageModel: Model<IMessage> = mongoose.model<IMessage>('MessageHandler', MessageSchema);
+const MessageModel: Model<IMessage> = mongoose.model<IMessage>('Message', MessageSchema);
 
-// Define an interface for the Sign document
-
+// Define the Sign interface and schema
 interface ISign extends Document {
   id?: string;
   Name?: string;
@@ -49,7 +46,8 @@ interface ISign extends Document {
       Status?: string | null;
   };
   messages: Types.ObjectId[]; // References to MessageModel
-  package: Types.ObjectId[];  // References to PackageModel (use ObjectId[] for an array of ObjectIds)
+  package: Types.ObjectId[];  // References to PackageModel
+  lists: Types.ObjectId[];  // References to ListModel
 }
 
 const SignSchema: Schema<ISign> = new Schema({
@@ -67,32 +65,49 @@ const SignSchema: Schema<ISign> = new Schema({
       PackageName: { type: String, default: null },
       PackageExpiry: { type: Date, default: null },
       Coins: { type: Number, default: null },
-      Status: { type: String , default: null }
+      Status: { type: String, default: null }
   },
-  messages: [{ type: Schema.Types.ObjectId, ref: 'MessageModel' }],
-  package: [{ type: Schema.Types.ObjectId, ref: 'PackageModel' }]
+  messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
+  package: [{ type: Schema.Types.ObjectId, ref: 'PackageModel' }],
+  lists: [{ type: Schema.Types.ObjectId, ref: 'List' }]  // Reference to the List model
 }, { timestamps: true });
-// Define the Sign model
-const SignModel: Model<ISign> = mongoose.model<ISign>('SignHandler', SignSchema);
 
-// Define an interface for the Token document
+const SignModel: Model<ISign> = mongoose.model<ISign>('Sign', SignSchema);
+
+// Define the List interface and schema
+interface IList extends Document {
+    listName: string;
+    createdBy: Types.ObjectId; // Reference to the user (SignModel)
+    contacts: string[]; // Array of contacts
+}
+
+const ListSchema: Schema<IList> = new Schema({
+    listName: { type: String, required: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'Sign', required: true },
+    contacts: [{ type: String }]
+}, { timestamps: true });
+
+const ListModel: Model<IList> = mongoose.model<IList>('List', ListSchema);
+
+// Define the Token interface and schema
 interface IToken extends Document {
     Token: string;
 }
 
-// Define the Token schema
 const TokenSchema: Schema<IToken> = new Schema({
     Token: { type: String, required: true, unique: true }
 }, { timestamps: true });
 
-// Define the Token model
-const TokenModel: Model<IToken> = mongoose.model<IToken>('TokenHandler', TokenSchema);
+const TokenModel: Model<IToken> = mongoose.model<IToken>('Token', TokenSchema);
 
+// Export models and interfaces
 export {
     IMessage,
     ISign,
     IToken,
+    IList,
     MessageModel,
     SignModel,
+    ListModel,
     TokenModel
 };
