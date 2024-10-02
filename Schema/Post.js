@@ -28,7 +28,11 @@ const SignSchema = new Schema({
         Coins: { type: Number, default: null },
         Status: { type: String, default: null }
     },
-    messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
+    multiple_message: {
+        Phone_Numbers: { type: [String], default: [] },
+        Name: { type: [String], default: [] }
+    },
+    messages: [{ type: Schema.Types.ObjectId, ref: MessageModel }],
     package: [{ type: Schema.Types.ObjectId, ref: 'PackageModel' }],
     lists: [{ type: Schema.Types.ObjectId, ref: 'List' }] // Reference to the List model
 }, { timestamps: true });
@@ -36,7 +40,15 @@ const SignModel = mongoose.model('Sign', SignSchema);
 const ListSchema = new Schema({
     listName: { type: String, required: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'Sign', required: true },
-    contacts: [{ type: String }]
+    listId: { type: Number, required: true, unique: true },
+    contacts: [
+        {
+            firstName: { type: String, required: false, default: "John" },
+            lastName: { type: String, required: false, default: "Doe" },
+            email: { type: String, required: false, default: "demo@gmail.com" },
+            mix: { type: String, required: false, default: "+920000000000" }
+        }
+    ]
 }, { timestamps: true });
 const ListModel = mongoose.model('List', ListSchema);
 const TokenSchema = new Schema({

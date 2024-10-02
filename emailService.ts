@@ -13,8 +13,9 @@ async function sendVerificationEmail(Email: string , verificationToken: string) 
         console.error("No recipient email defined");
         return;
     }
+    // const verificationURL = new URL(`https://smsportalgivenbysir.vercel.app/verify-email`);
+    const verificationURL = new URL(`https://6f83-203-101-187-89.ngrok-free.app/verify-email`);
 
-    const verificationURL = new URL(`https://smsportalgivenbysir.vercel.app/verify-email`);
     verificationURL.searchParams.append('token', verificationToken);
 
     const mailOptions = {

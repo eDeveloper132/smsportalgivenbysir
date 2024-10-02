@@ -437,7 +437,7 @@
                         <div class="position-relative container-fluid px-0">
                             <div class="row align-items-center position-relative">
                                 <div class="col-md-8 mb-4 mb-lg-0">
-                                    <h3 class="mb-2">Brought Package</h3>
+                                    <h3 class="mb-2">Create Hello List</h3>
 
 
                                 </div>
@@ -497,175 +497,282 @@
                     <!--//Page content//-->
                     <div class="content pt-3 px-3 px-lg-6 d-flex flex-column-fluid">
                         <div class="container-fluid px-0">
-                            <div class="row">
-                                <div class="col-12 mb-3 mb-lg-5">
-                                    <div class="card">
-                                        <div class="table-responsive">
-                                            <table id="message-table" class="table mt-0 table-striped table-card table-nowrap">
-                                                <thead class="text-uppercase small text-muted">
-                                                    <tr>
-                                                        <th>Name</th>
-                                                        <th>Coins</th>
-                                                        <th>Duration</th>
-                                                        <th>Description</th>
-                                                        <th>Status</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="data-container">
-                                                    <!-- Messages will be populated here dynamically -->
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
+                          <!-- Toast container -->
+<div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;"></div>
+
+                            <h1 id="greeting">Hello!</h1>
+                            
+                            <form id="contactListForm">
+                                <div class="mb-3">
+                                    <label for="listName" class="form-label">Contact List Name</label>
+                                    <input type="text" class="form-control" id="listName" required>
                                 </div>
+                                <button type="submit" class="btn btn-primary">Create Contact List</button>
+                            </form>
+                    
+                            <!-- Search Bar -->
+                            <div class="mb-3 mt-3">
+                                <label for="searchInput" class="form-label">Search Contact Lists</label>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search by List Name, User ID...">
                             </div>
-                
-                            <!-- Toast Container -->
-                            <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-                                <div id="toast-container" class="toast-container"></div>
-                            </div>
+                  
+                    
+                            <table class="table mt-3">
+                                <thead>
+                                    <tr>
+                                        <th>List Name</th>
+                                        <th>User ID</th>
+                                        <th>Contacts Count</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="contactListTableBody">
+                                    <!-- Rows will be populated here by JavaScript -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <!-- Include Bootstrap JS and Popper.js -->
-
                     <script>
-
-                                document.addEventListener('DOMContentLoaded', () => {
-            // Function to determine the greeting based on the current time
-            function getGreeting() {
-                const now = new Date();
-                const hours = now.getHours();
-
-                let greeting = 'Good evening'; // Default greeting
-
-                if (hours >= 20 || hours < 6) {
-                    greeting = 'Good night';
-                } else if (hours >= 6 && hours < 12) {
-                    greeting = 'Good morning';
-                } else if (hours >= 12 && hours < 17) {
-                    greeting = 'Good afternoon';
-                } else if (hours >= 17 && hours < 20) {
-                    greeting = 'Good evening';
-                }
-
-                return greeting;
-            }
-
-            // Update the greeting in the HTML
-            function updateGreeting() {
-                const greetingElement = document.getElementById('greeting');
-                const userGreetingElement = document.getElementById('userGreeting');
-
-                const greeting = getGreeting();
-                if (greetingElement) {
-                    greetingElement.textContent = greeting;
-                }
-
-                // Optionally update user name if needed
-                if (userGreetingElement) {
-                    userGreetingElement.textContent = 'Noah'; 
-                }
-            }
-
-            // Call the function to set the greeting when the page loads
-            updateGreeting();
-        });
-
-        // Fetch user data
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const response = await fetch('/user', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                });
-
-                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-                const data = await response.json();
-                console.log('User Data:', data); // Debug output
-
-                if (data) {
-                    document.getElementById('userName').textContent = data.Name || 'Default Name';
-                    document.getElementById('userFullName').textContent = data.Name || 'Default Name';
-                    document.getElementById('userGreeting').textContent = data.Name || 'Default Name';
-                    document.getElementById('packagename').textContent = data.PackageName || 'No Package';
-                    document.getElementById('packagecoins').textContent = data.Coins || '0';
-                    // Update the avatar if needed
-                    // document.getElementById('userAvatar').src = '/path/to/avatar/' + data.Avatar;
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-            }
-        });
-
-        function showToast(type, message) {
-            const toastContainer = document.getElementById('toast-container');
-            const toastId = 'toast-' + new Date().getTime();
-
-            const toastHtml = `
-                <div id="${toastId}" class="toast align-items-center text-white ${type === 'error' ? 'bg-danger' : 'bg-success'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            ${message}
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                      document.addEventListener('DOMContentLoaded', () => {
+                          let userId = null; // Store the userId globally
+                      
+                          // Function to determine the greeting based on the current time
+                          function getGreeting() {
+                              const now = new Date();
+                              const hours = now.getHours();
+                              let greeting = 'Good evening'; // Default greeting
+                      
+                              if (hours >= 20 || hours < 6) {
+                                  greeting = 'Good night';
+                              } else if (hours >= 6 && hours < 12) {
+                                  greeting = 'Good morning';
+                              } else if (hours >= 12 && hours < 17) {
+                                  greeting = 'Good afternoon';
+                              }
+                      
+                              return greeting;
+                          }
+                      
+                          // Update the greeting in the HTML
+                          function updateGreeting() {
+                              const greetingElement = document.getElementById('greeting');
+                              const greeting = getGreeting();
+                              if (greetingElement) {
+                                  greetingElement.textContent = greeting;
+                              }
+                          }
+                      
+                          // Call the function to set the greeting when the page loads
+                          updateGreeting();
+                      
+                          // Fetch user data
+                          fetchUserData();
+                      
+                          // Fetch contact lists
+                          fetchContactLists();
+                      
+                          // Form submission event
+                          const form = document.getElementById('contactListForm');
+                          form.addEventListener('submit', async (event) => {
+                              event.preventDefault(); // Prevent the default form submission
+                      
+                              const listName = document.getElementById('listName').value;
+                              if (!listName) {
+                                  showToast('error', 'List name cannot be empty.');
+                                  return;
+                              }
+                      
+                              try {
+                                  const response = await fetch('/list', {
+                                      method: 'POST',
+                                      headers: {
+                                          'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({ listName }), // Send the list name to the server
+                                  });
+                      
+                                  const data = await response.json();
+                                  console.log('API Response:', data);
+                      
+                                  if (response.ok) {
+                                      showToast('success', 'Contact list created successfully!');
+                                      fetchContactLists(); // Refresh the contact lists after creating a new one
+                                      // window.location.reload();
+                                  } else {
+                                      showToast('error', data.message || 'Failed to create contact list.');
+                                  }
+                              } catch (error) {
+                                  console.error('Error creating contact list:', error);
+                                  showToast('error', 'Failed to create contact list.');
+                              }
+                          });
+                      
+                          // Function to fetch user data
+                          async function fetchUserData() {
+                              try {
+                                  const response = await fetch('/user', {
+                                      method: 'POST',
+                                      headers: {
+                                          'Content-Type': 'application/json'
+                                      },
+                                      body: JSON.stringify({})
+                                  });
+                      
+                                  if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                      
+                                  const data = await response.json();
+                                  console.log('User Data:', data); // Debug output
+                      
+                                  if (data) {
+                                      userId = data.id; // Extract and store the userId
+                                      document.getElementById('userName').textContent = data.Name || 'Default Name';
+                                      document.getElementById('userFullName').textContent = data.Name || 'Default Name';
+                                      document.getElementById('userGreeting').textContent = data.Name || 'Default Name';
+                                      document.getElementById('packagename').textContent = data.PackageName || 'No Package';
+                                      document.getElementById('packagecoins').textContent = data.Coins || '0';
+                                  }
+                              } catch (error) {
+                                  console.error('Error fetching user data:', error);
+                                  showToast('error', 'Failed to fetch user data.');
+                              }
+                          }
+                      
+                          // Search functionality
+                          const searchInput = document.getElementById('searchInput');
+                          searchInput.addEventListener('input', filterContactLists);
+                      
+                          // Function to filter contact lists based on search input
+                          function filterContactLists() {
+                              const searchQuery = searchInput.value.toLowerCase(); // Convert input to lowercase for case-insensitive search
+                              const rows = document.querySelectorAll('#contactListTableBody tr');
+                      
+                              rows.forEach(row => {
+                                  const listName = row.cells[0].textContent.toLowerCase();
+                                  const listUserId = row.cells[1].textContent.toLowerCase();
+                      
+                                  if (listName.includes(searchQuery) || listUserId.includes(searchQuery)) {
+                                      row.style.display = ''; // Show the row if it matches the search query
+                                  } else {
+                                      row.style.display = 'none'; // Hide the row if it doesn't match
+                                  }
+                              });
+                          }
+                      
+                          // Function to fetch contact lists and filter by userId
+                          async function fetchContactLists() {
+                              try {
+                                  const response = await fetch('/getlist', {
+                                      method: 'POST',
+                                      headers: {
+                                          'Content-Type': 'application/json'
+                                      }
+                                  });
+                      
+                                  if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                      
+                                  const data = await response.json();
+                                  console.log('Fetched Lists:', data); // Debug output
+                      
+                                  const contactListTableBody = document.getElementById('contactListTableBody');
+                                  contactListTableBody.innerHTML = ''; // Clear existing rows
+                      
+                                  const clickSendLists = data.clickSendLists.data.data || [];
+                                  const userLists = data.userLists || [];
+                      
+                                  // Filter and populate the table with lists matching the logged-in userId
+                                  const filteredLists = clickSendLists.filter(list => list.userId === userId);
+                                  const filteredUserLists = userLists.filter(list => list.createdBy === userId);
+                      
+                                  clickSendLists.forEach(list => {
+                                      const row = document.createElement('tr');
+                                      row.innerHTML = `
+                                          <td>${list.list_name}</td>
+                                          <td>${list.list_email_id || 'Unknown'}</td>
+                                          <td>${list._contacts_count || 0}</td>
+                                          <td>
+                                              <button class="btn btn-danger btn-sm" onclick="deleteList('${list.list_id}')">Delete</button>
+                                          </td>
+                                      `;
+                                      contactListTableBody.appendChild(row);
+                                  });
+                      
+                              } catch (error) {
+                                  console.error('Error fetching lists:', error);
+                                  showToast('error', 'Failed to fetch contact lists.');
+                              }
+                          }
+                        })
+                          // Show toast function
+      function showToast(type, message) {
+        const toastContainer = document.getElementById('toast-container');
+        const toastId = 'toast-' + new Date().getTime();
+    
+        // Construct the toast HTML
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white ${type === 'error' ? 'bg-danger' : 'bg-success'} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
                     </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
-            `;
+            </div>
+        `;
+    
+        // Insert the toast HTML into the container
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+        // Get the newly added toast element
+        const toastElement = document.getElementById(toastId);
+    
+        // Initialize the Bootstrap toast with autohide and delay settings
+        const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 3000 });
+    
+        // Show the toast
+        toast.show();
+    
+        // Remove the toast from DOM after it is hidden
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }    
 
-            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-
-            const toastElement = document.getElementById(toastId);
-            const toast = new bootstrap.Toast(toastElement);
-            toast.show();
-
-            // Remove the toast element after it has been hidden
-            toastElement.addEventListener('hidden.bs.toast', () => {
-                toastElement.remove();
-            });
-        }
-
-        // Fetch messages when the page loads
-        document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const response = await fetch('/buypackage/api/package');
-        
-        if (!response.ok) {
-            showToast('error', 'Failed to fetch package details.');
-            throw new Error('Failed to fetch package details');
-        }
-
-        const data = await response.json();
-        console.log('Package Data:', data); // Debug output
-
-        const container = document.getElementById('data-container');
-
-        if (data.package) {
-                const item = document.createElement('tr');
-                item.className = 'data-item';
-                item.innerHTML = `
-                    <td>${data.package.Name || 'N/A'}</td>
-                    <td>${data.package.Coins || 'N/A'}</td>
-                    <td>${data.package.Duration || 'N/A'}</td>
-                    <td>${data.package.Description || 'N/A'}</td>
-                    <td><span class="badge fs-6 fw-normal bg-tint-success text-success">Activated</span></td>
-                `;
-                container.appendChild(item);
-            
-
-            showToast('success', 'Package details loaded successfully.');
-        } else {
-            showToast('info', 'No packages found.');
-        }
-    } catch (error) {
-        console.error('Error loading package details:', error);
-        showToast('error', 'Error loading package details.');
-    }
-});                 
- </script>
+                      // Move deleteList function outside of DOMContentLoaded to make it globally accessible
+                      async function deleteList(listId) {
+                          if (!confirm('Are you sure you want to delete this list?')) {
+                              return; // If user cancels, do nothing
+                          }
+                      
+                          try {
+                              const response = await fetch('/listdel', {
+                                  method: 'DELETE',
+                                  headers: {
+                                      'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({ listId }), // Send the listId to the server
+                              });
+                      
+                              const data = await response.text(); // Expect text response from server
+                      
+                              if (response.ok) {
+                                showToast('success', "List deleted successfully!");
+                                fetchContactLists();
+                              } else {
+                                showToast('error', "List Not Deleted");
+                                fetchContactLists();
+                                  // window.location.reload();
+                              }
+                          } catch (error) {
+                              console.error('Error deleting list:', error);
+                              // showToast('error', "Internal Server Error");
+                              // fetchContactLists();
+                              window.location.reload();
+                          }
+                      }
+                      </script>
+                      
+                      
+                    
                     <!--//Page content End//-->
             <!--//Page-footer//-->
  <footer class="pb-3 pb-lg-5 px-3 px-lg-6">
@@ -692,66 +799,3 @@
     </body>
 
 </html>
-
-
-  <!-- <h3>If You want to logout Press Here ===></h3><button id="logoutButton">LOGOUT</button> -->
-  <!-- <script>
-    async function resetSession() {
-                                      try {
-                                          // To reset the token, you'd need to provide the current token in some way,
-                                          // but since we're avoiding cookies and localStorage, this step may involve
-                                          // a session or some other server-side mechanism to identify the token.
-                                          await fetch('/reset-Session', {
-                                              method: 'POST'
-                                          });
-                                      } catch (error) {
-                                          console.error('Error resetting session:', error);
-                                      }
-                                  }
-                              
-                                  // Event listener for logout button click
-                                  document.getElementById('logoutButton').addEventListener('click', async () => {
-                                      try {
-                                          await resetSession();
-                                          window.location.href = '/signin';
-                                      } catch (error) {
-                                          console.error('Error during logout:', error);
-                                      }
-                                  });
-                              
-                                  // Load user info when the window is loaded
-                                  window.addEventListener(loadUserInfo);
-                              </script> -->
-<!--   
-  <script>
-    async function resetSession() {
-                                      try {
-                                          // To reset the token, you'd need to provide the current token in some way,
-                                          // but since we're avoiding cookies and localStorage, this step may involve
-                                          // a session or some other server-side mechanism to identify the token.
-                                          await fetch('/reset-Session', {
-                                              method: 'POST'
-                                          });
-                                      } catch (error) {
-                                          console.error('Error resetting session:', error);
-                                      }
-                                  }
-                              
-                                  // Event listener for logout button click
-                                  document.getElementById('logoutButton').addEventListener('click', async () => {
-                                      try {
-                                          await resetSession();
-                                          window.location.href = '/signin';
-                                      } catch (error) {
-                                          console.error('Error during logout:', error);
-                                      }
-                                  });
-                              
-                                  // Load user info when the window is loaded
-                                  window.addEventListener(loadUserInfo);
-                              </script> -->
-        
-
-        <!-- Table to display messages -->
-        
-    <!-- Bootstrap JS -->

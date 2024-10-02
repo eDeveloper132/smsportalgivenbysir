@@ -45,6 +45,10 @@ interface ISign extends Document {
       Coins?: number | null;
       Status?: string | null;
   };
+  multiple_message: {
+    Phone_Numbers?: string[];
+    Name: string[],
+  };
   messages: Types.ObjectId[]; // References to MessageModel
   package: Types.ObjectId[];  // References to PackageModel
   lists: Types.ObjectId[];  // References to ListModel
@@ -67,25 +71,45 @@ const SignSchema: Schema<ISign> = new Schema({
       Coins: { type: Number, default: null },
       Status: { type: String, default: null }
   },
-  messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
+  multiple_message: {
+    Phone_Numbers: { type: [String], default: [] },
+    Name: {type: [String], default: []}
+  },
+  messages: [{ type: Schema.Types.ObjectId, ref: MessageModel }],
   package: [{ type: Schema.Types.ObjectId, ref: 'PackageModel' }],
   lists: [{ type: Schema.Types.ObjectId, ref: 'List' }]  // Reference to the List model
 }, { timestamps: true });
 
 const SignModel: Model<ISign> = mongoose.model<ISign>('Sign', SignSchema);
 
+interface IContact {
+    firstName: string;
+    lastName: string;
+    email: string;
+    mix: string;
+}
 // Define the List interface and schema
 interface IList extends Document {
     listName: string;
-    createdBy: Types.ObjectId; // Reference to the user (SignModel)
-    contacts: string[]; // Array of contacts
+    createdBy: Types.ObjectId;
+    listId: number; // Reference to the user (SignModel)
+    contacts: IContact[]; // Array of contacts
 }
 
 const ListSchema: Schema<IList> = new Schema({
     listName: { type: String, required: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'Sign', required: true },
-    contacts: [{ type: String }]
+    listId: { type: Number, required: true, unique: true },
+    contacts: [
+        {
+            firstName: { type: String, required: false, default: "John" },
+            lastName: { type: String, required: false, default:"Doe" },
+            email: { type: String, required: false, default:"demo@gmail.com" },
+            mix: { type: String, required: false , default:"+920000000000" }
+        }
+    ]
 }, { timestamps: true });
+
 
 const ListModel: Model<IList> = mongoose.model<IList>('List', ListSchema);
 
@@ -108,6 +132,7 @@ export {
     IList,
     MessageModel,
     SignModel,
+    IContact,
     ListModel,
     TokenModel
 };
