@@ -26,6 +26,7 @@ app.listen(PORT, () => {
 });
 await connection();
 app.use("/assets", express.static(path.join(__dirname, "assets")));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const sessionMiddleware = async (req, res, next) => {
     // Define paths that should be excluded from session verification
     const excludedPaths = [

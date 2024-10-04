@@ -32,6 +32,8 @@ app.listen(PORT, () => {
 await connection();
 
 app.use("/assets", express.static(path.join(__dirname, "assets")));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 export type AppRes = Response<any, { user: ISign | null }>;
 

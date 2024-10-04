@@ -34,7 +34,7 @@ const SignSchema = new Schema({
     },
     messages: [{ type: Schema.Types.ObjectId, ref: MessageModel }],
     package: [{ type: Schema.Types.ObjectId, ref: 'PackageModel' }],
-    lists: [{ type: Schema.Types.ObjectId, ref: 'List' }] // Reference to the List model
+    lists: [{ type: Schema.Types.ObjectId, ref: 'List' }]
 }, { timestamps: true });
 const SignModel = mongoose.model('Sign', SignSchema);
 const ListSchema = new Schema({
@@ -46,7 +46,8 @@ const ListSchema = new Schema({
             firstName: { type: String, required: false, default: "John" },
             lastName: { type: String, required: false, default: "Doe" },
             email: { type: String, required: false, default: "demo@gmail.com" },
-            mix: { type: String, required: false, default: "+920000000000" }
+            mix: { type: String, required: false, default: "+920000000000" },
+            contactid: { type: Number, required: false, default: 0 }
         }
     ]
 }, { timestamps: true });
@@ -55,5 +56,12 @@ const TokenSchema = new Schema({
     Token: { type: String, required: true, unique: true }
 }, { timestamps: true });
 const TokenModel = mongoose.model('Token', TokenSchema);
+const FileUrlSchema = new Schema({
+    userId: { type: Schema.Types.ObjectId, ref: 'Sign', required: true },
+    listId: { type: Number, required: true },
+    fileUrl: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now }
+});
+const FileUrlModel = mongoose.model('FileUrl', FileUrlSchema);
 // Export models and interfaces
-export { MessageModel, SignModel, ListModel, TokenModel };
+export { MessageModel, SignModel, ListModel, TokenModel, FileUrlModel };

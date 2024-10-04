@@ -168,6 +168,17 @@
                         </a>
                       </li>
                       <li class="nav-item pt-1">
+                        <a href="/addnumbers" class="nav-link d-flex align-items-center text-truncate">
+                          <span class="sidebar-icon">
+                            <span class="material-symbols-rounded">
+                              sell
+                              </span>
+                          </span>
+                          <!--Sidebar nav text-->
+                          <span class="sidebar-text">Add Number</span>
+                        </a>
+                      </li>
+                      <li class="nav-item pt-1">
                         <a href="/getnumbers" class="nav-link d-flex align-items-center text-truncate">
                           <span class="sidebar-icon">
                             <span class="material-symbols-rounded">
@@ -510,7 +521,7 @@
                                   <thead class="table-dark">
                                       <tr>
                                           <th>List Name</th>
-                                          <th>User ID</th>
+                                          <th>List ID</th>
                                           <th>Contacts Count</th>
                                           <th>Actions</th>
                                       </tr>
@@ -538,6 +549,95 @@
                           </div>
                       </div>
                   </div>
+
+                  <!-- Modal for displaying contact details -->
+<!-- Modal for displaying contact details -->
+<div class="modal fade" id="contactDetailsModal" tabindex="-1" aria-labelledby="contactDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 80%;">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="contactDetailsModalLabel">Contact Details</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <div id="contactDetailsContent">
+                  <!-- Contact details will be populated here -->
+              </div>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+
+
+                  <!-- Update List Modal -->
+<div class="modal fade" id="updateListModal" tabindex="-1" aria-labelledby="updateListModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="updateListModalLabel">Update List Name</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="updateListForm">
+          <div class="mb-3">
+            <label for="newListName" class="form-label">Enter New List Name</label>
+            <input type="text" class="form-control" id="newListName" placeholder="Enter new list name" required>
+          </div>
+          <input type="hidden" id="updateListId"> <!-- Hidden field for storing listId -->
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="saveUpdatedListBtn">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Import Contacts Modal -->
+<div class="modal fade" id="importContactsModal" tabindex="-1" aria-labelledby="importContactsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importContactsModalLabel">Import Contacts by selecting a file</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importContactsForm" onsubmit="handleImportContactsForm(event)">
+                    <div class="mb-3">
+                      <div class="alert alert-warning" role="alert">
+                        <h5>Please customize your .csv file before upload</h5> 
+                        Create a table in your Notepad or any editor first row contains comma separated headings like <br> phone,first_name,last_name,email <br> And second third fourth etc rows contains comma 
+                        separated values like <br> +920000000000,John,Doe,John@example.com
+                        <br>
+                        structure should be look like this:
+                        <br><br>
+                        phone,first_name,last_name,email
+                        +923198000000,ilyas,ahmed,ilyas@gmail.com
+
+
+                    </div>
+                        <label for="fileInput" class="form-label">Select File (.csv) supported format</label>
+                        <input type="file" class="form-control" id="fileInput" accept=".csv,.xls,.xlsx" required>
+                    </div>
+                    <input type="hidden" id="listIdInput" name="listId">
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Import</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
                   
                     <!-- Add Contact Modal -->
                     <div class="modal fade" id="addContactModal" tabindex="-1" aria-labelledby="addContactModalLabel" aria-hidden="true">
@@ -871,10 +971,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data) {
                 userId = data.id; // Extract and store the userId
-                document.getElementById('userName').textContent = `User Name: ${data.Name || 'Default Name'}`;
-                document.getElementById('userFullName').textContent = `Full Name: ${data.Name || 'Default Name'}`;
-                document.getElementById('packagename').textContent = `Package: ${data.PackageName || 'No Package'}`;
-                document.getElementById('packagecoins').textContent = `Coins: ${data.Coins || '0'}`;
+                document.getElementById('userName').textContent = `${data.Name || 'Default Name'}`;
+                document.getElementById('userFullName').textContent = `${data.Name || 'Default Name'}`;
+                document.getElementById('userGreeting').textContent = data.Name;
+                document.getElementById('packagename').textContent = `${data.PackageName || 'No Package'}`;
+                document.getElementById('packagecoins').textContent = `${data.Coins || '0'}`;
 
                 // Now that userId is available, fetch and filter the contact lists
                 fetchContactLists();
@@ -935,27 +1036,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn btn-info btn-sm" onclick="viewList('${list.list_id}')">View</button>
                     <button class="btn btn-warning btn-sm" onclick="updateList('${list.list_id}')">Update</button>
                     <button class="btn btn-danger btn-sm" onclick="deleteList('${list.list_id}')">Delete</button>
+                    <button class="btn btn-primary btn-sm" onclick="importContacts('${list.list_id}')">Import</button>
                 </td>
             `;
             contactListTableBody.appendChild(row);
         });
-
-        // Populate the table with filtered user-specific lists
-        clickSendLists.forEach(list => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${list.list_name}</td>
-                <td>${list.list_id}</td>
-                <td>${list._contacts_count || 0}</td>
-                <td>
-                    <button class="btn btn-success btn-sm" onclick="openAddContactModal('${list.list_id}')">Add</button>
-                    <button class="btn btn-info btn-sm" onclick="viewList('${list.list_id}')">View</button>
-                    <button class="btn btn-warning btn-sm" onclick="updateList('${list.list_id}')">Update</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteList('${list.list_id}')">Delete</button>
-                </td>
-            `;
-            contactListTableBody.appendChild(row);
-        });
+        
 
         showToast('Contact lists fetched successfully!', true); // Show success message
     } catch (error) {
@@ -963,16 +1049,8 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Error fetching contact lists.', false); // Show error message
     }
 }
-async function deleteList(listId) {
-                          if (!confirm('Are you sure you want to delete this list?')) {
-                              return; // If user cancels, do nothing
-                          }
-                      
-                        }
     // Function to update a list
-    function updateList(listId) {
-        showToast('Updating list with ID: ' + listId, true); // Show updating message
-    }
+
 
     // Function to open the add contact modal
     window.openAddContactModal = function(listId) {
@@ -1017,10 +1095,12 @@ async function deleteList(listId) {
                 showToast('Contact added successfully!', true); // Show success message
             } else {
                 console.error('Failed to add contact');
+                fetchContactLists(); // Optionally refresh the contact list
                 showToast('Failed to add contact.', false); // Show error message
             }
         } catch (error) {
             console.error('Error adding contact:', error);
+            fetchContactLists(); // Optionally refresh the contact list
             showToast('Error adding contact.', false); // Show error message
         }
     });
@@ -1066,6 +1146,165 @@ function showToast(message, isSuccess = true) {
         toastTemplate.remove();
     });
 }
+function importContacts(listId) {
+    // Set the listId in the hidden input field in the modal
+    document.getElementById('listIdInput').value = listId;
+
+    // Open the import modal
+    const importModal = new bootstrap.Modal(document.getElementById('importContactsModal'));
+    importModal.show();
+}
+
+async function handleImportContactsForm(event) {
+    event.preventDefault(); // Prevent the default form submission
+
+    const formData = new FormData(document.getElementById('importContactsForm'));
+    const listId = document.getElementById('listIdInput').value;
+
+    // Add the file to FormData
+    const fileInput = document.getElementById('fileInput');
+    formData.append('file', fileInput.files[0]); // Add the selected file
+
+    try {
+        const response = await fetch(`/importContacts`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            console.log('Success:', result);
+            showToast('Contacts imported successfully!', true); // Show success message
+            window.location.reload();
+        } else {
+            console.error('Error:', result.error);
+            showToast('Error importing contacts: ' + result.error, false); // Show error message
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error importing contacts.', false); // Show error message
+    }
+}
+
+async function updateList(listId) {
+    document.getElementById('updateListId').value = listId; // Set the listId in hidden input
+    const modal = new bootstrap.Modal(document.getElementById('updateListModal')); // Initialize modal
+    modal.show(); // Show the modal
+}
+
+// Function to handle the saving of the updated list name
+document.getElementById('saveUpdatedListBtn').addEventListener('click', async (event) => {
+    event.preventDefault(); // Prevent the form from refreshing the page
+
+    const newListName = document.getElementById('newListName').value; // Get the new list name from input
+    const listId = document.getElementById('updateListId').value; // Get the listId
+
+    if (!newListName) {
+        alert("Please enter a new list name.");
+        return;
+    }
+
+    const updatedListData = {
+        listId,
+        newListName // Send both listId and newListName to the backend
+    };
+
+    try {
+        const response = await fetch('/listupdate', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedListData) // Send listId and newListName to the server
+        });
+
+        if (response.ok) {
+            console.log('List updated successfully');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('updateListModal')); // Get the modal instance
+            modal.hide(); // Hide the modal after success
+            fetchContactLists(); // Refresh the contact lists
+            showToast('List updated successfully!', true); // Show success message
+        } else {
+            console.error('Failed to update list');
+            window.location.reload()
+            showToast('Failed to update list.', false); // Show error message
+        }
+    } catch (error) {
+        console.error('Error updating list:', error);
+        window.location.reload()
+        showToast('Error updating list.', false); // Show error message
+    }
+});
+async function viewList(listId) {
+    try {
+        const response = await fetch(`/listview`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ listId }) // Send listId in the body
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            console.log('List retrieved successfully:', result.list);
+
+            // Display contacts in the modal
+            displayContacts(result.list.contacts); // Call to display the contacts
+            showToast('success', 'List retrieved successfully!');
+
+            // Show the modal with contact details
+            const contactDetailsModal = new bootstrap.Modal(document.getElementById('contactDetailsModal'));
+            contactDetailsModal.show();
+        } else {
+            const errorData = await response.json();
+            console.error('Failed to retrieve list:', errorData);
+            showToast('error', 'Failed to retrieve the list');
+        }
+    } catch (error) {
+        console.error('Error retrieving list:', error);
+        showToast('error', 'Error retrieving the list.');
+    }
+}
+
+function displayContacts(contacts) {
+    const contactDetailsContent = document.getElementById('contactDetailsContent');
+    contactDetailsContent.innerHTML = ''; // Clear previous details
+
+    if (contacts.length === 0) {
+        contactDetailsContent.innerHTML = '<p>No contacts found for this list.</p>';
+        return;
+    }
+
+    // Create a table to display contact details
+    const contactsTable = document.createElement('table');
+    contactsTable.classList.add('table', 'table-bordered');
+
+    // Create table headers
+    contactsTable.innerHTML = `
+        <thead>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Contact Number</th>
+            </tr>
+        </thead>
+        <tbody>
+        ${contacts.map(contact => `
+            <tr>
+                <td>${contact.firstName}</td>
+                <td>${contact.lastName}</td>
+                <td>${contact.email}</td>
+                <td>${contact.mix}</td>
+            </tr>
+        `).join('')}
+        </tbody>
+    `;
+
+    contactDetailsContent.appendChild(contactsTable);
+}
+
 async function deleteList(listId) {
     if (!confirm('Are you sure you want to delete this list?')) {
         return; // If user cancels, do nothing
@@ -1092,6 +1331,7 @@ async function deleteList(listId) {
     } catch (error) {
         console.error('Error deleting list:', error);
         showToast('Error deleting the list.', false); // Show error message
+        window.location.reload();
     }
 }
 </script>

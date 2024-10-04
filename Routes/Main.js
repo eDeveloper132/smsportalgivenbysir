@@ -3,11 +3,12 @@ import path from "path";
 import { fileURLToPath } from "url";
 import bcrypt from "bcrypt";
 import axios from "axios";
-import { SignModel, ListModel, MessageModel } from "../Schema/Post.js";
+import { SignModel, ListModel, MessageModel, FileUrlModel } from "../Schema/Post.js";
 import { ContactListApi, ContactList } from "clicksend";
 import { v4 as uuidv4 } from 'uuid';
 import multer from 'multer';
 import XLSX from 'xlsx';
+import fs from 'fs';
 import mongoose from 'mongoose';
 import "dotenv/config";
 mongoose.set('debug', true);
@@ -66,6 +67,48 @@ router.get("/list", (req, res) => {
 router.get("/alllists", (req, res) => {
     res.sendFile(path.resolve(__dirname, "../Views/alllists.html"));
 });
+router.get('/addnumbers', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../Views/multiple.html'));
+});
+router.post('/addnumbers', async (req, res) => {
+    const { name, phonecode, phonenumber } = req.body;
+    const user = res.locals.user; // Modify as needed
+    const userId = user._id;
+    if (!name || !phonecode || !phonenumber) {
+        return res.status(400).json({ success: false, message: 'Invalid input' });
+    }
+    const mix = `${phonecode}${phonenumber}`;
+    try {
+        if (!userId) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        const user = await SignModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        // Ensure multiple_message and its fields are initialized
+        user.multiple_message = user.multiple_message || { Name: [], Phone_Numbers: [] };
+        user.multiple_message.Name = user.multiple_message.Name ?? [];
+        user.multiple_message.Phone_Numbers = user.multiple_message.Phone_Numbers ?? [];
+        // Check if the number already exists
+        if (user.multiple_message.Phone_Numbers.includes(mix)) {
+            return res.status(400).json({ success: false, message: 'Number already exists' });
+        }
+        if (user.multiple_message.Name.includes(name)) {
+            return res.status(400).json({ success: false, message: 'Name already exists' });
+        }
+        // Add the name and number to the arrays
+        user.multiple_message.Name.push(name);
+        user.multiple_message.Phone_Numbers.push(mix);
+        // Save the updated user document
+        await user.save();
+        res.json({ success: true, message: `Number added successfully: ${mix}` });
+    }
+    catch (error) {
+        console.error('Error adding number:', error);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+});
 router.post("/list", async (req, res) => {
     console.log(req.body); // Log the request body
     const { listName } = req.body; // Get the list name from the request body
@@ -103,6 +146,112 @@ router.post("/list", async (req, res) => {
     catch (err) {
         console.error('Error creating contact list:', err.message || err.body);
         res.status(500).json({ success: false, message: 'Failed to create contact list: ' + (err.message || 'Internal Server Error') });
+    }
+});
+const upload1 = multer({ dest: 'uploads/' });
+// Function to send contacts to ClickSend
+const sendContactsToClickSend = async (listId, fileUrl) => {
+    const url = `https://rest.clicksend.com/v3/lists/${listId}/import`;
+    // Adjust fieldOrder to match your actual data
+    const fieldOrder = ['phone', 'first_name', 'last_name', 'email'];
+    // Prepare the request body
+    const fileData = {
+        file_url: fileUrl, // Send file URL instead of contacts
+        field_order: fieldOrder, // Specify the order of fields
+    };
+    console.log('File data being sent:', fileData);
+    try {
+        // Sending the POST request to ClickSend
+        const response = await axios.post(url, fileData, {
+            headers: {
+                'Content-Type': 'application/json', // Ensure Content-Type is JSON
+                'Authorization': 'Basic ' + Buffer.from('bluebirdintegrated@gmail.com:EA26A5D0-7AAC-6631-478B-FC155CE94C99').toString('base64'), // Your credentials
+            },
+        });
+        console.log('Contacts successfully imported to ClickSend:', response.data);
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error importing contacts to ClickSend:', error.response?.data || error.message);
+        throw new Error('Failed to import contacts to ClickSend.');
+    }
+};
+// Route for importing contacts
+// Route for importing contacts
+router.post('/importContacts', upload1.single('file'), async (req, res) => {
+    const { listId } = req.body;
+    const user = res.locals.user;
+    const userId = user._id; // Assuming this gets the authenticated user's ID
+    const file = req.file;
+    if (!file) {
+        return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
+    if (!fileExtension || fileExtension !== 'csv') {
+        return res.status(400).json({ error: 'Invalid file type. Please upload a .csv file.' });
+    }
+    try {
+        // Read the content of the uploaded file
+        fs.readFile(file.path, 'utf8', async (err, data) => {
+            if (err) {
+                console.error('Error reading file:', err);
+                return res.status(500).json({ error: 'Error reading the file.' });
+            }
+            console.log('File content:', data); // Log the content of the file
+            // Parse the CSV data
+            const lines = data.split('\n').filter(line => line.trim() !== ''); // Split by line and filter out empty lines
+            const contacts = lines.slice(1).map(line => {
+                const [phone, first_name, last_name, email] = line.split(',').map(item => item.trim());
+                return {
+                    firstName: first_name,
+                    lastName: last_name,
+                    email,
+                    mix: phone, // Assuming phone is used as 'mix' based on the previous discussions
+                    contactid: 0 // Generate a random contact ID or handle it accordingly
+                };
+            });
+            // Find the corresponding ListModel and update contacts
+            const list = await ListModel.findOne({ listId: listId });
+            if (!list) {
+                return res.status(404).json({ error: 'List not found' });
+            }
+            // Log the existing contacts before updating
+            console.log('Existing contacts before update:', list.contacts);
+            // Add new contacts to the existing contacts array
+            list.contacts.push(...contacts); // Assuming contacts is an array in your ListModel
+            // Attempt to save the updated list
+            try {
+                await list.save();
+                console.log('Updated contacts:', list.contacts); // Log updated contacts
+            }
+            catch (saveError) {
+                console.error('Error saving contacts:', saveError);
+                return res.status(500).json({ error: 'Failed to save contacts to the list.' });
+            }
+            // Create the file URL
+            const fileUrl = `https://0755-203-101-187-89.ngrok-free.app/${file.path.replace(/\\/g, '/')}`;
+            // Save the file URL in the FileUrlModel
+            const fileUrlEntry = new FileUrlModel({
+                userId: userId, // Use the user ID from the request context
+                listId: listId, // Use the listId provided in the request
+                fileUrl: fileUrl // The URL of the uploaded file
+            });
+            try {
+                await fileUrlEntry.save();
+                console.log('File URL saved successfully:', fileUrlEntry);
+            }
+            catch (saveError) {
+                console.error('Error saving file URL:', saveError);
+                return res.status(500).json({ error: 'Failed to save file URL.' });
+            }
+            // Send contacts to ClickSend
+            await sendContactsToClickSend(listId, fileUrl); // Call the function to send contacts
+            res.status(200).json({ message: 'Contacts imported successfully', contacts });
+        });
+    }
+    catch (error) {
+        console.error('Error processing file:', error);
+        return res.status(500).json({ error: 'Error processing the file.' });
     }
 });
 const upload = multer({
@@ -244,6 +393,82 @@ router.post("/getlist", async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+router.post('/listview', async (req, res) => {
+    const { listId } = req.body;
+    console.log(listId);
+    if (!listId) {
+        console.error('No listId provided.');
+        return res.status(400).send({ error: true, message: 'Invalid Request: listId is missing.' });
+    }
+    try {
+        // Check if the list exists in the local database
+        const list = await ListModel.findOne({ listId: listId });
+        if (!list) {
+            console.log('List not found in database.');
+            return res.status(404).send({ error: true, message: 'List not found in the database.' });
+        }
+        console.log(list.contacts); // This will log the contacts array to the console
+        // If the list exists, return the list and its contacts
+        return res.status(200).send({ success: true, list });
+    }
+    catch (error) {
+        console.error('Error occurred during fetching the list:', error.message);
+        return res.status(500).send({ error: true, message: 'Server error occurred during fetching the list.' });
+    }
+});
+router.put('/listupdate', async (req, res) => {
+    const { listId, newListName } = req.body;
+    if (!listId && !newListName) {
+        console.log('Server Error 400: Missing listId');
+        return res.status(400).json({ error: 'Missing listId' });
+    }
+    try {
+        // Step 1: Check and update the list in MongoDB
+        const updatedList = await ListModel.findOneAndUpdate({ listId: listId }, { listName: newListName }, // Update the name in your MongoDB schema
+        { new: true });
+        if (!updatedList) {
+            console.log('List not found in database, checking ClickSend.');
+            // Step 2: Update the list in ClickSend if not found in MongoDB
+            const clickSendResponse = await axios.put(`https://rest.clicksend.com/v3/lists/${listId}`, {
+                list_name: newListName, // Send the new list name to ClickSend
+            }, {
+                auth: {
+                    username: 'bluebirdintegrated@gmail.com', // Your ClickSend credentials
+                    password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99', // Your ClickSend API key
+                },
+            });
+            if (clickSendResponse.status === 200) {
+                console.log('List successfully updated in ClickSend.');
+                return res.status(200).send({ success: true, message: 'List updated successfully in ClickSend.' });
+            }
+            else {
+                console.error(`ClickSend update failed: ${clickSendResponse.statusText}`);
+                return res.status(500).send({ error: true, message: 'Failed to update list in ClickSend.' });
+            }
+        }
+        // If the list was updated in MongoDB, also update it in ClickSend
+        const clickSendResponse = await axios.put(`https://rest.clicksend.com/v3/lists/${listId}`, {
+            list_name: newListName, // Update the list name on ClickSend
+        }, {
+            auth: {
+                username: 'bluebirdintegrated@gmail.com', // Your ClickSend credentials
+                password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99', // Your ClickSend API key
+            },
+        });
+        if (clickSendResponse.status === 200) {
+            console.log('List successfully updated in both MongoDB and ClickSend.');
+            return res.status(200).send({ success: true, message: 'List updated successfully in both MongoDB and ClickSend.' });
+        }
+        else {
+            console.error(`ClickSend update failed: ${clickSendResponse.statusText}`);
+            return res.status(500).send({ error: true, message: 'Failed to update list in ClickSend.' });
+        }
+    }
+    catch (error) {
+        console.error('Error occurred during the update process:', error.message);
+        return res.status(500).send({ error: true, message: 'Server error occurred during the update process.' });
+    }
+});
 router.delete('/listdel', async (req, res) => {
     const listId = req.body.listId;
     if (!listId) {
@@ -309,27 +534,14 @@ router.post("/addcontact", async (req, res) => {
     const formattedPhone = `${code}${phone}`; // E.164 formatted phone number
     console.log('Formatted Phone Number:', formattedPhone);
     console.log('List ID:', userid);
-    const contactObject = {
-        firstName,
-        lastName,
-        email,
-        mix: formattedPhone
-    };
     try {
         const username = 'bluebirdintegrated@gmail.com';
         const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
         const contactData = {
-            contacts: [
-                {
-                    first_name: firstName || '', // Optional
-                    last_name: lastName || '', // Optional
-                    email: email || '', // Optional
-                    phone_number: `${code}${phone}`, // Ensure E.164 format
-                    address_line_1: "Placeholder address", // Ensure this is a valid address
-                    custom_1: 'CustomField1', // Required custom_1 field
-                    // Add more fields if necessary
-                }
-            ]
+            first_name: firstName || '', // Optional
+            last_name: lastName || '', // Optional
+            email: email || '',
+            phone_number: `${code}${phone}`
         };
         console.log('ClickSend Request Body:', JSON.stringify(contactData, null, 2));
         const clickSendUrl = `https://rest.clicksend.com/v3/lists/${userid}/contacts`;
@@ -344,6 +556,13 @@ router.post("/addcontact", async (req, res) => {
         });
         console.log('ClickSend API Response:', clickSendResponse.data);
         if (clickSendResponse.data.response_code === 'SUCCESS') {
+            const contactObject = {
+                firstName,
+                lastName,
+                email,
+                mix: formattedPhone,
+                contactid: clickSendResponse.data.data.contact_id
+            };
             console.log('Contact Object to be added to MongoDB:', contactObject);
             const list = await ListModel.findOne({ listId: userid });
             if (!list) {
