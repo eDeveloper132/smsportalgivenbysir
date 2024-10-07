@@ -4,40 +4,6 @@
   .dH{
     float: left;
   }
-        .form-group {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            margin-right: 10px;
-        }
-        select, textarea, button {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        select {
-            margin-right: 10px;
-        }
-        textarea {
-            resize: none;
-            margin-right: 10px;
-        }
-        button {
-            background-color: #28a745;
-            color: #fff;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        .large-textarea {
-            width: 100%;
-            margin-top: 15px;
-        }
 </style>
 <head>
   <meta charset="UTF-8">
@@ -487,7 +453,7 @@ if (x.style.display === "none") {
                       <div class="position-relative container-fluid px-0">
                           <div class="row align-items-center position-relative">
                               <div class="col-md-8 mb-4 mb-lg-0">
-                                  <h3 class="mb-2">Send Bulk SMS</h3>
+                                  <h3 class="mb-2">Verify Number</h3>
 
 
                               </div>
@@ -546,259 +512,254 @@ if (x.style.display === "none") {
               </div><!-- Page Content -->
               <div class="content pt-5 px-4 px-lg-6 d-flex flex-column-fluid">
                 <div class="container p-5">
-                  <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
-
-                    <h2 class="mb-4 text-center">Send SMS to Selected List Numbers</h2>
-                    <!-- Table to display lists -->
-                    <form id="phoneCodeForm">
-                        <div class="form-group mb-4">
-                            <textarea id="additionalInfo" name="message" rows="5" class="form-control" placeholder="Type your message here" required></textarea>
+                    <!-- Existing Form for Verifying Number -->
+                    <form id="verifyNumberForm">
+                        <div class="mb-3">
+                            <label for="phoneNumber" class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="phoneNumber" placeholder="Number must be like : +1234567890" required>
                         </div>
+            
+                        <div class="mb-3">
+                            <label for="country" class="form-label">Select Country</label>
+                            <select class="form-select" id="country" required>
+                                <option selected disabled>Choose a country</option>
+                                <!-- Options will be populated by JavaScript -->
+                            </select>
+                        </div>
+            
+                        <div class="mb-3">
+                            <label for="label" class="form-label">Label</label>
+                            <input type="text" class="form-control" id="label" placeholder="Organization Name" required>
+                        </div>
+            
+                        <button type="submit" class="btn btn-primary">Verify Number</button>
                     </form>
-                    <div class="table-responsive">
-                      <table class="table table-striped table-hover table-bordered mt-2">
-                          <thead class="table-dark">
-                              <tr>
-                                  <th>List Name</th>
-                                  <th>Contacts Count</th>
-                                  <th>Actions</th>
-                              </tr>
-                          </thead>
-                          <tbody id="contactListTableBody">
-                              <!-- Rows will be populated by JavaScript -->
-                          </tbody>
-                      </table>
-                  </div>
-                  
+            
+                    <!-- New Form for Entering Verification Code -->
+                    <form id="verificationCodeForm" style="display: none;">
+                        <div class="mb-3">
+                            <label for="verificationCode" class="form-label">Verification Code</label>
+                            <input type="text" class="form-control" id="verificationCode" placeholder="Enter verification code" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">Submit Verification Code</button>
+                    </form>
+            
+                    <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
                 </div>
             </div>
             
             <script>
-              document.addEventListener('DOMContentLoaded', async () => {
-                let userId = null; // Store the userId globally
-                fetch('/profile-pic')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Profile picture not found');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const imgElement = document.getElementById('userAvatar');
-            imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
-        })
-        .catch(error => {
-            console.error('Error:', error.message);
-            // Optionally set a default image if the profile picture is not found
-            const imgElement = document.getElementById('userAvatar');
-            imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
-        });
-                try {
-                    // Fetch user data after DOM is loaded
-                    const response = await fetch('/user', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({}) // Adjust payload if necessary
+                document.addEventListener('DOMContentLoaded', async () => {
+                    let userId = null; // Store the userId globally
+            
+                    // Fetching user profile picture
+                    fetch('/profile-pic')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Profile picture not found');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            const imgElement = document.getElementById('userAvatar');
+                            imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
+                        })
+                        .catch(error => {
+                            console.error('Error:', error.message);
+                            const imgElement = document.getElementById('userAvatar');
+                            imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
+                        });
+            
+                    // Fetch user data
+                    try {
+                        const response = await fetch('/user', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({}) // Adjust payload if necessary
+                        });
+            
+                        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            
+                        const data = await response.json();
+            
+                        if (data) {
+                            document.getElementById('userName').textContent = data.Name;
+                            document.getElementById('userFullName').textContent = data.Name;
+                            document.getElementById('userGreeting').textContent = data.Name;
+                            document.getElementById('packagename').textContent = data.PackageName;
+                            document.getElementById('packagecoins').textContent = data.Coins;
+                        }
+            
+                        updateGreeting();
+                    } catch (error) {
+                        console.error('Error fetching user data:', error);
+                        showToast('Error fetching user data: ' + error.message, false);
+                    }
+            
+                    // Fetching countries
+                    async function fetchCountries() {
+                        try {
+                            const response = await fetch('https://rest.clicksend.com/v3/countries', {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                }
+                            });
+            
+                            if (!response.ok) {
+                                throw new Error(`Error fetching countries: ${response.statusText}`);
+                            }
+            
+                            const data = await response.json();
+                            const countrySelect = document.getElementById('country');
+                            data.data.forEach(country => {
+                                const option = document.createElement('option');
+                                option.value = country.code;
+                                option.textContent = `${country.value} (${country.code})`;
+                                countrySelect.appendChild(option);
+                            });
+                        } catch (error) {
+                            showToast('Error fetching countries: ' + error.message, false);
+                        }
+                    }
+            
+                    await fetchCountries();
+            
+                    // Verify Number Form Submission
+                    document.getElementById('verifyNumberForm').addEventListener('submit', async function(event) {
+                        event.preventDefault(); // Prevent default form submission
+            
+                        const phoneNumber = document.getElementById('phoneNumber').value;
+                        const label = document.getElementById('label').value;
+                        const country = document.getElementById('country').value;
+            
+                        // Validate that the phone number and country are not empty
+                        if (!phoneNumber || !country) {
+                            showToast('Please enter a phone number and select a country.', false);
+                            return;
+                        }
+            
+                        try {
+                            // Make a POST request to the /verifyownnumber route
+                            const response = await fetch('/verifyownnumber', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    phone_number: phoneNumber,
+                                    label: label,
+                                    country: country
+                                }),
+                            });
+            
+                            const result = await response.json();
+            
+                            if (response.ok) {
+                                showToast('Verification code sent to your number!', true); // Success message
+                                document.getElementById('verifyNumberForm').style.display = 'none'; // Hide the verification number form
+                                document.getElementById('verificationCodeForm').style.display = 'block'; // Show the verification code form
+                            } else {
+                                showToast(result.error || 'Failed to send verification code.', false); // Error message
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            showToast('An error occurred while sending the code: ' + error.message, false);
+                        }
                     });
             
-                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                    
-                    const data = await response.json();
+                    // Verification Code Form Submission
+                    document.getElementById('verificationCodeForm').addEventListener('submit', async function(event) {
+                        event.preventDefault(); // Prevent default form submission
             
-                    if (data) {
-                        // Update the user-related content in the DOM
-                        document.getElementById('userName').textContent = data.Name;
-                        document.getElementById('userFullName').textContent = data.Name;
-                        document.getElementById('userGreeting').textContent = data.Name;
-                        document.getElementById('packagename').textContent = data.PackageName;
-                        document.getElementById('packagecoins').textContent = data.Coins;
+                        const verificationCode = document.getElementById('verificationCode').value;
+            
+                        // Validate that the verification code is not empty
+                        if (!verificationCode) {
+                            showToast('Please enter the verification code.', false);
+                            return;
+                        }
+            
+                        try {
+                            // Make a POST request to the verification endpoint
+                            const response = await fetch('/verifyownnumber', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    verification_code: verificationCode // Adjust if your API expects a different key
+                                }),
+                            });
+            
+                            const result = await response.json();
+            
+                            if (response.ok) {
+                                showToast('Verification successful!', true); // Success message
+                                document.getElementById('verificationCodeForm').reset(); // Reset the form
+                                document.getElementById('verifyNumberForm').style.display = 'block'; // Show the verification number form again
+                                document.getElementById('verificationCodeForm').style.display = 'none'; // Hide the verification code form
+                            } else {
+                                showToast(result.error || 'Verification failed.', false); // Error message
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            showToast('An error occurred during verification: ' + error.message, false);
+                        }
+                    });
+            
+                    function getGreeting() {
+                        const now = new Date();
+                        const hours = now.getHours();
+                        
+                        if (hours >= 20 || hours < 6) {
+                            return 'Good night';
+                        } else if (hours >= 6 && hours < 12) {
+                            return 'Good morning';
+                        } else if (hours >= 12 && hours < 17) {
+                            return 'Good afternoon';
+                        } else {
+                            return 'Good evening';
+                        }
                     }
             
-                    // Call the function to set the greeting after user data is fetched
-                    updateGreeting();
-            
-                } catch (error) {
-                    console.error('Error fetching user data:', error);
-                }
-            
-                // Function to determine the greeting based on the current time
-                function getGreeting() {
-                    const now = new Date();
-                    const hours = now.getHours();
-                    
-                    if (hours >= 20 || hours < 6) {
-                        return 'Good night';
-                    } else if (hours >= 6 && hours < 12) {
-                        return 'Good morning';
-                    } else if (hours >= 12 && hours < 17) {
-                        return 'Good afternoon';
-                    } else {
-                        return 'Good evening';
+                    function updateGreeting() {
+                        const greetingElement = document.getElementById('greeting');
+                        const greeting = getGreeting();
+                        greetingElement.textContent = greeting;
                     }
-                }
+                });
             
-                // Update the greeting in the HTML
-                function updateGreeting() {
-                    const greetingElement = document.getElementById('greeting');
-                    const greeting = getGreeting();
-                    greetingElement.textContent = greeting;
-                }
-                
-                // Function to send message data to '/sms/bulksms'
-
-    // Function to fetch contact lists
-    async function fetchContactLists() {
-        try {
-            const response = await fetch('/getlist', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-            const data = await response.json();
-            console.log('Fetched Lists:', data); // Debug output
-
-            const contactListTableBody = document.getElementById('contactListTableBody');
-            contactListTableBody.innerHTML = ''; // Clear existing rows
-
-            const clickSendLists = data.clickSendLists?.data?.data || [];
-            const userLists = data.userLists || [];
-
-            // Populate the table with ClickSend lists
-            clickSendLists.forEach(list => {
-    console.log('List ID:', list.list_id); // Debugging
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td>${list.list_name}</td>
-        <td>${list._contacts_count || 0}</td>
-        <td>
-            <button class="btn btn-dark btn-sm" type="button" onclick="sendMessage('${list.list_id}')">Send</button>
-        </td>
-    `;
-    contactListTableBody.appendChild(row);
-});
-
-
-            showToast('Contact lists fetched successfully!', true); // Show success message
-        } catch (error) {
-            console.error('Error fetching lists:', error);
-            showToast('Error fetching contact lists.', false); // Show error message
-        }
-    }
-
-    // Call fetchContactLists
-    fetchContactLists();
-
-  });
-
-  function sendMessage(listId) {
-    console.log('sendMessage triggered with:', listId); // Debugging
-
-    const message = document.getElementById('additionalInfo').value;
-
-    // Check if message input is empty
-    if (!message.trim()) {
-        showToast('Please enter a message before sending!', false); // Show error toast
-        return;
-    }
-
-    // Define the payload to send, including both listId and message
-    const payload = { listId, message };
-    console.log('payload: ',payload)
-
-    // Send the message to the server
-    fetch('/bulksms', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Message sent successfully!', true); // Show success toast
-        } else {
-            showToast('Failed to send the message. Please try again.', false); // Show error toast
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred while sending the message.', false); // Show error toast
-    });
-}
-
-
-  // Function to show toast notifications
-  function showToast(message, isSuccess) {
-    const toastElement = document.createElement('div');
-    toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
-    toastElement.role = 'alert';
-    toastElement.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-
-    document.getElementById('uploadForm').addEventListener('submit', async function(event) {
-    event.preventDefault(); // Prevent the default form submission
-
-    const fileInput = document.getElementById('profilePic');
-    const file = fileInput.files[0];
-
-    if (!file) {
-        alert('Please select a file to upload.');
-        return;
-    }
-
-    // Create FormData and append the file
-    const formData = new FormData();
-    formData.append('profilePic', file); // 'profilePic' should match the field name in multer
-
-    // Call the upload function
-    await uploadProfilePic(formData);
-});
-async function uploadProfilePic(formData) {
-    try {
-        const response = await fetch('/uploadProfilePic', { // Ensure this matches your server route
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-        console.log(data); // Handle success or error message
-        alert(data.message); // Show success message to user
-
-    } catch (error) {
-        console.error('Error uploading profile picture:', error);
-        alert('An error occurred while uploading the profile picture.');
-    }
-}
-    // Append the toast to the toast container instead of body
-    document.getElementById('toastContainer').appendChild(toastElement);
-
-    const toast = new bootstrap.Toast(toastElement);
-    toast.show();
-
-    // Optionally, remove the toast after it's hidden to avoid cluttering the DOM
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        toastElement.remove();
-    });
-}
+                // Function to show toast notifications
+                function showToast(message, isSuccess) {
+                    const toastElement = document.createElement('div');
+                    toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
+                    toastElement.role = 'alert';
+                    toastElement.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
             
+                    // Append the toast to the toast container
+                    document.getElementById('toastContainer').appendChild(toastElement);
+            
+                    const toast = new bootstrap.Toast(toastElement);
+                    toast.show();
+            
+                    // Remove the toast after it's hidden to avoid cluttering the DOM
+                    toastElement.addEventListener('hidden.bs.toast', () => {
+                        toastElement.remove();
+                    });
+                }
             </script>
+            
+            
             
 
                     <!--//Page content End//-->
@@ -827,59 +788,3 @@ async function uploadProfilePic(formData) {
     </body>
 
 </html>
-
-
-  <!-- <h3>If You want to logout Press Here ===></h3><button id="logoutButton">LOGOUT</button> -->
-  <!-- <script>
-    async function resetSession() {
-                                      try {
-                                          // To reset the token, you'd need to provide the current token in some way,
-                                          // but since we're avoiding cookies and localStorage, this step may involve
-                                          // a session or some other server-side mechanism to identify the token.
-                                          await fetch('/reset-Session', {
-                                              method: 'POST'
-                                          });
-                                      } catch (error) {
-                                          console.error('Error resetting session:', error);
-                                      }
-                                  }
-                              
-                                  // Event listener for logout button click
-                                  document.getElementById('logoutButton').addEventListener('click', async () => {
-                                      try {
-                                          await resetSession();
-                                          window.location.href = '/signin';
-                                      } catch (error) {
-                                          console.error('Error during logout:', error);
-                                      }
-                                  });
-                              
-                                  // Load user info when the window is loaded
-                                  window.addEventListener(loadUserInfo);
-                              </script> -->
-<!--   
-  <script>
-    async function resetSession() {
-                                      try {
-                                          // To reset the token, you'd need to provide the current token in some way,
-                                          // but since we're avoiding cookies and localStorage, this step may involve
-                                          // a session or some other server-side mechanism to identify the token.
-                                          await fetch('/reset-Session', {
-                                              method: 'POST'
-                                          });
-                                      } catch (error) {
-                                          console.error('Error resetting session:', error);
-                                      }
-                                  }
-                              
-                                  // Event listener for logout button click
-                                  document.getElementById('logoutButton').addEventListener('click', async () => {
-                                      try {
-                                          await resetSession();
-                                          window.location.href = '/signin';
-                                      } catch (error) {
-                                          console.error('Error during logout:', error);
-                                      }
-                                  });
-                              
-    

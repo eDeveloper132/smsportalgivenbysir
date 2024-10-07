@@ -5,42 +5,12 @@
     .dH{
       float: left;
     }
-    .data-item {
-        border: 1px solid #ddd;
-        padding: 10px;
-        margin: 10px 0;
-        position: relative;
-      }
-      .data-item h2 {
-        margin: 0 0 10px;
-      }
-      .data-item p {
-        margin: 5px 0;
-      }
-      .action-buttons {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-      }
-      .action-buttons button {
-        margin-left: 5px;
-      }
-  
-      .close {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-      }
-      .close:hover,
-      .close:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
-      }
-      .dH{
-      float: left;
-    }
+    .content { padding-top: 3rem; padding-left: 3rem; padding-right: 3rem; }
+        .avatar { width: 100px; height: 100px; }
+        .form-section { margin-top: 2rem; }
+        .form-control { border-radius: 0.375rem; }
+        .btn-custom { background-color: #007bff; color: #fff; }
+        .btn-custom:hover { background-color: #0056b3; }
     
 </style>
   <head>
@@ -489,7 +459,7 @@
                         <div class="position-relative container-fluid px-0">
                             <div class="row align-items-center position-relative">
                                 <div class="col-md-8 mb-4 mb-lg-0">
-                                    <h3 class="mb-2">Change Password</h3>
+                                    <h3 class="mb-2">Manage Profile</h3>
 
 
                                 </div>
@@ -550,94 +520,81 @@
 
                     <div class="content pt-3 px-3 px-lg-6 d-flex flex-column-fluid">
                         <div class="container-fluid px-0">
-                            <form id="change-password-form" class="my-4">
-                                <div class="form-floating mb-3" style="width: 100%;">
-                                    <input id="current_password" class="form-control" type="password" name="current_password" placeholder="Current Password" required>
-                                    <label for="current_password">Current Password</label>
+                            <div class="row">
+                                <div class="col-lg-4 text-center">
+                                    <div class="avatar-status status-online avatar me-2">
+                                        <img src="/assets/media/avatars/default.jpg" class="rounded-circle img-fluid" alt="User Avatar" id="userAvataria">
+                                    </div>
+                                    <h3 id="userONpro" class="mt-3">User Full Name</h3>
+                                    <p class="text-muted">Package: <span id="paaka">Basic</span> | Coins: <span id="caaka">100</span></p>
                                 </div>
-                                <div class="form-floating mb-3" style="width: 100%;">
-                                    <input id="new_password" class="form-control" type="password" name="new_password" placeholder="New Password" required>
-                                    <label for="new_password">New Password</label>
+                
+                                <div class="col-lg-8">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h4 class="card-title">User Information</h4>
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item">Email: <span id="usermaila">Noah@example.com</span></li>
+                                                <li class="list-group-item">PhoneNumber: <span id="userPhona">03000000000</span></li>
+                                                <li class="list-group-item">Organization: <span id="userOrgana">Demo</span></li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form-floating mb-3" style="width: 100%;">
-                                    <input id="confirm_password" class="form-control" type="password" name="confirm_password" placeholder="Confirm New Password" required>
-                                    <label for="confirm_password">Confirm New Password</label>
+                            </div>
+                
+                            <!-- Edit Name & Email Section -->
+                            <div class="row form-section">
+                                <div class="col-lg-12">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h4 class="card-title">Edit Name and Email</h4>
+                                            <form id="editUserForm">
+                                                <div class="mb-3">
+                                                    <label for="editName" class="form-label">Name</label>
+                                                    <input type="text" class="form-control" id="editName" placeholder="Enter your name">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="editEmail" class="form-label">Email</label>
+                                                    <input type="email" class="form-control" id="editEmail" placeholder="Enter your email">
+                                                </div>
+                                                <button type="submit" class="btn btn-custom">Save Changes</button>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form-group" style="width: 100%;">
-                                    <input class="btn btn-primary my-4 w-100" type="submit" value="Change Password">
-                                </div>
-                            </form>
-                            
+                            </div>
+                
+                
                         </div>
                     </div>
-                    
-                    <!-- Bootstrap Toasts -->
-                    <div class="toast-container position-fixed top-0 end-0 p-3">
-                        <div id="toast-success" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                            <div class="d-flex">
-                                <div class="toast-body">
-                                    Password changed successfully.
-                                </div>
-                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+                        <div id="profileToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header">
+                                <strong class="me-auto">Profile</strong>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
                             </div>
-                        </div>
-                    
-                        <div id="toast-error" class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                            <div class="d-flex">
-                                <div class="toast-body">
-                                    An error occurred while changing the password.
-                                </div>
-                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                            </div>
+                            <div class="toast-body">Profile updated successfully!</div>
                         </div>
                     </div>
                     
                 
                     <script>
-                        document.addEventListener('DOMContentLoaded', async () => {
-                          fetch('/profile-pic')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Profile picture not found');
+                              document.addEventListener('DOMContentLoaded', async () => {
+            // Fetch profile picture
+            try {
+                const response = await fetch('/profile-pic');
+                if (!response.ok) throw new Error('Profile picture not found');
+                const data = await response.json();
+                document.getElementById('userAvatar').src = data.fileUrl;
+                document.getElementById('userAvataria').src = data.fileUrl;
+            } catch (error) {
+                console.error('Error fetching profile picture:', error.message);
+                document.getElementById('userAvatar').src = '/assets/media/avatars/default.jpg'; // Default avatar
             }
-            return response.json();
-        })
-        .then(data => {
-            const imgElement = document.getElementById('userAvatar');
-            imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
-        })
-        .catch(error => {
-            console.error('Error:', error.message);
-            // Optionally set a default image if the profile picture is not found
-            const imgElement = document.getElementById('userAvatar');
-            imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
-        });
-                            // Function to determine the greeting based on the current time
-                            function getGreeting() {
-                                const now = new Date();
-                                const hours = now.getHours();
-                        
-                                if (hours >= 20 || hours < 6) return 'Good night';
-                                if (hours >= 6 && hours < 12) return 'Good morning';
-                                if (hours >= 12 && hours < 17) return 'Good afternoon';
-                                return 'Good evening'; // Default greeting
-                            }
-                        
-                            // Update the greeting in the HTML
-                            function updateGreeting() {
-                                const greetingElement = document.getElementById('greeting');
-                                const userGreetingElement = document.getElementById('userGreeting');
-                        
-                                const greeting = getGreeting();
-                                if (greetingElement) greetingElement.textContent = greeting;
-                        
-                                // Optionally update user name if needed
-                                // userGreetingElement.textContent = 'Noah'; // Or dynamically set this
-                            }
-                        
-                            updateGreeting();
-                        
-                            try {
+
+            // Fetch user information
+            try {
                                 const response = await fetch('/user', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -651,68 +608,73 @@
                                     document.getElementById('userName').textContent = data.Name;
                                     document.getElementById('userFullName').textContent = data.Name;
                                     document.getElementById('userGreeting').textContent = data.Name;
+                                    document.getElementById('userONpro').textContent = data.Name;
                                     document.getElementById('packagename').textContent = data.PackageName;
+                                    document.getElementById('paaka').textContent = data.PackageName;
                                     document.getElementById('packagecoins').textContent = data.Coins;
+                                    document.getElementById('caaka').textContent = data.Coins;
+                                    document.getElementById('usermaila').textContent = data.Email;
+                                    document.getElementById('userPhona').textContent = data.PhoneNumber;
+                                    document.getElementById('userOrgana').textContent = data.Organization;
                                     // Update the avatar if needed
                                     // document.getElementById('userAvatar').src = '/path/to/avatar/' + data.Avatar;
                                 }
                             } catch (error) {
                                 console.error('Error fetching user data:', error);
                             }
-                        });
-                        
-                        document.getElementById('change-password-form').addEventListener('submit', async function(event) {
-                            event.preventDefault(); // Prevent the default form submission
-                        
-                            // Get the form data
-                            const current_password = document.getElementById('current_password').value.trim();
-                            const new_password = document.getElementById('new_password').value.trim();
-                            const confirm_password = document.getElementById('confirm_password').value.trim();
-                        
-                            // Basic validation checks
-                            if (!current_password || !new_password || !confirm_password) {
-                                showToast('toast-error', 'All fields are required.');
-                                return;
-                            }
-                        
-                            // Validate new password and confirm password match
-                            if (new_password !== confirm_password) {
-                                showToast('toast-error', 'New passwords do not match.');
-                                return;
-                            }
-                        
-                            try {
-                                // Send the data using fetch
-                                const response = await fetch('/changepass', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ current_password, new_password, confirm_password })
-                                });
-                        
-                                // Handle the response
-                                if (response.ok) {
-                                    showToast('toast-success', 'Password changed successfully.');
-                                    // Optionally redirect or update the UI
-                                    document.getElementById('change-password-form').reset();
-                                } else {
-                                    const error = await response.text(); // Or response.json() if expecting JSON response
-                                    showToast('toast-error', `Error: ${error}`);
-                                }
-                            } catch (error) {
-                                console.error('Error:', error);
-                                showToast('toast-error', 'An error occurred while changing the password.');
-                            }
-                        });
-                        
-                        // Function to show toast messages
-                        function showToast(id, message = null) {
-                            const toastElement = document.getElementById(id);
-                            if (message) {
-                                toastElement.querySelector('.toast-body').textContent = message;
-                            }
-                            const toast = new bootstrap.Toast(toastElement);
-                            toast.show();
-                        }
+// Handle form submission for editing user name and email
+document.getElementById('editUserForm').addEventListener('submit', async function (event) {
+    event.preventDefault();
+    
+    const newName = document.getElementById('editName').value.trim();
+    const newEmail = document.getElementById('editEmail').value.trim();
+    
+    // Create an empty object to hold the data to send
+    const updateData = {};
+
+    // Conditionally add 'name' and 'email' to the request body if provided
+    if (newName) {
+        updateData.name = newName;
+    }
+    if (newEmail) {
+        updateData.email = newEmail;
+    }
+
+    // Ensure that at least one field is being updated
+    if (Object.keys(updateData).length === 0) {
+        showToast('profileToast', 'No data provided to update.');
+        return;
+    }
+
+    try {
+        const response = await fetch('/update-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData)  // Only send fields that have values
+        });
+
+        if (response.ok) {
+            showToast('profileToast', 'Profile updated successfully!');
+            window.location.reload()
+        } else {
+            console.error('Failed to update profile');
+        }
+    } catch (error) {
+        console.error('Error updating profile:', error);
+    }
+});
+                              })
+            // Handle form submission for changing password
+            
+        // Function to show toast messages
+        function showToast(id, message = null) {
+            const toastElement = document.getElementById(id);
+            if (message) {
+                toastElement.querySelector('.toast-body').textContent = message;
+            }
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+        }
                         </script>
                     
 <!--//Page content End//-->

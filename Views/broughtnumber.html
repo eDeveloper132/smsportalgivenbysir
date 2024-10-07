@@ -4,40 +4,6 @@
   .dH{
     float: left;
   }
-        .form-group {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            margin-right: 10px;
-        }
-        select, textarea, button {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        select {
-            margin-right: 10px;
-        }
-        textarea {
-            resize: none;
-            margin-right: 10px;
-        }
-        button {
-            background-color: #28a745;
-            color: #fff;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        .large-textarea {
-            width: 100%;
-            margin-top: 15px;
-        }
 </style>
 <head>
   <meta charset="UTF-8">
@@ -147,17 +113,6 @@
                       </a>
                     </li>
                     <li class="nav-item pt-1">
-                      <a href="/SMS" class="nav-link d-flex align-items-center text-truncate">
-                        <span class="sidebar-icon">
-                          <span class="material-symbols-rounded">
-                            sell
-                            </span>
-                        </span>
-                        <!--Sidebar nav text-->
-                        <span class="sidebar-text">SMS</span>
-                      </a>
-                    </li>  
-                    <li class="nav-item pt-1">
                       <a href="/buypackage" class="nav-link d-flex align-items-center text-truncate">
                         <span class="sidebar-icon">
                           <span class="material-symbols-rounded">
@@ -169,17 +124,6 @@
                       </a>
                     </li>
                     <li class="nav-item pt-1">
-                      <a href="/list" class="nav-link d-flex align-items-center text-truncate">
-                        <span class="sidebar-icon">
-                          <span class="material-symbols-rounded">
-                            sell
-                            </span>
-                        </span>
-                        <!--Sidebar nav text-->
-                        <span class="sidebar-text">Create List</span>
-                      </a>
-                    </li>
-                    <li class="nav-item pt-1">
                       <a href="/alllists" class="nav-link d-flex align-items-center text-truncate">
                         <span class="sidebar-icon">
                           <span class="material-symbols-rounded">
@@ -187,42 +131,46 @@
                             </span>
                         </span>
                         <!--Sidebar nav text-->
-                        <span class="sidebar-text">Manage Lists</span>
+                        <span class="sidebar-text">Add & Manage Lists</span>
                       </a>
-                    </li>
-                    <li class="nav-item pt-1">
-                      <a href="/addnumbersbyexcel" class="nav-link d-flex align-items-center text-truncate">
-                        <span class="sidebar-icon">
-                          <span class="material-symbols-rounded">
-                            sell
-                            </span>
-                        </span>
-                        <!--Sidebar nav text-->
-                        <span class="sidebar-text">Add Excel Numbers</span>
+                    </li>   
+                    <li class="nav-item">
+                      <a class="nav-link d-flex align-items-center" href="Other/#multi-leveler" data-bs-toggle="collapse" aria-expanded="false">
+                        <div class="d-flex align-items-center">
+                          <span class="sidebar-icon">
+                            <span class="material-symbols-rounded">
+                              layers
+                              </span>
+                          </span>
+                          <span class="sidebar-text">SMS</span>
+                        </div>
                       </a>
-                    </li>
-                    <li class="nav-item pt-1">
-                      <a href="/addnumbers" class="nav-link d-flex align-items-center text-truncate">
-                        <span class="sidebar-icon">
-                          <span class="material-symbols-rounded">
-                            sell
-                            </span>
-                        </span>
-                        <!--Sidebar nav text-->
-                        <span class="sidebar-text">Add Number</span>
-                      </a>
-                    </li>
-                    <li class="nav-item pt-1">
-                      <a href="/getnumbers" class="nav-link d-flex align-items-center text-truncate">
-                        <span class="sidebar-icon">
-                          <span class="material-symbols-rounded">
-                            sell
-                            </span>
-                        </span>
-                        <!--Sidebar nav text-->
-                        <span class="sidebar-text">Numbers List</span>
-                      </a>
-                    </li>    
+                 
+            <ul id="multi-leveler" class="collapse sidebar-dropdown list-unstyled mb-0">
+              <li class="nav-item pt-1">
+            <a href="/bulksms"
+            class="nav-link d-flex align-items-center text-truncate ">
+            <span class="sidebar-icon">
+            <span class="material-symbols-rounded">
+            chat
+            </span>
+            </span>
+            <span class="sidebar-text">Bulk SMS</span>
+            </a>
+            </li>
+            <li class="nav-item pt-1">
+              <a href="/SMS"
+              class="nav-link d-flex align-items-center text-truncate ">
+              <span class="sidebar-icon">
+              <span class="material-symbols-rounded">
+              chat
+              </span>
+              </span>
+              <span class="sidebar-text">Quick SMS</span>
+              </a>
+              </li>
+          </ul>
+        </li>
                     <li class="nav-item">
                       <a class="nav-link d-flex align-items-center" href="Other/#multi-level" data-bs-toggle="collapse" aria-expanded="false">
                         <div class="d-flex align-items-center">
@@ -231,7 +179,7 @@
                               layers
                               </span>
                           </span>
-                          <span class="sidebar-text">Others</span>
+                          <span class="sidebar-text">Settings</span>
                         </div>
                       </a>
                  
@@ -257,6 +205,17 @@
               </span>
               <span class="sidebar-text">Brought Package</span>
               </a>
+              </li>
+              <li class="nav-item pt-1">
+                <a href="/buypackage" class="nav-link d-flex align-items-center text-truncate">
+                  <span class="sidebar-icon">
+                    <span class="material-symbols-rounded">
+                      sell
+                      </span>
+                  </span>
+                  <!--Sidebar nav text-->
+                  <span class="sidebar-text">Buy Package</span>
+                </a>
               </li>
           </ul>
         </li>
@@ -323,65 +282,57 @@ if (x.style.display === "none") {
                   <div class="d-flex align-items-center">
                       <!--Avatar with status-->
                       <div class="avatar-status status-online me-sm-2 avatar xs">
-                          <img src="/assets/media/avatars/01.jpg" class="rounded-circle img-fluid" alt="" id="userAvatar">
-                      </div>
+                        <img src="/assets/media/avatars/default.jpg" class="rounded-circle img-fluid" alt="" id="userAvatar">
+                    </div>
                       <span class="d-none d-md-inline-block" id="userName">Noah</span>
                   </div>
               </a>
               <div class="dropdown-menu mt-0 p-0 dropdown-menu-end overflow-hidden">
-                  <!--User meta-->
-                  <div class="position-relative overflow-hidden px-3 pt-4 pb-7 bg-gradient-primary text-white">
-                      <!--Divider-->
-                      <svg style="transform: rotate(-180deg)" preserveAspectRatio="none"
-                           class="position-absolute start-0 bottom-0 w-100 dropdown-wave" fill="currentColor" height="24"
-                           viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg">
-                          <path
-                              d="M0 0v46.29c47.79 22.2 103.59 32.17 158 28 70.36-5.37 136.33-33.31 206.8-37.5 73.84-4.36 147.54 16.88 218.2 35.26 69.27 18 138.3 24.88 209.4 13.08 36.15-6 69.85-17.84 104.45-29.34C989.49 25 1113-14.29 1200 52.47V0z"
-                              opacity=".25"/>
-                          <path
-                              d="M0 0v15.81c13 21.11 27.64 41.05 47.69 56.24C99.41 111.27 165 111 224.58 91.58c31.15-10.15 60.09-26.07 89.67-39.8 40.92-19 84.73-46 130.83-49.67 36.26-2.85 70.9 9.42 98.6 31.56 31.77 25.39 62.32 62 103.63 73 40.44 10.79 81.35-6.69 119.13-24.28s75.16-39 116.92-43.05c59.73-5.85 113.28 22.88 168.9 38.84 30.2 8.66 59 6.17 87.09-7.5 22.43-10.89 48-26.93 60.65-49.24V0z"
-                              opacity=".5"/>
-                          <path
-                              d="M0 0v5.63C149.93 59 314.09 71.32 475.83 42.57c43-7.64 84.23-20.12 127.61-26.46 59-8.63 112.48 12.24 165.56 35.4C827.93 77.22 886 95.24 951.2 90c86.53-7 172.46-45.71 248.8-84.81V0z"/>
-                      </svg>
-                      <div class="position-relative">
-                          <h5 class="mb-1" id="userFullName">Noah Pierre</h5>
-                      </div>
-                  </div>
-                  <div class="pt-2">
-                    <a class="dropdown-item d-flex align-items-center" href="/uploadpic">
+                <!--User meta-->
+                <div class="position-relative overflow-hidden px-3 pt-4 pb-7 bg-gradient-primary text-white">
+                    <svg style="transform: rotate(-180deg)" preserveAspectRatio="none"
+                         class="position-absolute start-0 bottom-0 w-100 dropdown-wave" fill="currentColor" height="24"
+                         viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 0v46.29c47.79 22.2 103.59 32.17 158 28 70.36-5.37 136.33-33.31 206.8-37.5 73.84-4.36 147.54 16.88 218.2 35.26 69.27 18 138.3 24.88 209.4 13.08 36.15-6 69.85-17.84 104.45-29.34C989.49 25 1113-14.29 1200 52.47V0z" opacity=".25"/>
+                        <path d="M0 0v15.81c13 21.11 27.64 41.05 47.69 56.24C99.41 111.27 165 111 224.58 91.58c31.15-10.15 60.09-26.07 89.67-39.8 40.92-19 84.73-46 130.83-49.67 36.26-2.85 70.9 9.42 98.6 31.56 31.77 25.39 62.32 62 103.63 73 40.44 10.79 81.35-6.69 119.13-24.28s75.16-39 116.92-43.05c59.73-5.85 113.28 22.88 168.9 38.84 30.2 8.66 59 6.17 87.09-7.5 22.43-10.89 48-26.93 60.65-49.24V0z" opacity=".5"/>
+                        <path d="M0 0v5.63C149.93 59 314.09 71.32 475.83 42.57c43-7.64 84.23-20.12 127.61-26.46 59-8.63 112.48 12.24 165.56 35.4C827.93 77.22 886 95.24 951.2 90c86.53-7 172.46-45.71 248.8-84.81V0z"/>
+                    </svg>
+                    <div class="position-relative">
+                        <h5 class="mb-1" id="userFullName">Noah Pierre</h5>
+                    </div>
+                </div>
+            
+                <div class="pt-2">
+                    <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#uploadModal">
                         <div>
-                          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="grey"><path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Zm220-280Z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="grey">
+                                <path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Zm220-280Z"/>
+                            </svg>
                         </div>
-                            </span>
-                  <span class="px-2">Upload Profile Pic</span>
-                </a>
-              </div>
-                  <div class="pt-2">
+                        <span class="px-2">Upload Profile Pic</span>
+                    </a>
+                </div>
+                <div class="pt-2">
                     <a class="dropdown-item d-flex align-items-center" href="/changepass">
                         <div>
                             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="grey">
                                 <path d="M160-160v-80h110l-16-14q-52-46-73-105t-21-119q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z"/>
                             </svg>
                         </div>
-                            </span>
-                        
-                            <span class="px-2">Change Password</span>
-                        
+                        <span class="px-2">Change Password</span>
                     </a>
                 </div>
-                  <div class="pt-2">
-                      <a class="dropdown-item d-flex align-items-center">
-                          <span class="material-symbols-rounded align-middle me-2 size-30 fs-5 d-flex align-items-center justify-content-center bg-warning text-white rounded-2">
-                              logout
-                          </span>
-                          <button type="button" class="btn btn-light btn-sm active" data-bs-toggle="modal"
-                                  data-bs-target="#exampleModal">
-                              <span class="flex-grow-1">Logout</span>
-                          </button>
-                      </a>
-                  </div>
-              </div>
+                <div class="pt-2">
+                    <a class="dropdown-item d-flex align-items-center">
+                        <span class="material-symbols-rounded align-middle me-2 size-30 fs-5 d-flex align-items-center justify-content-center bg-warning text-white rounded-2">
+                            logout
+                        </span>
+                        <button type="button" class="btn btn-light btn-sm active" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                            <span class="flex-grow-1">Logout</span>
+                        </button>
+                    </a>
+                </div>
+            </div>
           </li>
             <li
               class="nav-item dropdown ms-2 d-flex d-lg-none align-items-center justify-content-center flex-column h-100">
@@ -394,7 +345,27 @@ if (x.style.display === "none") {
         </header>
         <!--Main Header End-->
 
-
+        <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title" id="uploadModalLabel">Upload Profile Picture</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                      <form id="uploadForm">
+                          <div class="mb-3">
+                              <label for="profilePic" class="form-label">Choose a profile picture</label>
+                              <input type="file" class="form-control" id="profilePic" accept="image/*" required>
+                          </div>
+                          <button type="submit" class="btn btn-primary">Upload</button>
+                      </form>
+                  </div>
+              </div>
+          </div>
+      </div>
+      
+      
 
         <!--Main Search Modal-->
         <!-- Modal -->
@@ -477,7 +448,18 @@ if (x.style.display === "none") {
           </div>
       </div>
 
+                  <!--//Page Toolbar//-->
+                  <div class="toolbar pb-4 px-3 px-lg-6 pt-4 bg-body">
+                      <div class="position-relative container-fluid px-0">
+                          <div class="row align-items-center position-relative">
+                              <div class="col-md-8 mb-4 mb-lg-0">
+                                  <h3 class="mb-2">Brought Numbers</h3>
 
+
+                              </div>
+                          </div>
+                      </div>
+                  </div>
                   <!--//Page Toolbar End//-->
                   <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                     <div class="modal-dialog">
@@ -527,168 +509,211 @@ if (x.style.display === "none") {
                           </div>
                       </div>
                   </div>
-              </div>                    <!--//Page content//-->    
-                    <div class="content pt-5 px-4 px-lg-6 d-flex flex-column-fluid bg-light">
-                      <div class="container shadow-sm p-5 bg-white rounded">
-                          <h2 class="mb-4 text-center">Your Added Phone Numbers</h2>
-                          <div class="mb-3">
-                              <input type="text" id="searchInput" class="form-control" placeholder="Search Phone Number">
-                          </div>
-                          <ul id="phoneNumbersContainer" class="list-group"></ul>
-                          <p id="noResultsMessage" class="text-center mt-3" style="display:none;">No results found.</p>
-                      </div>
+              </div><!-- Page Content -->
+              <div class="content pt-5 px-4 px-lg-6 d-flex flex-column-fluid">
+                <div class="container p-5">
+                  <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
+              
+                  <!-- Section to display brought numbers in a modern table -->
+                  <div id="broughtNumbersSection" class="mt-4">
+                    <div class="table-responsive"> <!-- Makes the table responsive on small screens -->
+                      <table id="broughtNumbersTable" class="table table-striped table-hover table-bordered table-light text-center">
+                        <thead class="table-dark">
+                          <tr>
+                            <th>#</th>
+                            <th>Brought Number</th>
+                          </tr>
+                        </thead>
+                        <tbody id="broughtNumbersList"></tbody>
+                      </table>
+                    </div>
                   </div>
-                  
-                  <script>
-                    let phoneNumbers = []; // Array to store fetched phone numbers
-                    let names = []; // Array to store fetched names
-                    document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const response = await fetch('/user', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                });
-
-                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-                const data = await response.json();
-                console.log('User Data:', data); // Debug output
-
-                if (data) {
-                    document.getElementById('userName').textContent = data.Name || 'Default Name';
-                    document.getElementById('userFullName').textContent = data.Name || 'Default Name';
-                    document.getElementById('userGreeting').textContent = data.Name || 'Default Name';
-                    document.getElementById('packagename').textContent = data.PackageName || 'No Package';
-                    document.getElementById('packagecoins').textContent = data.Coins || '0';
-                    // Update the avatar if needed
-                    // document.getElementById('userAvatar').src = '/path/to/avatar/' + data.Avatar;
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-            }
-        });
-
-                    // Fetch and display phone numbers and names
-                    async function fetchAndDisplayContacts() {
-                      try {
-                        const response = await fetch('/getnumbers', {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({})
+                </div>
+              </div>
+              
+              <script>
+                document.addEventListener('DOMContentLoaded', async () => {
+                    let userId = null; // Store the userId globally
+                    fetch('/profile-pic')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Profile picture not found');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            const imgElement = document.getElementById('userAvatar');
+                            imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
+                        })
+                        .catch(error => {
+                            console.error('Error:', error.message);
+                            const imgElement = document.getElementById('userAvatar');
+                            imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
+                            showToast('Using default profile picture.', false); // Alert user about default image
                         });
+            
+                    try {
+                        const response = await fetch('/user', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({}) // Adjust payload if necessary
+                        });
+            
+                        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            
                         const data = await response.json();
-                  
-                        if (response.ok) {
-                          phoneNumbers = data.phoneNumbers; // Correct data keys
-                          names = data.names; // Correct data keys
-                          displayContacts(); // Display all contacts initially
-                        } else {
-                          console.error('Error fetching contacts:', data.message);
+            
+                        if (data) {
+                            document.getElementById('userName').textContent = data.Name;
+                            document.getElementById('userFullName').textContent = data.Name;
+                            document.getElementById('userGreeting').textContent = data.Name;
+                            document.getElementById('packagename').textContent = data.PackageName;
+                            document.getElementById('packagecoins').textContent = data.Coins;
                         }
-                      } catch (error) {
-                        console.error('Error:', error);
-                      }
+            
+                        updateGreeting();
+                    } catch (error) {
+                        console.error('Error fetching user data:', error);
+                        showToast('Error fetching user data: ' + error.message, false);
                     }
-                  
-                    // Function to display phone numbers and names in the list
-                    function displayContacts() {
-                      const contactsContainer = document.getElementById('phoneNumbersContainer'); // Correct container ID
-                      const noResultsMessage = document.getElementById('noResultsMessage');
-                  
-                      contactsContainer.innerHTML = ''; // Clear existing content
-                  
-                      if (phoneNumbers.length > 0) {
-                        phoneNumbers.forEach((number, index) => {
-                          const listItem = document.createElement('li');
-                          listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
-                          listItem.innerHTML = `
-                            ${names[index] || 'Unknown'} - ${number || 'No phone number available'}
-                            <button class="btn btn-danger btn-sm ms-2" onclick="deleteContact(${index}, '${number}', '${names[index] || 'Unknown'}')">Delete</button>
-                          `;
-                          contactsContainer.appendChild(listItem);
-                        });
-                        noResultsMessage.style.display = 'none'; // Hide "No results found" message
-                      } else {
-                        noResultsMessage.style.display = 'block'; // Show "No results found" message
-                      }
-                    }
-                  
-                    // Function to delete a contact
-                    async function deleteContact(index, number, name) {
-                      try {
-                        const response = await fetch('/deletenumber', {
-                          method: 'DELETE',
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({ phoneNumber: number, Name: name })
-                        });
-                  
-                        if (response.ok) {
-                          // Remove the contact from the local arrays
-                          phoneNumbers.splice(index, 1);
-                          names.splice(index, 1);
-                          displayContacts(); // Update the displayed list
-                        } else {
-                          console.error('Error deleting contact:', await response.json());
+            
+                    // Fetch brought numbers on page load
+                    await fetchBroughtNumbers();
+            
+                    // Function to fetch brought numbers
+                    async function fetchBroughtNumbers() {
+                        try {
+                            const response = await fetch('/broughtnumbers', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({}), // Send any required data if needed
+                            });
+            
+                            if (!response.ok) throw new Error(`Failed to fetch brought numbers. Status: ${response.status}`);
+            
+                            const broughtNumbersData = await response.json();
+            
+                            // Check if the brought numbers are returned and display them in the table
+                            if (broughtNumbersData && Array.isArray(broughtNumbersData.data)) {
+                                const broughtNumbersList = document.getElementById('broughtNumbersList');
+                                broughtNumbersList.innerHTML = ''; // Clear any existing rows
+                                broughtNumbersData.data.forEach((number, index) => {
+                                    const row = document.createElement('tr');
+                                    row.innerHTML = `
+                                        <td>${index + 1}</td>
+                                        <td>${number}</td>
+                                    `;
+                                    broughtNumbersList.appendChild(row);
+                                });
+            
+                                showToast('Brought numbers loaded successfully', true); // Success toast
+                            } else {
+                                console.error('No brought numbers found.');
+                                showToast('No brought numbers found.', false); // Error toast
+                            }
+                        } catch (error) {
+                            console.error('Error fetching brought numbers:', error);
+                            showToast('Failed to fetch brought numbers', false); // Error toast
                         }
-                      } catch (error) {
-                        console.error('Error:', error);
-                      }
                     }
-                  
-                    // Search function to filter contacts based on user input
-                    function searchContacts() {
-                      const query = document.getElementById('searchInput').value.trim().toLowerCase();
-                      const filteredContacts = phoneNumbers.map((number, index) => ({
-                        name: names[index] || 'Unknown',
-                        phoneNumber: number
-                      })).filter(contact =>
-                        contact.name.toLowerCase().includes(query) || contact.phoneNumber.includes(query)
-                      );
-                      displayFilteredContacts(filteredContacts);
+            
+                    // Function to determine the greeting based on the current time
+                    function getGreeting() {
+                        const now = new Date();
+                        const hours = now.getHours();
+            
+                        if (hours >= 20 || hours < 6) {
+                            return 'Good night';
+                        } else if (hours >= 6 && hours < 12) {
+                            return 'Good morning';
+                        } else if (hours >= 12 && hours < 17) {
+                            return 'Good afternoon';
+                        } else {
+                            return 'Good evening';
+                        }
                     }
-                  
-                    // Function to display filtered contacts
-                    function displayFilteredContacts(contacts) {
-                      const contactsContainer = document.getElementById('phoneNumbersContainer'); // Correct container ID
-                      const noResultsMessage = document.getElementById('noResultsMessage');
-                  
-                      contactsContainer.innerHTML = ''; // Clear existing content
-                  
-                      if (contacts.length > 0) {
-                        contacts.forEach((contact, index) => {
-                          const listItem = document.createElement('li');
-                          listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
-                          listItem.innerHTML = `
-                            ${contact.name || 'Unknown'} - ${contact.phoneNumber || 'No phone number available'}
-                            <button class="btn btn-danger btn-sm ms-2" onclick="deleteContact(${index}, '${contact.phoneNumber}', '${contact.name}')">Delete</button>
-                          `;
-                          contactsContainer.appendChild(listItem);
-                        });
-                        noResultsMessage.style.display = 'none'; // Hide "No results found" message
-                      } else {
-                        noResultsMessage.style.display = 'block'; // Show "No results found" message
-                      }
+            
+                    // Update the greeting in the HTML
+                    function updateGreeting() {
+                        const greetingElement = document.getElementById('greeting');
+                        const greeting = getGreeting();
+                        greetingElement.textContent = greeting;
                     }
-                  
-                    // Add event listener to search input field
-                    document.getElementById('searchInput').addEventListener('input', searchContacts);
-                  
-                    // Initialize the page
-                    document.addEventListener('DOMContentLoaded', () => {
-                      fetchAndDisplayContacts();
+            
+                    // Upload profile picture event listener
+                    document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+                        event.preventDefault(); // Prevent the default form submission
+            
+                        const fileInput = document.getElementById('profilePic');
+                        const file = fileInput.files[0];
+            
+                        if (!file) {
+                            showToast('Please select a file to upload.', false); // Error toast
+                            return;
+                        }
+            
+                        // Create FormData and append the file
+                        const formData = new FormData();
+                        formData.append('profilePic', file); // 'profilePic' should match the field name in multer
+            
+                        // Call the upload function
+                        await uploadProfilePic(formData);
                     });
-                  </script>
-                  
-                    
-                    
-                    
+            
+                    async function uploadProfilePic(formData) {
+                        try {
+                            const response = await fetch('/uploadProfilePic', { // Ensure this matches your server route
+                                method: 'POST',
+                                body: formData,
+                            });
+            
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+            
+                            const data = await response.json();
+                            console.log(data); // Handle success or error message
+                            showToast(data.message || 'Profile picture uploaded successfully.', true); // Success toast
+            
+                        } catch (error) {
+                            console.error('Error uploading profile picture:', error);
+                            showToast('An error occurred while uploading the profile picture.', false); // Error toast
+                        }
+                    }
+                });
+            
+                // Function to show toast notifications
+                function showToast(message, isSuccess) {
+                    const toastElement = document.createElement('div');
+                    toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
+                    toastElement.role = 'alert';
+                    toastElement.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+            
+                    // Append the toast to the toast container
+                    document.getElementById('toastContainer').appendChild(toastElement);
+            
+                    const toast = new bootstrap.Toast(toastElement);
+                    toast.show();
+            
+                    // Remove the toast after it's hidden to avoid cluttering the DOM
+                    toastElement.addEventListener('hidden.bs.toast', () => {
+                        toastElement.remove();
+                    });
+                }
+            </script>
+            
+
                     <!--//Page content End//-->
             <!--//Page-footer//-->
  <footer class="pb-3 pb-lg-5 px-3 px-lg-6">
@@ -715,59 +740,3 @@ if (x.style.display === "none") {
     </body>
 
 </html>
-
-
-  <!-- <h3>If You want to logout Press Here ===></h3><button id="logoutButton">LOGOUT</button> -->
-  <!-- <script>
-    async function resetSession() {
-                                      try {
-                                          // To reset the token, you'd need to provide the current token in some way,
-                                          // but since we're avoiding cookies and localStorage, this step may involve
-                                          // a session or some other server-side mechanism to identify the token.
-                                          await fetch('/reset-Session', {
-                                              method: 'POST'
-                                          });
-                                      } catch (error) {
-                                          console.error('Error resetting session:', error);
-                                      }
-                                  }
-                              
-                                  // Event listener for logout button click
-                                  document.getElementById('logoutButton').addEventListener('click', async () => {
-                                      try {
-                                          await resetSession();
-                                          window.location.href = '/signin';
-                                      } catch (error) {
-                                          console.error('Error during logout:', error);
-                                      }
-                                  });
-                              
-                                  // Load user info when the window is loaded
-                                  window.addEventListener(loadUserInfo);
-                              </script> -->
-<!--   
-  <script>
-    async function resetSession() {
-                                      try {
-                                          // To reset the token, you'd need to provide the current token in some way,
-                                          // but since we're avoiding cookies and localStorage, this step may involve
-                                          // a session or some other server-side mechanism to identify the token.
-                                          await fetch('/reset-Session', {
-                                              method: 'POST'
-                                          });
-                                      } catch (error) {
-                                          console.error('Error resetting session:', error);
-                                      }
-                                  }
-                              
-                                  // Event listener for logout button click
-                                  document.getElementById('logoutButton').addEventListener('click', async () => {
-                                      try {
-                                          await resetSession();
-                                          window.location.href = '/signin';
-                                      } catch (error) {
-                                          console.error('Error during logout:', error);
-                                      }
-                                  });
-                              
-    

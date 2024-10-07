@@ -4,40 +4,40 @@
   .dH{
     float: left;
   }
-        .form-group {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
+  .table {
+        border-radius: 0.5rem;
+        overflow: hidden; /* Prevents border radius from affecting child elements */
+    }
+
+    .table th,
+    .table td {
+        vertical-align: middle; /* Center content vertically */
+    }
+
+    .table-primary {
+        background-color: #007bff; /* Bootstrap primary color */
+        color: white; /* Text color */
+    }
+
+    .table-bordered th,
+    .table-bordered td {
+        border: 1px solid #dee2e6; /* Light border color */
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f1f1f1; /* Light grey background on hover */
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: #f9f9f9; /* Light background for odd rows */
+    }
+
+    @media (max-width: 768px) {
+        /* Responsive styles for smaller screens */
+        .table {
+            font-size: 0.8rem; /* Reduce font size */
         }
-        .form-group label {
-            margin-right: 10px;
-        }
-        select, textarea, button {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        select {
-            margin-right: 10px;
-        }
-        textarea {
-            resize: none;
-            margin-right: 10px;
-        }
-        button {
-            background-color: #28a745;
-            color: #fff;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        .large-textarea {
-            width: 100%;
-            margin-top: 15px;
-        }
+    }
 </style>
 <head>
   <meta charset="UTF-8">
@@ -487,7 +487,7 @@ if (x.style.display === "none") {
                       <div class="position-relative container-fluid px-0">
                           <div class="row align-items-center position-relative">
                               <div class="col-md-8 mb-4 mb-lg-0">
-                                  <h3 class="mb-2">Send Bulk SMS</h3>
+                                  <h3 class="mb-2">Own Numbers</h3>
 
 
                               </div>
@@ -546,88 +546,201 @@ if (x.style.display === "none") {
               </div><!-- Page Content -->
               <div class="content pt-5 px-4 px-lg-6 d-flex flex-column-fluid">
                 <div class="container p-5">
-                  <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
-
-                    <h2 class="mb-4 text-center">Send SMS to Selected List Numbers</h2>
-                    <!-- Table to display lists -->
-                    <form id="phoneCodeForm">
-                        <div class="form-group mb-4">
-                            <textarea id="additionalInfo" name="message" rows="5" class="form-control" placeholder="Type your message here" required></textarea>
-                        </div>
-                    </form>
-                    <div class="table-responsive">
-                      <table class="table table-striped table-hover table-bordered mt-2">
-                          <thead class="table-dark">
-                              <tr>
-                                  <th>List Name</th>
-                                  <th>Contacts Count</th>
-                                  <th>Actions</th>
-                              </tr>
-                          </thead>
-                          <tbody id="contactListTableBody">
-                              <!-- Rows will be populated by JavaScript -->
-                          </tbody>
-                      </table>
-                  </div>
-                  
+                    <!-- Toast notifications -->
+                    <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
+            
+                    <!-- Search bar -->
+                    <div class="mb-3">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search by phone number..." onkeyup="filterTable()">
+                    </div>
+            
+                    <!-- Table to display fetched own numbers -->
+                    <div class="mt-4">
+                        <table class="table table-bordered table-hover table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th scope="col">Phone Number</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Label</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ownNumbersTableBody">
+                                <!-- Own numbers will be inserted here -->
+                            </tbody>
+                        </table>
+                        <!-- Pagination controls -->
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center" id="paginationControls">
+                                <!-- Pagination will be generated here -->
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
             </div>
             
             <script>
-              document.addEventListener('DOMContentLoaded', async () => {
-                let userId = null; // Store the userId globally
-                fetch('/profile-pic')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Profile picture not found');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const imgElement = document.getElementById('userAvatar');
-            imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
-        })
-        .catch(error => {
-            console.error('Error:', error.message);
-            // Optionally set a default image if the profile picture is not found
-            const imgElement = document.getElementById('userAvatar');
-            imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
-        });
-                try {
+                document.addEventListener('DOMContentLoaded', async () => {
+                    let userId = null; // Store the userId globally
+            
+                    // Fetch user profile picture
+                    fetch('/profile-pic')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Profile picture not found');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            const imgElement = document.getElementById('userAvatar');
+                            imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
+                            console.log('Profile picture fetched:', data.fileUrl); // Console log for debugging
+                            showToast('Profile picture loaded successfully.', true); // Show success message
+                        })
+                        .catch(error => {
+                            console.error('Error:', error.message);
+                            const imgElement = document.getElementById('userAvatar');
+                            imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
+                            console.warn('Default avatar set:', imgElement.src); // Console log for debugging
+                            showToast('Default avatar set due to an error.', false); // Show error message
+                        });
+            
                     // Fetch user data after DOM is loaded
-                    const response = await fetch('/user', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({}) // Adjust payload if necessary
-                    });
+                    try {
+                        const response = await fetch('/user', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({}) // Adjust payload if necessary
+                        });
             
-                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                    
-                    const data = await response.json();
+                        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
             
-                    if (data) {
-                        // Update the user-related content in the DOM
-                        document.getElementById('userName').textContent = data.Name;
-                        document.getElementById('userFullName').textContent = data.Name;
-                        document.getElementById('userGreeting').textContent = data.Name;
-                        document.getElementById('packagename').textContent = data.PackageName;
-                        document.getElementById('packagecoins').textContent = data.Coins;
+                        const data = await response.json();
+                        console.log('User data fetched:', data); // Console log for debugging
+            
+                        if (data) {
+                            document.getElementById('userName').textContent = data.Name;
+                            document.getElementById('userFullName').textContent = data.Name;
+                            document.getElementById('userGreeting').textContent = data.Name;
+                            document.getElementById('packagename').textContent = data.PackageName;
+                            document.getElementById('packagecoins').textContent = data.Coins;
+                            showToast('User data loaded successfully.', true); // Show success message
+                        }
+            
+                        updateGreeting();
+            
+                    } catch (error) {
+                        console.error('Error fetching user data:', error);
+                        showToast('An error occurred while fetching user data.', false); // Show error message
                     }
             
-                    // Call the function to set the greeting after user data is fetched
-                    updateGreeting();
+                    // Fetch own numbers
+                    await fetchOwnNumbers();
+                });
             
-                } catch (error) {
-                    console.error('Error fetching user data:', error);
+                // Function to fetch own numbers from the API
+                async function fetchOwnNumbers() {
+                    try {
+                        const response = await fetch('/ownnumbers', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+            
+                        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            
+                        const result = await response.json();
+                        console.log('Full response:', result); // Log the full response to diagnose the issue
+                        
+                        // Accessing the own_numbers array from the result
+                        displayOwnNumbers(result.own_numbers); // Update to the correct property
+                        showToast('Own numbers loaded successfully.', true); // Show success message
+            
+                    } catch (error) {
+                        console.error('Error fetching own numbers:', error);
+                        showToast('An error occurred while fetching own numbers.', false); // Show error message
+                    }
+                }
+            
+                // Function to display own numbers in the table
+                function displayOwnNumbers(numbers) {
+                    const tableBody = document.getElementById('ownNumbersTableBody');
+                    const paginationControls = document.getElementById('paginationControls');
+                    tableBody.innerHTML = ''; // Clear previous results
+                    paginationControls.innerHTML = ''; // Clear previous pagination
+            
+                    if (!Array.isArray(numbers) || numbers.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="3" class="text-center">No own numbers found.</td></tr>';
+                        return;
+                    }
+            
+                    // Pagination logic
+                    const itemsPerPage = 5; // Change this to set how many items to display per page
+                    const totalPages = Math.ceil(numbers.length / itemsPerPage);
+                    let currentPage = 1;
+            
+                    function renderPage(page) {
+                        const start = (page - 1) * itemsPerPage;
+                        const end = start + itemsPerPage;
+                        const currentItems = numbers.slice(start, end);
+            
+                        tableBody.innerHTML = ''; // Clear previous results
+            
+                        currentItems.forEach(number => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${number.phone_number}</td>
+                                <td>${number.status}</td>
+                                <td>${number.label ? number.label : 'N/A'}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+            
+                        renderPagination(page, totalPages);
+                    }
+            
+                    function renderPagination(currentPage, totalPages) {
+                        paginationControls.innerHTML = '';
+            
+                        for (let i = 1; i <= totalPages; i++) {
+                            const li = document.createElement('li');
+                            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+                            paginationControls.appendChild(li);
+                        }
+                    }
+            
+                    window.changePage = function(page) {
+                        currentPage = page;
+                        renderPage(currentPage);
+                    };
+            
+                    // Initial render
+                    renderPage(currentPage);
+                }
+            
+                // Function to filter table based on search input
+                function filterTable() {
+                    const searchInput = document.getElementById('searchInput').value.toLowerCase();
+                    const rows = document.querySelectorAll('#ownNumbersTableBody tr');
+            
+                    rows.forEach(row => {
+                        const phoneNumber = row.cells[0].textContent.toLowerCase();
+                        if (phoneNumber.includes(searchInput)) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
                 }
             
                 // Function to determine the greeting based on the current time
                 function getGreeting() {
                     const now = new Date();
                     const hours = now.getHours();
-                    
+            
                     if (hours >= 20 || hours < 6) {
                         return 'Good night';
                     } else if (hours >= 6 && hours < 12) {
@@ -644,161 +757,41 @@ if (x.style.display === "none") {
                     const greetingElement = document.getElementById('greeting');
                     const greeting = getGreeting();
                     greetingElement.textContent = greeting;
+                    console.log('Greeting updated:', greeting); // Console log for debugging
                 }
-                
-                // Function to send message data to '/sms/bulksms'
-
-    // Function to fetch contact lists
-    async function fetchContactLists() {
-        try {
-            const response = await fetch('/getlist', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-            const data = await response.json();
-            console.log('Fetched Lists:', data); // Debug output
-
-            const contactListTableBody = document.getElementById('contactListTableBody');
-            contactListTableBody.innerHTML = ''; // Clear existing rows
-
-            const clickSendLists = data.clickSendLists?.data?.data || [];
-            const userLists = data.userLists || [];
-
-            // Populate the table with ClickSend lists
-            clickSendLists.forEach(list => {
-    console.log('List ID:', list.list_id); // Debugging
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td>${list.list_name}</td>
-        <td>${list._contacts_count || 0}</td>
-        <td>
-            <button class="btn btn-dark btn-sm" type="button" onclick="sendMessage('${list.list_id}')">Send</button>
-        </td>
-    `;
-    contactListTableBody.appendChild(row);
-});
-
-
-            showToast('Contact lists fetched successfully!', true); // Show success message
-        } catch (error) {
-            console.error('Error fetching lists:', error);
-            showToast('Error fetching contact lists.', false); // Show error message
-        }
-    }
-
-    // Call fetchContactLists
-    fetchContactLists();
-
-  });
-
-  function sendMessage(listId) {
-    console.log('sendMessage triggered with:', listId); // Debugging
-
-    const message = document.getElementById('additionalInfo').value;
-
-    // Check if message input is empty
-    if (!message.trim()) {
-        showToast('Please enter a message before sending!', false); // Show error toast
-        return;
-    }
-
-    // Define the payload to send, including both listId and message
-    const payload = { listId, message };
-    console.log('payload: ',payload)
-
-    // Send the message to the server
-    fetch('/bulksms', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Message sent successfully!', true); // Show success toast
-        } else {
-            showToast('Failed to send the message. Please try again.', false); // Show error toast
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred while sending the message.', false); // Show error toast
-    });
-}
-
-
-  // Function to show toast notifications
-  function showToast(message, isSuccess) {
-    const toastElement = document.createElement('div');
-    toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
-    toastElement.role = 'alert';
-    toastElement.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-
-    document.getElementById('uploadForm').addEventListener('submit', async function(event) {
-    event.preventDefault(); // Prevent the default form submission
-
-    const fileInput = document.getElementById('profilePic');
-    const file = fileInput.files[0];
-
-    if (!file) {
-        alert('Please select a file to upload.');
-        return;
-    }
-
-    // Create FormData and append the file
-    const formData = new FormData();
-    formData.append('profilePic', file); // 'profilePic' should match the field name in multer
-
-    // Call the upload function
-    await uploadProfilePic(formData);
-});
-async function uploadProfilePic(formData) {
-    try {
-        const response = await fetch('/uploadProfilePic', { // Ensure this matches your server route
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-        console.log(data); // Handle success or error message
-        alert(data.message); // Show success message to user
-
-    } catch (error) {
-        console.error('Error uploading profile picture:', error);
-        alert('An error occurred while uploading the profile picture.');
-    }
-}
-    // Append the toast to the toast container instead of body
-    document.getElementById('toastContainer').appendChild(toastElement);
-
-    const toast = new bootstrap.Toast(toastElement);
-    toast.show();
-
-    // Optionally, remove the toast after it's hidden to avoid cluttering the DOM
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        toastElement.remove();
-    });
-}
             
+                // Function to show toast notifications
+                function showToast(message, isSuccess) {
+                    const toastElement = document.createElement('div');
+                    toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
+                    toastElement.role = 'alert';
+                    toastElement.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+            
+                    // Append the toast element to the toast container
+                    const toastContainer = document.getElementById('toastContainer');
+                    toastContainer.appendChild(toastElement);
+            
+                    // Initialize and show the toast
+                    const bsToast = new bootstrap.Toast(toastElement);
+                    bsToast.show();
+            
+                    // Remove the toast after it's shown
+                    toastElement.addEventListener('hidden.bs.toast', () => {
+                        toastContainer.removeChild(toastElement);
+                    });
+                }
             </script>
+            
+            
+            
+                
             
 
                     <!--//Page content End//-->
@@ -827,59 +820,3 @@ async function uploadProfilePic(formData) {
     </body>
 
 </html>
-
-
-  <!-- <h3>If You want to logout Press Here ===></h3><button id="logoutButton">LOGOUT</button> -->
-  <!-- <script>
-    async function resetSession() {
-                                      try {
-                                          // To reset the token, you'd need to provide the current token in some way,
-                                          // but since we're avoiding cookies and localStorage, this step may involve
-                                          // a session or some other server-side mechanism to identify the token.
-                                          await fetch('/reset-Session', {
-                                              method: 'POST'
-                                          });
-                                      } catch (error) {
-                                          console.error('Error resetting session:', error);
-                                      }
-                                  }
-                              
-                                  // Event listener for logout button click
-                                  document.getElementById('logoutButton').addEventListener('click', async () => {
-                                      try {
-                                          await resetSession();
-                                          window.location.href = '/signin';
-                                      } catch (error) {
-                                          console.error('Error during logout:', error);
-                                      }
-                                  });
-                              
-                                  // Load user info when the window is loaded
-                                  window.addEventListener(loadUserInfo);
-                              </script> -->
-<!--   
-  <script>
-    async function resetSession() {
-                                      try {
-                                          // To reset the token, you'd need to provide the current token in some way,
-                                          // but since we're avoiding cookies and localStorage, this step may involve
-                                          // a session or some other server-side mechanism to identify the token.
-                                          await fetch('/reset-Session', {
-                                              method: 'POST'
-                                          });
-                                      } catch (error) {
-                                          console.error('Error resetting session:', error);
-                                      }
-                                  }
-                              
-                                  // Event listener for logout button click
-                                  document.getElementById('logoutButton').addEventListener('click', async () => {
-                                      try {
-                                          await resetSession();
-                                          window.location.href = '/signin';
-                                      } catch (error) {
-                                          console.error('Error during logout:', error);
-                                      }
-                                  });
-                              
-    

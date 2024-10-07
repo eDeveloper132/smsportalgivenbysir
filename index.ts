@@ -14,10 +14,12 @@ import sendVerificationEmail from "./emailService.js"; // Import the email servi
 import { lstat } from "fs";
 import SessionModel from "./Schema/Session.js";
 import cookieParser from "cookie-parser";
+import mongoose from "mongoose";
 const PORT = process.env.PORT || 3437;
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 app.use(cookieParser());
@@ -30,9 +32,11 @@ app.listen(PORT, () => {
 });
 
 await connection();
-
+mongoose.set('debug', true);
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.static('profilephoto'));
+app.use('/profilephoto', express.static('profilephoto'));
 
 
 export type AppRes = Response<any, { user: ISign | null }>;
@@ -198,6 +202,8 @@ app.post("/user", async (req: Request, res: AppRes) => {
     id: user._id,
     Name: user.Name,
     Email: user.Email,
+    Organization: user.Organization,
+    PhoneNumber: user.PhoneNumber,
     PackageName: user.Details?.PackageName,
     Coins: user.Details?.Coins,
     messages: user.messages

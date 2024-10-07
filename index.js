@@ -14,9 +14,11 @@ import sendVerificationEmail from "./emailService.js"; // Import the email servi
 import { lstat } from "fs";
 import SessionModel from "./Schema/Session.js";
 import cookieParser from "cookie-parser";
+import mongoose from "mongoose";
 const PORT = process.env.PORT || 3437;
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(cookieParser());
 const __filename = fileURLToPath(import.meta.url);
@@ -25,8 +27,11 @@ app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 await connection();
+mongoose.set('debug', true);
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.static('profilephoto'));
+app.use('/profilephoto', express.static('profilephoto'));
 const sessionMiddleware = async (req, res, next) => {
     // Define paths that should be excluded from session verification
     const excludedPaths = [
@@ -160,6 +165,8 @@ app.post("/user", async (req, res) => {
         id: user._id,
         Name: user.Name,
         Email: user.Email,
+        Organization: user.Organization,
+        PhoneNumber: user.PhoneNumber,
         PackageName: user.Details?.PackageName,
         Coins: user.Details?.Coins,
         messages: user.messages

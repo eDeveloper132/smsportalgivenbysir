@@ -3,15 +3,12 @@ import path from "path";
 import { fileURLToPath } from "url";
 import bcrypt from "bcrypt";
 import axios from "axios";
-import { SignModel, ListModel, MessageModel, FileUrlModel } from "../Schema/Post.js";
+import { SignModel, ListModel, FileUrlModel, PhotoUrlModel, VerifiedNumberModel, AlphaTagModel } from "../Schema/Post.js";
 import { ContactListApi, ContactList } from "clicksend";
-import { v4 as uuidv4 } from 'uuid';
+import SessionModel from '../Schema/Session.js';
 import multer from 'multer';
-import XLSX from 'xlsx';
 import fs from 'fs';
-import mongoose from 'mongoose';
 import "dotenv/config";
-mongoose.set('debug', true);
 // Resolve file and directory paths   
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,53 +58,8 @@ const findAndUpdateUserById = async (id, updateData) => {
 router.get("/", (req, res) => {
     res.sendFile(path.resolve(__dirname, "../Views/index.html"));
 });
-router.get("/list", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../Views/list.html"));
-});
 router.get("/alllists", (req, res) => {
     res.sendFile(path.resolve(__dirname, "../Views/alllists.html"));
-});
-router.get('/addnumbers', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../Views/multiple.html'));
-});
-router.post('/addnumbers', async (req, res) => {
-    const { name, phonecode, phonenumber } = req.body;
-    const user = res.locals.user; // Modify as needed
-    const userId = user._id;
-    if (!name || !phonecode || !phonenumber) {
-        return res.status(400).json({ success: false, message: 'Invalid input' });
-    }
-    const mix = `${phonecode}${phonenumber}`;
-    try {
-        if (!userId) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        const user = await SignModel.findById(userId);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        // Ensure multiple_message and its fields are initialized
-        user.multiple_message = user.multiple_message || { Name: [], Phone_Numbers: [] };
-        user.multiple_message.Name = user.multiple_message.Name ?? [];
-        user.multiple_message.Phone_Numbers = user.multiple_message.Phone_Numbers ?? [];
-        // Check if the number already exists
-        if (user.multiple_message.Phone_Numbers.includes(mix)) {
-            return res.status(400).json({ success: false, message: 'Number already exists' });
-        }
-        if (user.multiple_message.Name.includes(name)) {
-            return res.status(400).json({ success: false, message: 'Name already exists' });
-        }
-        // Add the name and number to the arrays
-        user.multiple_message.Name.push(name);
-        user.multiple_message.Phone_Numbers.push(mix);
-        // Save the updated user document
-        await user.save();
-        res.json({ success: true, message: `Number added successfully: ${mix}` });
-    }
-    catch (error) {
-        console.error('Error adding number:', error);
-        res.status(500).json({ success: false, message: 'Internal Server Error' });
-    }
 });
 router.post("/list", async (req, res) => {
     console.log(req.body); // Log the request body
@@ -229,7 +181,7 @@ router.post('/importContacts', upload1.single('file'), async (req, res) => {
                 return res.status(500).json({ error: 'Failed to save contacts to the list.' });
             }
             // Create the file URL
-            const fileUrl = `https://0755-203-101-187-89.ngrok-free.app/${file.path.replace(/\\/g, '/')}`;
+            const fileUrl = `https://c1ea-203-101-187-89.ngrok-free.app/${file.path.replace(/\\/g, '/')}`;
             // Save the file URL in the FileUrlModel
             const fileUrlEntry = new FileUrlModel({
                 userId: userId, // Use the user ID from the request context
@@ -254,121 +206,11 @@ router.post('/importContacts', upload1.single('file'), async (req, res) => {
         return res.status(500).json({ error: 'Error processing the file.' });
     }
 });
-const upload = multer({
-    dest: 'addnumbersbyexcel/' // Path where uploaded files will be stored
-});
-router.get('/addnumbersbyexcel', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../Views/multipleexcel.html'));
-});
-router.post('/addnumbersbyexcel', upload.single('file'), async (req, res) => {
-    try {
-        const file = req.file;
-        if (!file) {
-            return res.status(400).json({ message: 'No file uploaded' });
-        }
-        // Load the file
-        const workbook = XLSX.readFile(path.resolve(file.path));
-        const sheetName = workbook.SheetNames[0]; // Read the first sheet
-        const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-        // Assuming the sheet has 'Name' and 'PhoneNumber' columns
-        const extractedData = sheet.map((row) => ({
-            name: row.Name,
-            phoneNumber: row.PhoneNumber
-        }));
-        // Send extracted data as JSON response
-        res.status(200).json({ data: extractedData });
-    }
-    catch (error) {
-        console.error('Error processing file:', error);
-        res.status(500).json({ message: 'Failed to process the file' });
-    }
-});
-router.post('/saveAllNumbers', async (req, res) => {
-    const { numbers } = req.body;
-    console.log(numbers);
-    console.log(req.body);
-    const user = res.locals.user; // Modify as needed
-    const userId = user._id;
-    if (!numbers || !Array.isArray(numbers) || numbers.length === 0) {
-        return res.status(400).json({ success: false, message: 'No numbers provided' });
-    }
-    try {
-        // Find the user by ID
-        const user = await SignModel.findById(userId);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        // Initialize multiple_message and its fields if they are undefined
-        user.multiple_message = user.multiple_message || { Name: [], Phone_Numbers: [] };
-        user.multiple_message.Name = user.multiple_message.Name || [];
-        user.multiple_message.Phone_Numbers = user.multiple_message.Phone_Numbers || [];
-        let addedNumbers = [];
-        for (const item of numbers) {
-            const { name, phoneNumber } = item;
-            if (!name || !phoneNumber) {
-                continue; // Skip if either name or phone number is missing
-            }
-            const formattedNumber = `+${phoneNumber}`;
-            console.log(formattedNumber);
-            console.log(user);
-            // Check if the number or name already exists in the user's record
-            if (!user.multiple_message.Phone_Numbers.includes(formattedNumber) &&
-                !user.multiple_message.Name.includes(name)) {
-                user.multiple_message.Phone_Numbers.push(formattedNumber);
-                user.multiple_message.Name.push(name);
-                addedNumbers.push({ name, phoneNumber: formattedNumber });
-            }
-        }
-        // Save the user with the new numbers
-        await user.save();
-        res.json({ success: true, message: `${addedNumbers.length} numbers added successfully`, data: addedNumbers });
-    }
-    catch (error) {
-        console.error('Error saving numbers:', error);
-        res.status(500).json({ success: false, message: 'Internal Server Error' });
-    }
-});
-router.post('/savenumber', async (req, res) => {
-    const { name, phoneNumber } = req.body;
-    console.log(req.body);
-    const user = res.locals.user; // Modify as needed
-    const userId = user._id;
-    if (!name || !phoneNumber) {
-        return res.status(400).json({ success: false, message: 'Invalid input' });
-    }
-    console.log(name, phoneNumber);
-    const mix = `+${phoneNumber}`;
-    console.log(mix);
-    try {
-        if (!userId) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        const user = await SignModel.findById(userId);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        // Ensure multiple_message and its fields are initialized
-        user.multiple_message = user.multiple_message || { Name: [], Phone_Numbers: [] };
-        user.multiple_message.Name = user.multiple_message.Name ?? [];
-        user.multiple_message.Phone_Numbers = user.multiple_message.Phone_Numbers ?? [];
-        // Check if the number already exists
-        if (user.multiple_message.Phone_Numbers.includes(mix)) {
-            return res.status(400).json({ success: false, message: 'Number already exists' });
-        }
-        if (user.multiple_message.Name.includes(name)) {
-            return res.status(400).json({ success: false, message: 'Name already exists' });
-        }
-        // Add the name and number to the arrays
-        user.multiple_message.Name.push(name);
-        user.multiple_message.Phone_Numbers.push(mix);
-        // Save the updated user document
-        await user.save();
-        res.json({ success: true, message: `Number added successfully: ${mix}` });
-    }
-    catch (error) {
-        console.error('Error adding number:', error);
-        res.status(500).json({ success: false, message: 'Internal Server Error' });
-    }
+router.get('/api/credentials', (req, res) => {
+    res.json({
+        username: process.env.USERNAME,
+        apiKey: process.env.API_KEY
+    });
 });
 router.post("/getlist", async (req, res) => {
     const user = res.locals.user; // Modify as needed
@@ -631,78 +473,15 @@ router.post("/changepass", async (req, res) => {
             .send({ error: "Error changing password: " + error.message });
     }
 });
-router.get('/getnumbers', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../Views/numberDetails.html'));
-});
-router.post('/getnumbers', async (req, res) => {
-    try {
-        const user = res.locals.user;
-        const userId = user._id;
-        // Fetch the sign record for the user by ID
-        const signRecord = await SignModel.findById(userId).select('multiple_message.Phone_Numbers multiple_message.Name');
-        if (!signRecord) {
-            return res.status(404).json({ message: 'Sign record not found' });
-        }
-        const phoneNumbers = signRecord.multiple_message.Phone_Numbers || [];
-        const names = signRecord.multiple_message.Name || [];
-        // Ensure both arrays are of the same length
-        const maxLength = Math.max(phoneNumbers.length, names.length);
-        const extendedPhoneNumbers = phoneNumbers.concat(new Array(maxLength - phoneNumbers.length).fill(''));
-        const extendedNames = names.concat(new Array(maxLength - names.length).fill('Unknown'));
-        res.json({ phoneNumbers: extendedPhoneNumbers, names: extendedNames });
-    }
-    catch (error) {
-        res.status(500).json({ message: 'Server error', error });
-    }
-});
-router.delete('/deletenumber', async (req, res) => {
-    const user = res.locals.user;
-    const userId = user._id;
-    try {
-        const { phoneNumber, Name } = req.body;
-        // Log request body to ensure correct data is being sent
-        console.log('Request Body:', { phoneNumber, Name });
-        // Find the user's sign record
-        const signRecord = await SignModel.findOne({ _id: userId });
-        if (!signRecord) {
-            return res.status(404).json({ message: 'User not found.' });
-        }
-        // Log sign record to check its structure
-        console.log('Sign Record:', signRecord);
-        // Ensure that multiple_message and Phone_Numbers exist
-        if (!signRecord.multiple_message || !signRecord.multiple_message.Phone_Numbers) {
-            return res.status(404).json({ message: 'Phone numbers list not found.' });
-        }
-        // Find the index of the phone number to be deleted
-        const index = signRecord.multiple_message.Phone_Numbers.indexOf(phoneNumber);
-        // Log the index to check if the number was found
-        console.log('Index of number:', index);
-        // Check if the phone number and name exist at the same index
-        if (index === -1 || signRecord.multiple_message.Name[index] !== Name) {
-            return res.status(404).json({ message: 'Phone number and name pair not found.' });
-        }
-        // Log the phone number and name before deletion
-        console.log('Deleting:', {
-            phoneNumber: signRecord.multiple_message.Phone_Numbers[index],
-            name: signRecord.multiple_message.Name[index],
-        });
-        // Remove the phone number and name at the same index
-        signRecord.multiple_message.Phone_Numbers.splice(index, 1);
-        signRecord.multiple_message.Name.splice(index, 1);
-        // Save the updated sign record
-        await signRecord.save();
-        res.status(200).json({ message: 'Phone number and name deleted successfully.' });
-    }
-    catch (error) {
-        console.error('Error during deletion:', error);
-        res.status(500).json({ message: 'Server error', error });
-    }
-});
 router.get('/bulksms', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../Views/bulksms.html'));
 });
+router.get('/purchaseno', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../Views/purchasenumber.html'));
+});
 router.post('/bulksms', async (req, res) => {
-    const { message } = req.body;
+    const { listId, message } = req.body;
+    console.log('Request body:', req.body);
     if (!message) {
         console.log('Server Error 400: Missing required fields');
         return res.status(400).json({ error: 'Please provide a message to send.' });
@@ -711,15 +490,19 @@ router.post('/bulksms', async (req, res) => {
     const userId = user._id;
     const packageName = user?.Details?.PackageName;
     const coins = user?.Details?.Coins;
+    console.log(`User ID: ${userId}, Package Name: ${packageName}, Coins Available: ${coins}`);
     if (!packageName || typeof coins !== 'number') {
         console.log('Server Error 403: User package details are incomplete.');
         return res.status(403).json({ error: 'You cannot send SMS. Please buy our package first.' });
     }
-    const phoneNumbers = user?.multiple_message?.Phone_Numbers;
-    if (!Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
+    const listNumbers = await ListModel.findOne({ listId: listId });
+    // Ensure listNumbers is found and contacts are available
+    if (!listNumbers || !listNumbers.contacts || listNumbers.contacts.length === 0) {
         console.log('Server Error 400: No phone numbers found');
         return res.status(400).json({ error: 'No phone numbers available to send the message.' });
     }
+    const phoneNumbers = listNumbers.contacts.map(contact => contact.mix); // Assuming mix contains the phone numbers
+    console.log('Phone Numbers Retrieved:', phoneNumbers);
     if (coins < phoneNumbers.length) {
         return res.status(400).send('Insufficient coins for sending all messages');
     }
@@ -732,8 +515,6 @@ router.post('/bulksms', async (req, res) => {
             console.log('User details or coins are missing or invalid:', dbUser.Details);
             return res.status(400).send('User details not found or coins are not valid');
         }
-        // Deduct coins for each message sent
-        dbUser.Details.Coins -= phoneNumbers.length;
         // Set up the message for ClickSend
         const messages = phoneNumbers.map(phoneNumber => ({
             to: phoneNumber,
@@ -746,34 +527,486 @@ router.post('/bulksms', async (req, res) => {
                 password: "EA26A5D0-7AAC-6631-478B-FC155CE94C99"
             }
         });
-        if (response.data.data && response.data.data.messages) {
-            for (const sms of response.data.data.messages) {
-                if (sms.status === 'SUCCESS') {
-                    const newMessage = await MessageModel.create({
-                        id: uuidv4(),
-                        u_id: dbUser._id,
-                        from: 'Default',
-                        to: sms.to,
-                        message: message,
-                        m_count: 1,
-                        m_schedule: 'NOT PROVIDED',
-                        status: "SUCCESS"
-                    });
-                    const messageId = newMessage._id;
-                    dbUser.messages.push(messageId);
-                }
-            }
+        console.log('Response from ClickSend:', response.data);
+        const messagesDetails = response.data.data.messages;
+        messagesDetails.forEach((msg, index) => {
+            console.log(`Message ${index + 1}:`, msg);
+        });
+        const successfulMessages = messagesDetails.filter((sms) => sms.status === 'SUCCESS');
+        // Deduct coins for each successful message sent
+        if (successfulMessages.length > 0) {
+            dbUser.Details.Coins -= successfulMessages.length; // Deduct only for successful messages
             await dbUser.save();
-            console.log('Data Updated Successfully', dbUser);
-            res.status(200).json({ message: 'Messages sent successfully to all numbers!' });
+            console.log('Coins deducted successfully. Remaining Coins:', dbUser.Details.Coins);
         }
         else {
-            res.status(500).json({ error: 'Failed to send SMS via ClickSend.' });
+            console.log('No successful messages to deduct coins for.');
         }
+        // Log and respond
+        console.log('Data Updated Successfully:', dbUser);
+        res.status(200).json({ message: 'Messages sent successfully to all numbers!', successfulMessages });
     }
     catch (err) {
         console.error(err.response ? err.response.data : err.message);
         res.status(500).json({ error: 'Failed to send SMS. Please try again later.' });
+    }
+});
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // Specify the directory to save uploaded files
+        cb(null, 'profilephoto/'); // Ensure this directory exists
+    },
+    filename: (req, file, cb) => {
+        // Specify the filename (you can customize it here)
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname); // Get the file extension
+        cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    }
+});
+const photo = multer({ storage: storage });
+router.post('/uploadProfilePic', photo.single('profilePic'), async (req, res) => {
+    const user = res.locals.user; // Get the user from middleware
+    const userId = user._id;
+    console.log(req.file); // Log the uploaded file info
+    console.log(req.body); // Log the body of the request (should be empty for file uploads)
+    // Check if the file is uploaded
+    if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+    }
+    // File successfully uploaded, extract the URL
+    const fileUrl = req.file.path; // Adjust this based on your storage setup
+    try {
+        // Update or create the photo URL entry in the database
+        const updatedPhotoUrl = await PhotoUrlModel.findOneAndUpdate({ userId: userId }, // Find the entry for the current user
+        {
+            $set: { fileUrl: fileUrl, createdAt: new Date() } // Use $set to update the fields
+        }, { new: true, upsert: true } // Create a new document if it doesn't exist
+        );
+        // Send success response
+        return res.status(200).json({
+            message: 'Profile picture uploaded successfully',
+            file: req.file,
+            photoUrl: updatedPhotoUrl // Include the updated entry in the response
+        });
+    }
+    catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Failed to save profile picture URL', error });
+    }
+});
+router.post('/update-user', async (req, res) => {
+    const user = res.locals.user; // Get the user from middleware
+    const userId = user._id; // Get the userId from the authenticated user
+    // Destructure the incoming data (lowercase 'name' and 'email')
+    const { name, email } = req.body;
+    // Object to hold fields that need updating
+    let updates = {};
+    // Check if name is provided and add it to the updates object
+    if (name) {
+        updates.Name = name; // Ensure 'Name' matches the schema field
+    }
+    // Check if email is provided and add it to the updates object
+    if (email) {
+        updates.Email = email; // Ensure 'Email' matches the schema field
+        updates.isVerified = false; // Set isVerified to false if email is being updated
+    }
+    // If there are no updates, return a bad request
+    if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: 'No fields to update' });
+    }
+    try {
+        // Find the user by their userId and update the necessary fields
+        const updatedUser = await SignModel.findOneAndUpdate({ _id: userId }, { $set: updates }, { new: true } // Return the updated user object
+        );
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        // If email was updated, send a request to /reset-session
+        if (email) {
+            try {
+                // Just hit the /reset-session route without sending any data
+                const sessionId = req.cookies.sessionId;
+                if (sessionId) {
+                    await SessionModel.findOneAndDelete({ sessionId });
+                    res.clearCookie("sessionId");
+                }
+            }
+            catch (resetError) {
+                console.error('Error hitting /reset-session route:', resetError);
+                return res.status(500).json({ message: 'Error hitting /reset-session route' });
+            }
+        }
+        // Respond with the updated user details
+        return res.status(200).json({
+            message: 'User updated successfully',
+            user: updatedUser
+        });
+    }
+    catch (error) {
+        console.error('Error updating user:', error);
+        return res.status(500).json({ message: 'Failed to update user', error });
+    }
+});
+router.post('/purchaseno', async (req, res) => {
+    console.log(req.body); // This Console Is Received On req.body: { dedicated_number: '+436703094546' }
+    const dedicatedNumber = req.body.dedicated_number; // Extract the dedicated number from the request body
+    const username = 'bluebirdintegrated@gmail.com'; // Replace with your ClickSend username
+    const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'; // Replace with your ClickSend API key
+    const encodedAuth = Buffer.from(`${username}:${apiKey}`).toString('base64');
+    try {
+        // Log the encoded auth for debugging
+        console.log('Encoded Auth:', encodedAuth);
+        // Make the purchase request to ClickSend
+        const response = await axios.post(`https://rest.clicksend.com/v3/numbers/buy/${encodeURIComponent(dedicatedNumber)}`, {}, {
+            headers: {
+                'Authorization': `Basic ${encodedAuth}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        // Handle the response from ClickSend
+        if (response.status === 200) {
+            // Successful purchase
+            res.status(200).json({ message: 'Purchase successful!', data: response.data });
+        }
+        else {
+            // Handle unexpected status
+            res.status(response.status).json({ message: 'Purchase failed!', error: response.data });
+        }
+    }
+    catch (error) {
+        // Handle errors
+        console.error('Error purchasing number:', error.message);
+        // Log the entire error response for better debugging
+        if (error.response) {
+            console.error('Error Response Data:', error.response.data);
+            console.error('Error Response Status:', error.response.status);
+            // Check for insufficient balance error
+            if (error.response.data.response_msg === 'Insufficient Balance.') {
+                return res.status(400).json({
+                    message: 'Purchase failed due to insufficient balance. Please top up your account.',
+                    error: error.response.data
+                });
+            }
+            else {
+                return res.status(error.response.status).json({
+                    message: 'Error processing purchase.',
+                    error: error.response.data
+                });
+            }
+        }
+        else {
+            return res.status(500).json({ message: 'Error processing purchase.', error: error.message });
+        }
+    }
+});
+router.get('/verifyownnumber', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../Views/verifynumber.html'));
+});
+router.post('/verifyownnumber', async (req, res) => {
+    const { phone_number, label, country, verification_code } = req.body; // Extract phone number, label, and country from request body
+    console.log('Request body:', req.body);
+    const user = res.locals.user; // Get the user from middleware
+    if (!user) {
+        console.error('User not authenticated');
+        return res.status(401).json({ message: 'User not authenticated' });
+    }
+    const userId = user._id;
+    // Replace with your ClickSend credentials
+    const username = 'bluebirdintegrated@gmail.com';
+    const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+    if (phone_number && label && country) {
+        try {
+            // Call the ClickSend API
+            const apiResponse = await fetch('https://rest.clicksend.com/v3/own-numbers/verifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + Buffer.from(`${username}:${apiKey}`).toString('base64') // Basic Auth
+                },
+                body: JSON.stringify({
+                    phone_number: phone_number, // Required field
+                    label: label || 'Default Label', // Optional, set default if not provided
+                    country: country
+                })
+            });
+            // Parse the response from ClickSend API
+            const result = await apiResponse.json();
+            console.log('Response from ClickSend API:', result);
+            // If successful, save the verified number and update the user's verifiedNumbers
+            if (apiResponse.ok) {
+                const verifiedNumber = await VerifiedNumberModel.create({
+                    userId: userId,
+                    number: phone_number,
+                    own_numberid: result.id,
+                    label: label,
+                    country: country
+                });
+                // Update the Sign model to include the verified number reference
+                await SignModel.findByIdAndUpdate(userId, {
+                    $push: { verifiedNumbers: verifiedNumber._id } // Add the verified number ID to the user's verifiedNumbers array
+                });
+                // Set a timeout to delete the verified number after 1 minute
+                setTimeout(async () => {
+                    await VerifiedNumberModel.findByIdAndDelete(verifiedNumber._id); // Delete the verified number
+                    await SignModel.findByIdAndUpdate(userId, {
+                        $pull: { verifiedNumbers: verifiedNumber._id } // Remove the verified number ID from the user's verifiedNumbers array
+                    });
+                    console.log(`Deleted verified number for user ${userId}:`, verifiedNumber._id);
+                }, 60 * 1000); // 60 seconds in milliseconds
+                res.status(200).json({ success: true, data: result, verifiedNumber }); // Respond with the verified number
+            }
+            else {
+                // Handle error response from ClickSend API
+                console.error('Error from ClickSend API:', result);
+                res.status(apiResponse.status).json({
+                    success: false,
+                    error: result.message || 'Error verifying phone number'
+                });
+            }
+        }
+        catch (error) {
+            console.error('Error fetching from ClickSend API:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Server error occurred while verifying phone number'
+            });
+        }
+    }
+    else if (verification_code) {
+        const find = await VerifiedNumberModel.findOne({ userId: userId });
+        if (!find) {
+            console.warn('No verified number record found for user:', userId);
+            return res.status(404).json({ message: 'Verification Code Expired' });
+        }
+        const numberId = find.own_numberid;
+        const phonr = find.number;
+        const countrye = find.country;
+        try {
+            // Call the ClickSend API
+            const apiResponse = await fetch(`https://rest.clicksend.com/v3/own-numbers/verifications/${numberId}/verify`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + Buffer.from(`${username}:${apiKey}`).toString('base64') // Basic Auth
+                },
+                body: JSON.stringify({
+                    country: countrye,
+                    phone_number: phonr, // Required field
+                    code: verification_code
+                })
+            });
+            if (apiResponse.ok) {
+                const verificationResult = await apiResponse.json();
+                console.log('Phone number verified successfully:', verificationResult);
+                res.status(200).json({ success: true, message: 'Phone number verified successfully!', data: verificationResult });
+            }
+            else {
+                console.error('Error verifying the verification code:', apiResponse);
+                const errorResult = await apiResponse.json();
+                res.status(apiResponse.status).json({
+                    success: false,
+                    error: errorResult.message || 'Error verifying the verification code'
+                });
+            }
+        }
+        catch (error) {
+            console.error('Error verifying the code:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Server error occurred while verifying the code'
+            });
+        }
+    }
+    else {
+        console.log('Invalid request, no phone number or verification code provided');
+        res.status(400).json({ message: 'Invalid request. Please provide phone number, label, country, or verification code.' });
+    }
+});
+router.get('/broughtnumbers', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../Views/broughtnumber.html'));
+});
+router.post('/broughtnumbers', async (req, res) => {
+    const apiUrl = 'https://rest.clicksend.com/v3/numbers'; // ClickSend API URL
+    const username = 'bluebirdintegrated@gmail.com'; // Replace with your ClickSend username
+    const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'; // Replace with your ClickSend API key
+    try {
+        // Make API request to ClickSend
+        const response = await axios.get(apiUrl, {
+            auth: {
+                username: username,
+                password: apiKey, // ClickSend API key as password
+            }
+        });
+        // Handle response from API
+        const broughtNumbers = response.data; // Data from ClickSend API
+        res.json(broughtNumbers); // Send data back to client
+    }
+    catch (error) {
+        console.error('Error fetching ClickSend API:', error);
+        res.status(500).json({ error: 'Failed to fetch brought numbers' });
+    }
+});
+router.get('/ownnumbers', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../Views/ownnumbers.html'));
+});
+router.post('/ownnumbers', async (req, res) => {
+    try {
+        // Set up your API credentials
+        const apiUser = 'bluebirdintegrated@gmail.com';
+        const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+        // Make the request to the ClickSend API
+        const response = await axios.get('https://rest.clicksend.com/v3/own-numbers', {
+            auth: {
+                username: apiUser,
+                password: apiKey,
+            },
+        });
+        // Send the response data back to the client
+        res.status(200).json(response.data);
+    }
+    catch (error) {
+        console.error('Error fetching own numbers:', error);
+        // Handle errors gracefully
+        if (error.response) {
+            // If the error is from the response
+            res.status(error.response.status).json({ error: error.response.data });
+        }
+        else {
+            // Other errors
+            res.status(500).json({ error: 'An error occurred while fetching own numbers.' });
+        }
+    }
+});
+router.get('/alphatag', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../Views/alphatag.html'));
+});
+router.post('/getalpha', async (req, res) => {
+    const username = 'bluebirdintegrated@gmail.com';
+    const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+    try {
+        // Prepare the API call to ClickSend Alpha Tags API
+        const apiResponse = await fetch('https://rest.clicksend.com/v3/alpha-tags', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Basic ' + Buffer.from(`${username}:${apiKey}`).toString('base64') // Basic Auth
+            }
+        });
+        // Parse the response from ClickSend
+        const result = await apiResponse.json();
+        if (apiResponse.ok) {
+            // Respond with the result if the request is successful
+            res.status(200).json({
+                success: true,
+                message: 'Alpha tags fetched successfully',
+                data: result
+            });
+        }
+        else {
+            // Handle error response from ClickSend API
+            res.status(apiResponse.status).json({
+                success: false,
+                error: result.message || 'Failed to fetch alpha tags',
+                details: result
+            });
+        }
+    }
+    catch (error) {
+        console.error('Error fetching alpha tags:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error occurred while fetching alpha tags'
+        });
+    }
+});
+router.post('/alphatag', async (req, res) => {
+    const { alpha_tag, reason } = req.body; // Extract the alpha_tag and reason from request body
+    console.log(req.body); // Log the request body to verify data is being received correctly
+    const user = res.locals.user; // Get the user from middleware
+    if (!user) {
+        console.error('User not authenticated');
+        return res.status(401).json({ message: 'User not authenticated' });
+    }
+    const userId = user._id;
+    // Your ClickSend credentials
+    const username = 'bluebirdintegrated@gmail.com';
+    const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+    // Validate alpha_tag
+    if (!alpha_tag || alpha_tag.length < 3 || alpha_tag.length > 11 || !/[A-Za-z]+/.test(alpha_tag)) {
+        return res.status(400).json({ message: 'Invalid alpha tag. Must be between 3-11 characters and contain at least one letter.' });
+    }
+    try {
+        console.log('Attempting to send alpha tag request to ClickSend...');
+        const apiResponse = await fetch('https://rest.clicksend.com/v3/alpha-tags', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + Buffer.from(`${username}:${apiKey}`).toString('base64')
+            },
+            body: JSON.stringify({
+                alpha_tag: alpha_tag,
+                reason: reason || ''
+            })
+        });
+        const result = await apiResponse.json();
+        console.log('API Response:', result); // Log the result here
+        if (apiResponse.ok) {
+            const saver = await AlphaTagModel.create({
+                pid: result.id,
+                account_id: result.account_id,
+                workspace_id: result.workspace_id,
+                user_id_clicksend: result.user_id,
+                user_id: userId,
+                alpha_tag: result.alpha_tag,
+                status: result.status,
+                reason: result.reason
+            });
+            await saver.save();
+            console.log(saver);
+            res.status(200).json({
+                success: true,
+                message: 'Alpha tag created successfully',
+                data: result
+            });
+        }
+        else {
+            console.error('Error from ClickSend:', result); // Log any errors from the API
+            res.status(apiResponse.status).json({
+                success: false,
+                error: result.message || 'Failed to create alpha tag',
+                details: result
+            });
+        }
+    }
+    catch (error) {
+        console.error('Error creating alpha tag:', error.message || error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error occurred while creating alpha tag'
+        });
+    }
+});
+router.get('/profilepage', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../Views/profile.html'));
+});
+// Route to get the user's profile picture
+router.get('/profile-pic', async (req, res) => {
+    const user = res.locals.user; // Get the user from middleware
+    if (!user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+    }
+    const userId = user._id; // Ensure userId exists
+    console.log('User ID:', userId);
+    try {
+        const photoUrlEntry = await PhotoUrlModel.findOne({ userId: userId });
+        if (!photoUrlEntry) {
+            return res.status(404).json({ message: 'Profile picture not found' });
+        }
+        // Send the file URL in the response
+        return res.status(200).json({ fileUrl: photoUrlEntry.fileUrl });
+    }
+    catch (error) {
+        console.error('Error retrieving profile picture:', error);
+        return res.status(500).json({ message: 'Failed to retrieve profile picture', error });
     }
 });
 export default router;
