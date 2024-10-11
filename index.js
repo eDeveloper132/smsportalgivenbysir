@@ -245,11 +245,12 @@ app.get("/verify-email", async (req, res) => {
         user.isVerified = true;
         // Clear the token expiry
         await user.save();
-        // const redirectToken = uuidv4();
-        // const hash = await bcrypt.hash(redirectToken , 10);
-        // OneTime.push(hash)
-        // res.redirect('/');
+        // Send the success message and delay the redirect by 3 seconds
         res.send("Email verified successfully!");
+        // Delay and then redirect to the main route
+        setTimeout(() => {
+            res.redirect('/');
+        }, 3000); // 3000 milliseconds = 3 seconds
     }
     catch (error) {
         console.error("Error verifying email:", error);

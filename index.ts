@@ -301,16 +301,20 @@ app.get("/verify-email", async (req: Request, res: Response) => {
     user.isVerified = true;
     // Clear the token expiry
     await user.save();
-    // const redirectToken = uuidv4();
-    // const hash = await bcrypt.hash(redirectToken , 10);
-    // OneTime.push(hash)
-    // res.redirect('/');
+
+    // Send the success message and delay the redirect by 3 seconds
     res.send("Email verified successfully!");
+
+    // Delay and then redirect to the main route
+    setTimeout(() => {
+      res.redirect('/');
+    }, 3000); // 3000 milliseconds = 3 seconds
   } catch (error: any) {
     console.error("Error verifying email:", error);
     res.status(500).send("Server error");
   }
 });
+
 
 app.post("/resend-verification", async (req, res) => {
   const { Email } = req.body;
