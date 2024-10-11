@@ -4,7 +4,6 @@ import { fileURLToPath } from "url";
 import bcrypt from "bcrypt";
 import axios from "axios";
 import { SignModel, ListModel, FileUrlModel, PhotoUrlModel, VerifiedNumberModel, AlphaTagModel } from "../Schema/Post.js";
-import { ContactListApi, ContactList } from "clicksend";
 import SessionModel from '../Schema/Session.js';
 import multer from 'multer';
 import fs from 'fs';
@@ -64,28 +63,33 @@ router.get("/alllists", (req, res) => {
 router.post("/list", async (req, res) => {
     console.log(req.body); // Log the request body
     const { listName } = req.body; // Get the list name from the request body
-    const user = res.locals.user; // Modify as needed
+    const user = res.locals.user; // Get the user from res.locals (modify as needed)
     const userId = user._id;
-    console.log(userId);
-    // Create an instance of the ContactListApi
-    const contactListApi = new ContactListApi(`bluebirdintegrated@gmail.com`, `EA26A5D0-7AAC-6631-478B-FC155CE94C99`);
-    // Create a new ContactList object
-    const contactList = new ContactList();
-    contactList.listName = listName; // Set the list name
+    console.log(userId); // Log userId for debugging
+    // ClickSend API credentials
+    const username = 'bluebirdintegrated@gmail.com';
+    const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+    const clickSendUrl = 'https://rest.clicksend.com/v3/lists';
     try {
-        // Call the API to create the contact list
-        const response = await contactListApi.listsPost(contactList);
-        // Ensure that the response body is treated as a JSON object, not as a string
-        const responseBody = response.body; // Use appropriate type or `any` if not known
+        // Make a POST request to ClickSend API to create a contact list
+        const clickSendResponse = await axios.post(clickSendUrl, {
+            list_name: listName // Payload for creating a list
+        }, {
+            headers: {
+                'Authorization': `Basic ${Buffer.from(`${username}:${apiKey}`).toString('base64')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        const responseBody = clickSendResponse.data; // Extract data from response
         console.log('ClickSend API Response:', responseBody); // Log the response
-        // Check if the response contains the expected data
+        // Check if the response contains the expected data (list_id)
         if (responseBody && responseBody.data && responseBody.data.list_id) {
             // Create a new List document
             const newList = new ListModel({
                 listName: listName,
-                createdBy: userId, // Ensure you pass the correct user ID
-                listId: responseBody.data.list_id, // Use responseBody.data.list_id
-                contacts: [] // Initialize contacts as an empty array or with actual contacts if needed
+                createdBy: userId, // Set createdBy as the user ID
+                listId: responseBody.data.list_id, // Use the list_id from ClickSend response
+                contacts: [] // Initialize contacts as an empty array
             });
             await newList.save(); // Save the new list to the database
             console.log('List saved to database:', newList);
@@ -96,7 +100,7 @@ router.post("/list", async (req, res) => {
         }
     }
     catch (err) {
-        console.error('Error creating contact list:', err.message || err.body);
+        console.error('Error creating contact list:', err.response?.data || err.message);
         res.status(500).json({ success: false, message: 'Failed to create contact list: ' + (err.message || 'Internal Server Error') });
     }
 });
@@ -401,14 +405,21 @@ router.get('/api/credentials', (req, res) => {
 router.post("/getlist", async (req, res) => {
     const user = res.locals.user; // Modify as needed
     const userId = user._id;
-    // Create an instance of the ContactListApi
-    const contactListApi = new ContactListApi(`bluebirdintegrated@gmail.com`, `EA26A5D0-7AAC-6631-478B-FC155CE94C99`);
+    const clickSendUrl = 'https://rest.clicksend.com/v3/lists';
+    const auth = `Basic ${Buffer.from('bluebirdintegrated@gmail.com:EA26A5D0-7AAC-6631-478B-FC155CE94C99').toString('base64')}`;
     try {
-        // Fetch lists from ClickSend
-        const page = 1; // Page number
-        const limit = 10; // Limit of results per page
-        const clickSendResponse = await contactListApi.listsGet(page, limit);
-        const clickSendLists = clickSendResponse.body; // Extract lists from ClickSend response
+        // Fetch lists from ClickSend using axios
+        const clickSendResponse = await axios.get(clickSendUrl, {
+            headers: {
+                'Authorization': auth,
+                'Content-Type': 'application/json'
+            },
+            params: {
+                page: 1, // Page number
+                limit: 10 // Limit of results per page
+            }
+        });
+        const clickSendLists = clickSendResponse.data; // Extract lists from ClickSend response
         console.log(clickSendLists);
         // Optionally, fetch user-specific lists from your database
         const userLists = await ListModel.find({ createdBy: userId });
@@ -417,7 +428,7 @@ router.post("/getlist", async (req, res) => {
         res.json({ clickSendLists, userLists });
     }
     catch (error) {
-        console.error('Error fetching lists:', error.body || error.message);
+        console.error('Error fetching lists:', error.response ? error.response.data : error.message);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
