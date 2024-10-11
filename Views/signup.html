@@ -475,7 +475,7 @@
                                                             body: JSON.stringify(formObject),
                                                         });
                                                         if (response.ok) {
-                                                            showToast('Registration successful! Redirecting to sign-in...', true);
+                                                            showToast('Registration successful! Please check your mail and verify it , Redirecting to sign-in...', true);
                                                             setTimeout(() => {
                                                                 window.location.href = '/signin';
                                                             }, 2000); // Redirect after 2 seconds
@@ -516,6 +516,7 @@
                                                     toastElement.remove();
                                                 });
                                             }
+                                        
                                         </script>
                                         
                                     </div>

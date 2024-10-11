@@ -551,6 +551,8 @@
                     <!--//Page content//-->
                     <div class="content pt-3 px-3 px-lg-6 d-flex flex-column-fluid">
                       <div class="container-fluid px-0">
+                        <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
+
                         <div class="col-xl-3 col-md-6 mb-3 mb-lg-5">
 
                           <!--//Card start//-->
@@ -632,25 +634,29 @@
                     </style>
                     
                     <script>
-                      // Function to determine the greeting based on the current time
                       document.addEventListener('DOMContentLoaded', () => {
+                        // Fetch and load the profile picture
                         fetch('/profile-pic')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Profile picture not found');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const imgElement = document.getElementById('userAvatar');
-            imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
-        })
-        .catch(error => {
-            console.error('Error:', error.message);
-            // Optionally set a default image if the profile picture is not found
-            const imgElement = document.getElementById('userAvatar');
-            imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
-        });
+                          .then(response => {
+                            if (!response.ok) {
+                              showToast('Profile picture not found. Using default avatar.', false);
+                              throw new Error('Profile picture not found');
+                            }
+                            return response.json();
+                          })
+                          .then(data => {
+                            const imgElement = document.getElementById('userAvatar');
+                            imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
+                            showToast('Profile picture loaded successfully!', true);
+                          })
+                          .catch(error => {
+                            console.error('Error:', error.message);
+                            const imgElement = document.getElementById('userAvatar');
+                            imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
+                            showToast('Error loading profile picture. Using default avatar.', false);
+                          });
+                    
+                        // Set the greeting message based on time
                         function getGreeting() {
                           const now = new Date();
                           const hours = now.getHours();
@@ -673,6 +679,7 @@
                           const greeting = getGreeting();
                           if (greetingElement) {
                             greetingElement.textContent = greeting;
+                            showToast(`Greeting updated to "${greeting}"`, true);
                           }
                         }
                     
@@ -692,9 +699,9 @@
                           });
                     
                           if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                          
+                    
                           const data = await response.json();
-                          
+                    
                           // Update user information in the UI
                           if (data) {
                             document.getElementById('userName').textContent = data.Name;
@@ -702,69 +709,93 @@
                             document.getElementById('userGreeting').textContent = data.Name;
                             document.getElementById('packagename').textContent = data.PackageName;
                             document.getElementById('packagecoins').textContent = data.Coins;
+                            showToast('User data fetched successfully!', true);
                           }
                         } catch (error) {
                           console.error('Error fetching user data:', error);
+                          showToast('Error fetching user data. Please try again later.', false);
                         }
                       });
                     
                       // Fetch SMS messages and update the UI
                       document.addEventListener('DOMContentLoaded', async () => {
-    try {
-      const response = await fetch('/sms/api/messages');
-      
-      if (!response.ok) {
-        showToast('error', 'Failed to fetch messages.');
-        throw new Error('Failed to fetch messages');
-      }
-
-      const data = await response.json();
-      console.log('Messages Data:', data); // Debug output
-
-      const container = document.getElementById('data-container');
-      const messagesCounter = document.getElementById('messagescounter'); // Get the message counter element
-
-      // Initialize a counter for the number of messages with specific statuses
-      let messageCount = 0;
-
-      if (data.messages && data.messages.length > 0) {
-        container.innerHTML = ''; // Clear any previous data
-        
-        data.messages.forEach(doc => {
-          const item = document.createElement('tr');
-          item.className = 'data-item';
-          item.innerHTML = `
-            <td>${doc.from || 'N/A'}</td>
-            <td>${doc.to || 'N/A'}</td>
-            <td>${doc.status || 'N/A'}</td>
-            <td class="message-truncate">${doc.message || 'N/A'}</td>
-          `;
-          container.appendChild(item);
-
-          // Count the number of messages with a status (for instance, 'sent')
-          if (doc.status) {
-            messageCount++;
-          }
-        });
-
-        // Update the message counter
-        messagesCounter.textContent = messageCount;
-
-        showToast('success', 'Messages loaded successfully.');
-      } else {
-        showToast('info', 'No messages found.');
-      }
-    } catch (error) {
-      console.error('Error loading messages:', error);
-      showToast('error', 'Error loading messages.');
-    }
-  });
-
-  // Utility function for showing toasts (implement as needed)
-  function showToast(type, message) {
-    console.log(`${type}: ${message}`); // Example implementation, replace with actual toast logic
-  }
+                        try {
+                          const response = await fetch('/sms/api/messages');
+                    
+                          if (!response.ok) {
+                            showToast('Failed to fetch messages.', false);
+                            throw new Error('Failed to fetch messages');
+                          }
+                    
+                          const data = await response.json();
+                          console.log('Messages Data:', data); // Debug output
+                    
+                          const container = document.getElementById('data-container');
+                          const messagesCounter = document.getElementById('messagescounter'); // Get the message counter element
+                    
+                          // Initialize a counter for the number of messages with specific statuses
+                          let messageCount = 0;
+                    
+                          if (data.messages && data.messages.length > 0) {
+                            container.innerHTML = ''; // Clear any previous data
+                    
+                            data.messages.forEach(doc => {
+                              const item = document.createElement('tr');
+                              item.className = 'data-item';
+                              item.innerHTML = `
+                                <td>${doc.from || 'N/A'}</td>
+                                <td>${doc.to || 'N/A'}</td>
+                                <td>${doc.status || 'N/A'}</td>
+                                <td class="message-truncate">${doc.message || 'N/A'}</td>
+                              `;
+                              container.appendChild(item);
+                    
+                              // Count the number of messages with a status (for instance, 'sent')
+                              if (doc.status) {
+                                messageCount++;
+                              }
+                            });
+                    
+                            // Update the message counter
+                            messagesCounter.textContent = messageCount;
+                    
+                            showToast('Messages loaded successfully.', true);
+                          } else {
+                            showToast('No messages found.', true);
+                          }
+                        } catch (error) {
+                          console.error('Error loading messages:', error);
+                          showToast('Error loading messages.', false);
+                        }
+                      });
+                    
+                      // Utility function for showing toasts
+                      function showToast(message, isSuccess) {
+                        const toastElement = document.createElement('div');
+                        toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
+                        toastElement.role = 'alert';
+                        toastElement.innerHTML = `
+                          <div class="d-flex">
+                            <div class="toast-body">
+                              ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                          </div>
+                        `;
+                    
+                        // Append the toast to the toast container
+                        document.getElementById('toastContainer').appendChild(toastElement);
+                    
+                        const toast = new bootstrap.Toast(toastElement);
+                        toast.show();
+                    
+                        // Remove the toast after it's hidden to avoid cluttering the DOM
+                        toastElement.addEventListener('hidden.bs.toast', () => {
+                          toastElement.remove();
+                        });
+                      }
                     </script>
+                    
                     <!--//Page content End//-->
             <!--//Page-footer//-->
  <footer class="pb-3 pb-lg-5 px-3 px-lg-6">
