@@ -282,7 +282,7 @@
               <span class="sidebar-text">Messages List</span>
               </a>
               </li>
-              <li class="nav-item pt-1">
+              <!-- <li class="nav-item pt-1">
                 <a href="/buypackage/broughtpackage"
                 class="nav-link d-flex align-items-center text-truncate ">
                 <span class="sidebar-icon">
@@ -292,7 +292,7 @@
                 </span>
                 <span class="sidebar-text">Brought Package</span>
                 </a>
-                </li>
+                </li> -->
                 <li class="nav-item pt-1">
                   <a href="/buypackage" class="nav-link d-flex align-items-center text-truncate">
                     <span class="sidebar-icon">
@@ -552,11 +552,12 @@
             <div class="container p-5">
               <h2 class="mb-4 text-center">Send SMS</h2>
               <form id="phoneCodeForm">
-                <div class="form-group mb-4">
-                  <select id="phoneCode" name="phonecode" class="form-select" required>
-                    <option value="+44" selected>United Kingdom (+44)</option>
-                    <option value="+1">US (+1)</option>
-                    <option value="+93">Afghanistan (+93)</option>
+                <div class="form-group mb-4 row">
+                  <div class="col-4">
+                    <select id="phoneCode" name="phonecode" class="form-select" required>
+                      <option value="+44" selected>United Kingdom (+44)</option>
+                      <option value="+1">US (+1)</option>
+                      <option value="+93">Afghanistan (+93)</option>
                     <option value="+355">Albania (+355)</option>
                     <option value="+213">Algeria (+213)</option>
                     <option value="+376">Andorra (+376)</option>
@@ -785,18 +786,19 @@
                     <option value="+263">Zimbabwe (+263)</option>
                   </select>
                 </div>
-                <div class="form-group mb-4">
+                <div class="col-8">
                   <input type="text" id="phoneNumber" name="phonenumber" class="form-control" placeholder="Enter phone number like this: 3200000000" required>
                 </div>
-                <div class="form-group mb-4">
-                  <textarea id="additionalInfo" name="message" rows="5" class="form-control" placeholder="Type your message here" required></textarea>
-                </div>
-                <div class="text-center">
-                  <button type="submit" class="btn btn-primary btn-lg px-5">Send</button>
-                </div>
-              </form>
-            </div>
+              </div>
+              <div class="form-group mb-4">
+                <textarea id="additionalInfo" name="message" rows="5" class="form-control" placeholder="Type your message here" required></textarea>
+              </div>
+              <div class="text-center">
+                <button type="submit" class="btn btn-primary btn-lg px-5">Send</button>
+              </div>
+            </form>
           </div>
+        </div>
           <script>
             document.getElementById('phoneCodeForm').addEventListener('submit', async function(event) {
               event.preventDefault(); // Prevent the default form submission

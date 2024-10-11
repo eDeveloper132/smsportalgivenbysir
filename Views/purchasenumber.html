@@ -237,7 +237,7 @@ chat
             <span class="sidebar-text">Messages List</span>
             </a>
             </li>
-            <li class="nav-item pt-1">
+            <!-- <li class="nav-item pt-1">
               <a href="/buypackage/broughtpackage"
               class="nav-link d-flex align-items-center text-truncate ">
               <span class="sidebar-icon">
@@ -247,7 +247,7 @@ chat
               </span>
               <span class="sidebar-text">Brought Package</span>
               </a>
-              </li>
+              </li> -->
               <li class="nav-item pt-1">
                 <a href="/buypackage" class="nav-link d-flex align-items-center text-truncate">
                   <span class="sidebar-icon">
@@ -492,7 +492,7 @@ if (x.style.display === "none") {
                   <div class="toolbar pb-4 px-3 px-lg-6 pt-4 bg-body">
                       <div class="position-relative container-fluid px-0">
                           <div class="row align-items-center position-relative">
-                              <div class="col-md-8 mb-4 mb-lg-0">
+                              <div class="col-md-8 mb-2 mb-lg-0">
                                   <h3 class="mb-2">Buy A Number</h3>
 
 
@@ -604,15 +604,28 @@ if (x.style.display === "none") {
                         <span id="pageInfo" class="mx-2"></span>
                         <button id="nextPage" class="btn btn-secondary">Next</button>
                     </div>
+                  </div>
+                </div>
+                    <div class="toolbar pb-4 px-3 px-lg-6 pt-2 bg-body">
+                      <div class="position-relative container-fluid px-0">
+                          <div class="row align-items-center position-relative">
+                              <div class="col-md-8 mb-2 mb-lg-0">
+                                  <h3 class="mb-2">Dedicated Numbers</h3>
 
-            
+
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="content pt-5 px-4 px-lg-6 d-flex flex-column-fluid">
+                    <div class="container p-5">
             <div id="broughtNumbersSection" class="mt-4">
               <div class="table-responsive"> <!-- Makes the table responsive on small screens -->
                 <table id="broughtNumbersTable" class="table table-striped table-hover table-bordered table-light text-center">
                   <thead class="table-dark">
                     <tr>
                       <th>#</th>
-                      <th>Brought Number</th>
+                      <th>Dedicated Numbers</th>
                     </tr>
                   </thead>
                   <tbody id="broughtNumbersList"></tbody>

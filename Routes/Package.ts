@@ -277,9 +277,9 @@ router.post("/buy", async (req: Request, res: AppRes) => {
 });
 
 // Route to show brought package page
-router.get("/broughtpackage", (req: Request, res: Response) => {
-  res.sendFile(path.resolve(__dirname, "../Views/BroughtPackage.html"));
-});
+// router.get("/broughtpackage", (req: Request, res: Response) => {
+//   res.sendFile(path.resolve(__dirname, "../Views/BroughtPackage.html"));
+// });
 
 // Route to fetch user package
 router.get("/api/package", async (req: Request, res: AppRes) => {
@@ -319,7 +319,9 @@ router.get("/api/package", async (req: Request, res: AppRes) => {
             },
           }
         );
-
+        console.log(response);
+        
+        console.log(response.data.document);
         return response.data.document || null;
       } catch (error: any) {
         console.error(

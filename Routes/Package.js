@@ -223,9 +223,9 @@ router.post("/buy", async (req, res) => {
     }
 });
 // Route to show brought package page
-router.get("/broughtpackage", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../Views/BroughtPackage.html"));
-});
+// router.get("/broughtpackage", (req: Request, res: Response) => {
+//   res.sendFile(path.resolve(__dirname, "../Views/BroughtPackage.html"));
+// });
 // Route to fetch user package
 router.get("/api/package", async (req, res) => {
     try {
@@ -256,6 +256,8 @@ router.get("/api/package", async (req, res) => {
                         "api-key": process.env.MongoDB_API_KEY,
                     },
                 });
+                console.log(response);
+                console.log(response.data.document);
                 return response.data.document || null;
             }
             catch (error) {
