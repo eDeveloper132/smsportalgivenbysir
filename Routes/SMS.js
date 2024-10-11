@@ -16,33 +16,37 @@ router.get("/", (req, res) => {
 // POST route to handle SMS sending
 router.post("/", async (req, res) => {
     const { phonecode, phonenumber, message } = req.body;
+    // Check for missing required fields
     if (!phonecode || !phonenumber || !message) {
-        console.log("Server Error 400: Missing required fields");
+        console.log("Server Error 400: Missing required fields"); // Log the error
         return res.status(400).json({
             error: "Please fill in all the required fields: phone code, phone number, and message.",
         });
     }
     const user = res.locals.user;
     if (!user) {
+        console.log("Server Error 404: User not found"); // Log if user not found
         return res.status(404).send("User not found.");
     }
     const packageName = user?.Details?.PackageName;
     const coins = user?.Details?.Coins;
+    // Check for incomplete user package details
     if (!packageName || !coins) {
-        console.log("Server Error 403: User package details are incomplete.");
+        console.log("Server Error 403: User package details are incomplete."); // Log the error
         return res
             .status(403)
             .json({ error: "You cannot send SMS. Please buy our package first." });
     }
     const mix = `${phonecode}${phonenumber}`;
-    console.log(`We are delivering this message: ${message} to ${mix}`);
+    console.log(`We are delivering this message: "${message}" to ${mix}`); // Log the message and recipient
     try {
-        // Send SMS using ClickSend API
+        // Prepare SMS message for ClickSend API
         const smsMessage = {
             to: mix,
             body: message,
         };
         const apiUrl = "https://rest.clicksend.com/v3/sms/send";
+        console.log(`Sending SMS to ClickSend API at: ${apiUrl}`); // Log the API URL
         const response = await axios.post(apiUrl, {
             messages: [smsMessage],
         }, {
@@ -51,21 +55,26 @@ router.post("/", async (req, res) => {
                 password: "EA26A5D0-7AAC-6631-478B-FC155CE94C99",
             },
         });
-        console.log(response.data);
+        console.log('Response from ClickSend:', response.data); // Log the response from ClickSend API
         const userData = user;
         const userId = userData._id;
         const dbUser = await SignModel.findById(userId);
+        // Check if user exists in database
         if (!dbUser) {
+            console.log("Server Error 404: User not found in database"); // Log if user not found in DB
             return res.status(404).send("User not found");
         }
         if (!dbUser.Details) {
+            console.log("Server Error 400: User details not found"); // Log if user details not found
             return res.status(400).send("User details not found");
         }
         // Deduct one coin from the user's balance
         let coins = dbUser.Details.Coins;
         if (typeof coins === "number") {
             coins -= 1;
-            if (coins <= 0) {
+            console.log(`User coins after deduction: ${coins}`); // Log the remaining coins
+            if (coins < 0) {
+                console.log("Server Error 400: Insufficient coins for sending message"); // Log insufficient coins
                 return res.status(400).send("Insufficient coins for sending message");
             }
             dbUser.Details.Coins = coins;
@@ -86,16 +95,14 @@ router.post("/", async (req, res) => {
         // Add the message to the user's messages array and save the user
         dbUser.messages.push(messageId);
         await dbUser.save();
-        console.log("Data Updated Successfully", dbUser);
-        console.log("Data Added Successfully", newMessage);
+        console.log("Data Updated Successfully:", dbUser); // Log the updated user data
+        console.log("Data Added Successfully:", newMessage); // Log the new message data
         // Respond with success
         res.status(200).json({ message: "Message sent successfully!" });
     }
     catch (err) {
-        console.error(err.response ? err.response.data : err.message);
-        res
-            .status(500)
-            .json({ error: "Failed to send SMS. Please try again later." });
+        console.error('Error occurred during SMS sending:', err.response ? err.response.data : err.message); // Log detailed error
+        res.status(500).json({ error: "Failed to send SMS. Please try again later." });
     }
 });
 router.get("/messages", (req, res) => {

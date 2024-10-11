@@ -382,101 +382,142 @@
                                                 </button>
                                             </div> -->
                                         </form>
-                                        
-                                        <script>
-                                        document.getElementById('RegistrationForm').addEventListener('submit', async function(event) {
-                                            event.preventDefault();
-                                        
-                                            // Clear previous error messages
-                                            document.querySelectorAll('.invalid-feedback').forEach(element => {
-                                                element.style.display = 'none';
-                                            });
-                                        
-                                            let isValid = true;
-                                        
-                                            // Validate name
-                                            const name = document.getElementById('floatingInputName').value;
-                                            if (!name.trim()) {
-                                                document.getElementById('nameError').style.display = 'block';
-                                                isValid = false;
-                                            }
-                                        
-                                            // Validate email
-                                            const email = document.getElementById('floatingInputEmail').value;
-                                            const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                                            if (!emailPattern.test(email)) {
-                                                document.getElementById('emailError').style.display = 'block';
-                                                isValid = false;
-                                            }
-                                        
-                                            // Validate password
-                                            const password = document.getElementById('floatingPassword').value;
-                                            const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+                                        <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
 
-                                            if (!passwordPattern.test(password)) {
-                                                document.getElementById('passwordError').style.display = 'block';
-                                                isValid = false;
-                                            }
-                                        
-                                            // Validate confirm password
-                                            const confirmPassword = document.getElementById('floatingPassword2').value;
-                                            if (password !== confirmPassword) {
-                                                document.getElementById('confirmPasswordError').style.display = 'block';
-                                                isValid = false;
-                                            }
-                                        
-                                            // Validate organization
-                                            const organization = document.getElementById('floatingInputOrganization').value;
-                                            if (!organization.trim()) {
-                                                document.getElementById('organizationError').style.display = 'block';
-                                                isValid = false;
-                                            }
-                
-                                            // Validate phone number
-                                            const countryCode = document.getElementById('countryCode').value;
-                                            const phoneNumber = document.getElementById('floatingInputPhoneNumber').value;
-                                            const phonePattern = /^\d{10,15}$/; // Adjust pattern as necessary
-                                            if (!phonePattern.test(phoneNumber)) {
-                                                document.getElementById('phoneNumberError').style.display = 'block';
-                                                isValid = false;
-                                            }
-                                        
-                                            // Validate terms and conditions checkbox
-                                            const terms = document.getElementById('terms').checked;
-                                            if (!terms) {
-                                                document.getElementById('termsError').style.display = 'block';
-                                                isValid = false;
-                                            }
-                                        
-                                            if (isValid) {
-                                                const formObject = {
-                                                    Name: name,
-                                                    Email: email,
-                                                    Password: password,
-                                                    Organization: organization,
-                                                    PhoneNumber: countryCode + phoneNumber,
-                                                    Role: 'User' // Role is set to "User" by default
-                                                };
-                                        
-                                                try {
-                                                    const response = await fetch('/signup', {
-                                                        method: 'POST',
-                                                        headers: {
-                                                            'Content-Type': 'application/json',
-                                                        },
-                                                        body: JSON.stringify(formObject),
-                                                    });
-                                                    if (response.ok) {
-                                                        window.location.href = '/signin';
-                                                    }
-                                                } catch (error) {
-                                                    alert('An error occurred while submitting the form. Please try again.');
+                                        <script>
+                                            document.getElementById('RegistrationForm').addEventListener('submit', async function(event) {
+                                                event.preventDefault();
+                                            
+                                                // Clear previous error messages
+                                                document.querySelectorAll('.invalid-feedback').forEach(element => {
+                                                    element.style.display = 'none';
+                                                });
+                                            
+                                                let isValid = true;
+                                                const errorMessages = []; // Array to collect error messages
+                                            
+                                                // Validate name
+                                                const name = document.getElementById('floatingInputName').value;
+                                                if (!name.trim()) {
+                                                    document.getElementById('nameError').style.display = 'block';
+                                                    errorMessages.push("Name is required.");
+                                                    isValid = false;
                                                 }
-                                            } else {
-                                                alert('Please correct the errors in the form before submitting.');
+                                            
+                                                // Validate email
+                                                const email = document.getElementById('floatingInputEmail').value;
+                                                const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                                                if (!emailPattern.test(email)) {
+                                                    document.getElementById('emailError').style.display = 'block';
+                                                    errorMessages.push("Please enter a valid email address.");
+                                                    isValid = false;
+                                                }
+                                            
+                                                // Validate password
+                                                const password = document.getElementById('floatingPassword').value;
+                                                const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+                                                if (!passwordPattern.test(password)) {
+                                                    document.getElementById('passwordError').style.display = 'block';
+                                                    errorMessages.push("Password must be at least 8 characters long and include letters and numbers.");
+                                                    isValid = false;
+                                                }
+                                            
+                                                // Validate confirm password
+                                                const confirmPassword = document.getElementById('floatingPassword2').value;
+                                                if (password !== confirmPassword) {
+                                                    document.getElementById('confirmPasswordError').style.display = 'block';
+                                                    errorMessages.push("Passwords do not match.");
+                                                    isValid = false;
+                                                }
+                                            
+                                                // Validate organization
+                                                const organization = document.getElementById('floatingInputOrganization').value;
+                                                if (!organization.trim()) {
+                                                    document.getElementById('organizationError').style.display = 'block';
+                                                    errorMessages.push("Organization is required.");
+                                                    isValid = false;
+                                                }
+                                            
+                                                // Validate phone number
+                                                const countryCode = document.getElementById('countryCode').value;
+                                                const phoneNumber = document.getElementById('floatingInputPhoneNumber').value;
+                                                const phonePattern = /^\d{10,15}$/; // Adjust pattern as necessary
+                                                if (!phonePattern.test(phoneNumber)) {
+                                                    document.getElementById('phoneNumberError').style.display = 'block';
+                                                    errorMessages.push("Please enter a valid phone number.");
+                                                    isValid = false;
+                                                }
+                                            
+                                                // Validate terms and conditions checkbox
+                                                const terms = document.getElementById('terms').checked;
+                                                if (!terms) {
+                                                    document.getElementById('termsError').style.display = 'block';
+                                                    errorMessages.push("You must agree to the terms and conditions.");
+                                                    isValid = false;
+                                                }
+                                            
+                                                if (isValid) {
+                                                    const formObject = {
+                                                        Name: name,
+                                                        Email: email,
+                                                        Password: password,
+                                                        Organization: organization,
+                                                        PhoneNumber: countryCode + phoneNumber,
+                                                        Role: 'User' // Role is set to "User" by default
+                                                    };
+                                            
+                                                    try {
+                                                        const response = await fetch('/signup', {
+                                                            method: 'POST',
+                                                            headers: {
+                                                                'Content-Type': 'application/json',
+                                                            },
+                                                            body: JSON.stringify(formObject),
+                                                        });
+                                                        if (response.ok) {
+                                                            showToast('Registration successful! Redirecting to sign-in...', true);
+                                                            setTimeout(() => {
+                                                                window.location.href = '/signin';
+                                                            }, 2000); // Redirect after 2 seconds
+                                                        } else {
+                                                            showToast('Registration failed. Please try again.', false);
+                                                        }
+                                                    } catch (error) {
+                                                        showToast('An error occurred while submitting the form. Please try again.', false);
+                                                    }
+                                                } else {
+                                                    // Show all collected error messages
+                                                    showToast(`Please correct the following errors: ${errorMessages.join(' ')}`, false);
+                                                }
+                                            });
+                                            
+                                            // Function to show toast notifications
+                                            function showToast(message, isSuccess) {
+                                                const toastElement = document.createElement('div');
+                                                toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
+                                                toastElement.role = 'alert';
+                                                toastElement.innerHTML = `
+                                                    <div class="d-flex">
+                                                        <div class="toast-body">
+                                                            ${message}
+                                                        </div>
+                                                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                                                    </div>
+                                                `;
+                                            
+                                                // Append the toast to the toast container
+                                                document.getElementById('toastContainer').appendChild(toastElement);
+                                            
+                                                const toast = new bootstrap.Toast(toastElement);
+                                                toast.show();
+                                            
+                                                // Remove the toast after it's hidden to avoid cluttering the DOM
+                                                toastElement.addEventListener('hidden.bs.toast', () => {
+                                                    toastElement.remove();
+                                                });
                                             }
-                                        });
                                         </script>
+                                        
                                     </div>
                                 </div>
                             </div>
