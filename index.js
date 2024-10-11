@@ -249,7 +249,7 @@ app.get("/verify-email", async (req, res) => {
         res.send("Email verified successfully!");
         // Delay and then redirect to the main route
         setTimeout(() => {
-            res.redirect('/');
+            res.redirect('smsportalgivenbysir.vercel.app');
         }, 3000); // 3000 milliseconds = 3 seconds
     }
     catch (error) {

@@ -307,7 +307,7 @@ app.get("/verify-email", async (req: Request, res: Response) => {
 
     // Delay and then redirect to the main route
     setTimeout(() => {
-      res.redirect('/');
+      res.redirect('smsportalgivenbysir.vercel.app');
     }, 3000); // 3000 milliseconds = 3 seconds
   } catch (error: any) {
     console.error("Error verifying email:", error);
