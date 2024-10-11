@@ -140,41 +140,54 @@ router.get("/messages", (req: Request, res: Response) => {
 // API endpoint to fetch messages
 router.get("/api/messages", async (req: Request, res: AppRes) => {
   try {
+    // Extract the user from the response's local variables (set during authentication)
     const useri = res.locals.user;
+
+    // If user is not found in the local variables, send a 404 error
     if (!useri) {
       console.warn("User not found in res.locals.");
       return res.status(404).send("User not found.");
     }
-    console.log("Authenticated User:", useri);
-    
+
+    console.log("Authenticated User:", useri); // Log the authenticated user for debugging
+
+    // Extract the user ID from the authenticated user object
     const userId = useri._id;
+
+    // If the user ID is not found, send a 401 Unauthorized response
     if (!userId) {
       console.warn("User ID not found.");
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Fetch the user and populate messages
-    const user = await SignModel.findById(userId).populate("messages", null, 'MessageHandler').exec();
+    // Fetch the user by their ID, and populate their messages
+    // `populate()` is used to replace the 'messages' field with actual message data from the 'MessageHandler' model
+    const user = await SignModel.findById(userId).populate("messages", null, 'MessageModel').exec();
+
+    // If no user is found with the given ID, send a 404 error
     if (!user) {
       console.warn(`User with ID ${userId} not found.`);
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log("User Data with Populated Messages:", user);
+    console.log("User Data with Populated Messages:", user); // Log user data with populated messages for debugging
 
-    // Check if messages are populated
+    // If the user has no messages or the 'messages' array is empty, return an empty array with a 200 status
     if (!user.messages || user.messages.length === 0) {
       console.info("No messages found for this user.");
       return res.status(200).json({ messages: [] });
     }
 
-    // Send the user's messages as a response
+    // Send the user's messages as a successful JSON response
     res.status(200).json({ messages: user.messages });
+
   } catch (error: any) {
+    // Catch any errors that occur during the process, log the error, and return a 500 status with an error message
     console.error("Error fetching messages:", error.message, error.stack);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
 
 
 
