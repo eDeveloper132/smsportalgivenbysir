@@ -164,6 +164,237 @@ const sendContactsToClickSend = async (listId: any, fileUrl: string) => {
     }
 };
 
+router.delete('/deletecontact', async (req: Request, res: Response) => {
+  const contactId = req.body;
+
+  const user = res.locals.user;  // Assuming you have middleware that sets the logged-in user in res.locals
+  const userId = user._id;  // Get the user ID of the logged-in user
+
+  console.log('Received delete request for contact:', req.body);  // Log the entire body
+  console.log('User ID:', userId);
+
+  try {
+      // Check if contactId is an object and extract its value
+      const parsedContactId = typeof contactId === 'object' && contactId.contactId 
+          ? parseInt(contactId.contactId) 
+          : parseInt(contactId);
+
+      console.log('Parsed contactId:', parsedContactId);
+
+      if (isNaN(parsedContactId)) {
+          console.error('Parsed contactId is NaN, invalid contactId:', contactId);
+          return res.status(400).json({ message: 'Invalid contactId provided.' });
+      }
+
+      // Find the list that contains the contact created by the user
+      const list = await ListModel.findOne({
+          createdBy: userId,
+          'contacts.contactid': parsedContactId  // Use parsed contactId
+      });
+
+      console.log('List found:', list);
+
+      if (!list) {
+          console.log('Contact not found in any list.');
+          return res.status(404).json({ message: 'Contact not found in any list.' });
+      }
+
+      // Find the index of the contact in the contacts array
+      const contactIndex = list.contacts.findIndex((contact: any) => contact.contactid === parsedContactId);
+      console.log('Contact index found:', contactIndex);
+
+      if (contactIndex === -1) {
+          console.log('Contact not found in the list.');
+          return res.status(404).json({ message: 'Contact not found.' });
+      }
+
+      const contactToDelete = list.contacts[contactIndex];
+      console.log('Contact to delete:', contactToDelete);
+
+      // Prepare ClickSend API endpoint with list_id and contact_id
+      const clickSendUrl = `https://rest.clicksend.com/v3/lists/${list.listId}/contacts/${contactToDelete.contactid}`;
+      console.log('ClickSend URL:', clickSendUrl);
+
+      // Make a request to ClickSend API to delete the contact
+      const response = await axios.delete(clickSendUrl, {
+          auth: {
+              username: 'bluebirdintegrated@gmail.com',  // Replace with your ClickSend username
+              password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'  // Replace with your ClickSend API key
+          }
+      });
+
+      console.log('Response from ClickSend API:', response.status);
+
+      if (response.status === 200) {
+          // Remove the contact from your local database list
+          list.contacts.splice(contactIndex, 1);
+
+          // Save the updated list in your database
+          await list.save();
+          console.log('Contact deleted successfully from both ClickSend and your database.');
+
+          res.status(200).json({ message: 'Contact deleted successfully from both ClickSend and your database.' });
+      } else {
+          console.log(`Failed to delete contact from ClickSend. Status: ${response.status}`);
+          res.status(response.status).json({ message: `Failed to delete contact from ClickSend. Status: ${response.status}` });
+      }
+  } catch (error) {
+      console.error('Error deleting contact:', error);
+      res.status(500).json({ message: 'Failed to delete contact.' });
+  }
+});
+
+router.put('/updatecontactnumber', async (req: Request, res: Response) => {
+  const user = res.locals.user;
+  const userId = user._id;
+  const contactId = req.body.contactId;
+  const newNumber = req.body.newPhoneNumber;
+  console.log(contactId, newNumber);
+
+  try {
+      // Parse the contactId if it's an object
+      const parsedContactId = typeof contactId === 'object' && contactId.contactId
+          ? parseInt(contactId.contactId)
+          : parseInt(contactId);
+
+      if (isNaN(parsedContactId)) {
+          console.error('Parsed contactId is NaN, invalid contactId:', contactId);
+          return res.status(400).json({ message: 'Invalid contactId provided.' });
+      }
+
+      // Find the list that contains the contact created by the user
+      const list = await ListModel.findOne({
+          createdBy: userId,
+          'contacts.contactid': parsedContactId
+      });
+
+      if (!list) {
+          console.log('Contact not found in any list.');
+          return res.status(404).json({ message: 'Contact not found in any list.' });
+      }
+
+      // Get the listId
+      const listId = list.listId; // Adjust this line according to your actual field name for the list ID
+
+      // Find the index of the contact in the contacts array
+      const contactIndex = list.contacts.findIndex((contact: any) => contact.contactid === parsedContactId);
+
+      if (contactIndex === -1) {
+          console.log('Contact not found in the list.');
+          return res.status(404).json({ message: 'Contact not found.' });
+      }
+
+      // Now we need to update the contact in ClickSend
+      const clickSendUrl = `https://rest.clicksend.com/v3/lists/${listId}/contacts/${parsedContactId}`;
+
+      const clickSendResponse = await fetch(clickSendUrl, {
+          method: 'PUT',
+          headers: {
+              'Authorization': `Basic ${Buffer.from('bluebirdintegrated@gmail.com:EA26A5D0-7AAC-6631-478B-FC155CE94C99').toString('base64')}`, // Replace with your ClickSend credentials
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+              // This assumes you want to update the phone number only
+              phone_number: newNumber,
+              custom_1: 'updated'
+          })
+      });
+
+      if (!clickSendResponse.ok) {
+          const errorData = await clickSendResponse.json();
+          console.error('Error updating contact in ClickSend:', errorData);
+          return res.status(clickSendResponse.status).json({ message: errorData.message || 'Failed to update contact in ClickSend.' });
+      }
+
+      // If the ClickSend update was successful, update your local database as well
+      list.contacts[contactIndex].mix = newNumber; // Update the phone number locally
+      await list.save(); // Save changes to your database
+
+      console.log('Contact updated successfully in ClickSend and locally');
+      res.status(200).json({ message: 'Contact updated successfully!' });
+
+  } catch (error) {
+      console.error('Error updating contact:', error);
+      res.status(500).json({ message: 'An error occurred while updating the contact.' });
+  }
+});
+
+router.post('/removeduplicate', async (req: Request, res: Response) => {
+  const { listId } = req.body;
+  console.log('Received request to remove duplicates for listId:', listId);
+
+  try {
+      // Find the list by listId in your database
+      const listFound = await ListModel.findOne({ listId: listId });
+      console.log('List found:', listFound);
+
+      if (!listFound) {
+          console.log('List not found for listId:', listId);
+          return res.status(404).json({ message: 'List not found.' });
+      }
+
+      const { contacts } = listFound;
+      console.log('Number of contacts in list:', contacts.length);
+
+      // Create a Set to track unique phone numbers
+      const uniqueNumbers = new Set();
+      const uniqueContacts = [];
+
+      for (const contact of contacts) {
+          const phoneNumber = contact.mix;
+          console.log('Processing contact with phone number:', phoneNumber);
+
+          // Check if the number is already in the Set
+          if (!uniqueNumbers.has(phoneNumber)) {
+              uniqueNumbers.add(phoneNumber); // Add the phone number to the Set
+              uniqueContacts.push(contact);   // Add the contact to the unique contacts list
+          } else {
+              console.log('Duplicate phone number found:', phoneNumber);
+          }
+      }
+
+      // Call ClickSend API to remove duplicates
+      const clickSendUrl = `https://rest.clicksend.com/v3/lists/${listId}/remove-duplicates/`;
+      console.log('Sending request to ClickSend API:', clickSendUrl);
+
+      const clickSendResponse = await fetch(clickSendUrl, {
+          method: 'PUT',
+          headers: {
+              'Authorization': `Basic ${Buffer.from('bluebirdintegrated@gmail.com:EA26A5D0-7AAC-6631-478B-FC155CE94C99').toString('base64')}`, // Replace with your ClickSend credentials
+              'Content-Type': 'application/json',
+          }
+      });
+
+      // Handle ClickSend API response
+      if (!clickSendResponse.ok) {
+          const errorData = await clickSendResponse.json();
+          console.error('Error from ClickSend API:', errorData);
+          return res.status(clickSendResponse.status).json({ message: errorData.message || 'Failed to remove duplicates in ClickSend.' });
+      }
+
+      console.log('ClickSend duplicates removed successfully.');
+
+      // If ClickSend response is ok, update the contacts in the local database
+      listFound.contacts = uniqueContacts;
+      await listFound.save(); // Save changes to the database
+      console.log('Duplicate contacts removed and list updated successfully in the database.');
+
+      res.status(200).json({ message: 'Duplicate contacts removed successfully.', contacts: uniqueContacts });
+  } catch (error) {
+      console.error('Error during the duplicate removal process:', error);
+      res.status(500).json({ message: 'An error occurred while removing duplicates.' });
+  }
+});
+
+
+router.post('/updateownnumber', async (req:Request, res:Response) => {
+  const { id, label } = req.body;
+
+  console.log(req.body)
+});
+
+
+
 // Route for importing contacts
 // Route for importing contacts
 router.post('/importContacts', upload1.single('file'), async (req: Request, res: Response) => {
@@ -226,7 +457,7 @@ router.post('/importContacts', upload1.single('file'), async (req: Request, res:
           }
 
           // Create the file URL
-          const fileUrl = `https://c1ea-203-101-187-89.ngrok-free.app/${file.path.replace(/\\/g, '/')}`;
+          const fileUrl = `https://smsportalgivenbysir.vercel.app/${file.path.replace(/\\/g, '/')}`;
 
           // Save the file URL in the FileUrlModel
           const fileUrlEntry = new FileUrlModel({
@@ -988,13 +1219,6 @@ router.post('/verifyownnumber', async (req: Request, res: Response) => {
   }
 });
 
-
-
-
-router.get('/broughtnumbers',(req:Request,res:Response)=>{
-  res.sendFile(path.resolve(__dirname, '../Views/broughtnumber.html'));
-})
-
 router.post('/broughtnumbers', async (req: Request, res: Response) => {
   const apiUrl = 'https://rest.clicksend.com/v3/numbers';  // ClickSend API URL
   const username = 'bluebirdintegrated@gmail.com';  // Replace with your ClickSend username
@@ -1018,9 +1242,6 @@ router.post('/broughtnumbers', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/ownnumbers',(req:Request,res:Response)=>{
-  res.sendFile(path.resolve(__dirname, '../Views/ownnumbers.html'));
-})
 router.post('/ownnumbers', async (req: Request, res: Response) => {
   try {
       // Set up your API credentials

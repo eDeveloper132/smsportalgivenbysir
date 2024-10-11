@@ -112,28 +112,6 @@
                         <span class="sidebar-text">Dashboard</span>
                       </a>
                     </li>
-                    <li class="nav-item pt-1">
-                      <a href="/buypackage" class="nav-link d-flex align-items-center text-truncate">
-                        <span class="sidebar-icon">
-                          <span class="material-symbols-rounded">
-                            sell
-                            </span>
-                        </span>
-                        <!--Sidebar nav text-->
-                        <span class="sidebar-text">Buy Package</span>
-                      </a>
-                    </li>
-                    <li class="nav-item pt-1">
-                      <a href="/alllists" class="nav-link d-flex align-items-center text-truncate">
-                        <span class="sidebar-icon">
-                          <span class="material-symbols-rounded">
-                            sell
-                            </span>
-                        </span>
-                        <!--Sidebar nav text-->
-                        <span class="sidebar-text">Add & Manage Lists</span>
-                      </a>
-                    </li>   
                     <li class="nav-item">
                       <a class="nav-link d-flex align-items-center" href="Other/#multi-leveler" data-bs-toggle="collapse" aria-expanded="false">
                         <div class="d-flex align-items-center">
@@ -148,6 +126,17 @@
                  
             <ul id="multi-leveler" class="collapse sidebar-dropdown list-unstyled mb-0">
               <li class="nav-item pt-1">
+                  <a href="/SMS"
+                  class="nav-link d-flex align-items-center text-truncate ">
+                  <span class="sidebar-icon">
+                  <span class="material-symbols-rounded">
+                  chat
+                  </span>
+                  </span>
+                  <span class="sidebar-text">Quick SMS</span>
+                  </a>
+                  </li>
+              <li class="nav-item pt-1">
             <a href="/bulksms"
             class="nav-link d-flex align-items-center text-truncate ">
             <span class="sidebar-icon">
@@ -158,19 +147,72 @@
             <span class="sidebar-text">Bulk SMS</span>
             </a>
             </li>
-            <li class="nav-item pt-1">
-              <a href="/SMS"
-              class="nav-link d-flex align-items-center text-truncate ">
-              <span class="sidebar-icon">
-              <span class="material-symbols-rounded">
-              chat
-              </span>
-              </span>
-              <span class="sidebar-text">Quick SMS</span>
-              </a>
-              </li>
+
           </ul>
         </li>
+
+                    <li class="nav-item pt-1">
+                      <a href="/alllists" class="nav-link d-flex align-items-center text-truncate">
+                        <span class="sidebar-icon">
+                          <span class="material-symbols-rounded">
+                            sell
+                            </span>
+                        </span>
+                        <!--Sidebar nav text-->
+                        <span class="sidebar-text">Contacts</span>
+                      </a>
+                    </li>   
+
+        <li class="nav-item">
+          <a class="nav-link d-flex align-items-center" href="Other/#multi-levelo" data-bs-toggle="collapse" aria-expanded="false">
+            <div class="d-flex align-items-center">
+              <span class="sidebar-icon">
+                <span class="material-symbols-rounded">
+                  layers
+                  </span>
+              </span>
+              <span class="sidebar-text">Sender ID's</span>
+            </div>
+          </a>
+     
+<ul id="multi-levelo" class="collapse sidebar-dropdown list-unstyled mb-0">
+  <li class="nav-item pt-1">
+<a href="/alphatag"
+class="nav-link d-flex align-items-center text-truncate ">
+<span class="sidebar-icon">
+<span class="material-symbols-rounded">
+chat
+</span>
+</span>
+<span class="sidebar-text">Alpha Tag</span>
+</a>
+</li>
+<li class="nav-item pt-1">
+  <a href="/purchaseno"
+  class="nav-link d-flex align-items-center text-truncate ">
+  <span class="sidebar-icon">
+  <span class="material-symbols-rounded">
+  chat
+  </span>
+  </span>
+  <span class="sidebar-text">Purchase Numbers</span>
+  </a>
+  </li>
+    <li class="nav-item pt-1">
+      <a href="/verifyownnumber" class="nav-link d-flex align-items-center text-truncate">
+        <span class="sidebar-icon">
+          <span class="material-symbols-rounded">
+            chat
+            </span>
+        </span>
+        <!--Sidebar nav text-->
+        <span class="sidebar-text">Verify Numbers</span>
+      </a>
+    </li>
+</ul>
+</li>
+
+
                     <li class="nav-item">
                       <a class="nav-link d-flex align-items-center" href="Other/#multi-level" data-bs-toggle="collapse" aria-expanded="false">
                         <div class="d-flex align-items-center">
@@ -210,7 +252,7 @@
                 <a href="/buypackage" class="nav-link d-flex align-items-center text-truncate">
                   <span class="sidebar-icon">
                     <span class="material-symbols-rounded">
-                      sell
+                      chat
                       </span>
                   </span>
                   <!--Sidebar nav text-->
@@ -219,8 +261,6 @@
               </li>
           </ul>
         </li>
-  
-      
                           
                             
               </ul>
@@ -564,10 +604,24 @@ if (x.style.display === "none") {
                         <span id="pageInfo" class="mx-2"></span>
                         <button id="nextPage" class="btn btn-secondary">Next</button>
                     </div>
-                </div>
+
+            
+            <div id="broughtNumbersSection" class="mt-4">
+              <div class="table-responsive"> <!-- Makes the table responsive on small screens -->
+                <table id="broughtNumbersTable" class="table table-striped table-hover table-bordered table-light text-center">
+                  <thead class="table-dark">
+                    <tr>
+                      <th>#</th>
+                      <th>Brought Number</th>
+                    </tr>
+                  </thead>
+                  <tbody id="broughtNumbersList"></tbody>
+                </table>
+              </div>
             </div>
-            
-            
+
+          </div>
+        </div>
             
             <script>
               document.addEventListener('DOMContentLoaded', async () => {
@@ -575,7 +629,7 @@ if (x.style.display === "none") {
                   let currentPage = 1;
                   const itemsPerPage = 5;
                   let allNumbers = [];
-              
+                  
                   async function fetchCountries() {
                       try {
                           const response = await fetch('https://rest.clicksend.com/v3/countries', {
@@ -688,7 +742,7 @@ if (x.style.display === "none") {
                       if (currentPage > 1) {
                           currentPage--;
                           populateTable(currentPage);
-                          showToast('Navigated to previous page.', true); // Success alert
+                          // showToast('Navigated to previous page.', true); // Success alert
                       }
                   });
               
@@ -697,7 +751,7 @@ if (x.style.display === "none") {
                       if (currentPage < totalPages) {
                           currentPage++;
                           populateTable(currentPage);
-                          showToast('Navigated to next page.', true); // Success alert
+                          // showToast('Navigated to next page.', true); // Success alert
                       }
                   });
               
@@ -734,7 +788,47 @@ if (x.style.display === "none") {
                       const confirmationModal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
                       confirmationModal.hide(); // Hide the modal after confirming
                   });
-                  
+                  await fetchBroughtNumbers();
+            
+            // Function to fetch brought numbers
+            async function fetchBroughtNumbers() {
+                try {
+                    const response = await fetch('/broughtnumbers', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({}), // Send any required data if needed
+                    });
+    
+                    if (!response.ok) throw new Error(`Failed to fetch brought numbers. Status: ${response.status}`);
+    
+                    const broughtNumbersData = await response.json();
+    
+                    // Check if the brought numbers are returned and display them in the table
+                    if (broughtNumbersData && Array.isArray(broughtNumbersData.data)) {
+                        const broughtNumbersList = document.getElementById('broughtNumbersList');
+                        broughtNumbersList.innerHTML = ''; // Clear any existing rows
+                        broughtNumbersData.data.forEach((number, index) => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>${number}</td>
+                            `;
+                            broughtNumbersList.appendChild(row);
+                        });
+    
+                        showToast('Brought numbers loaded successfully', true); // Success toast
+                    } else {
+                        console.error('No brought numbers found.');
+                        showToast('No brought numbers found.', false); // Error toast
+                    }
+                } catch (error) {
+                    console.error('Error fetching brought numbers:', error);
+                    showToast('Failed to fetch brought numbers', false); // Error toast
+                }
+            }
+
                   // Fetch user profile picture
                   fetch('/profile-pic')
                       .then(response => {
