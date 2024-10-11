@@ -388,12 +388,131 @@ router.post('/removeduplicate', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/deleteownnumber', async (req: Request, res: Response) => {
+  const { id } = req.body; // Extract the number ID from the request body
 
-router.post('/updateownnumber', async (req:Request, res:Response) => {
-  const { id, label } = req.body;
+  console.log('Received request to delete own number:', req.body); // Log incoming request
 
-  console.log(req.body)
+  if (!id) {
+    console.log('Number ID is missing in the request.');
+    return res.status(400).json({ success: false, message: 'Number ID is required.' });
+  }
+
+  try {
+    // Replace with your ClickSend credentials
+    const clickSendAuth = {
+      username: 'bluebirdintegrated@gmail.com',
+      apiKey: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'
+    };
+
+    console.log(`Sending DELETE request to ClickSend for number ID: ${id}`);
+
+    // Make DELETE request to ClickSend API
+    const response = await axios.delete(`https://rest.clicksend.com/v3/own-numbers/${id}`, {
+      auth: {
+        username: clickSendAuth.username,
+        password: clickSendAuth.apiKey // Use the API key as the password
+      }
+    });
+
+    console.log('Response from ClickSend API:', response); // Log API response
+
+    // Check if the delete was successful
+    if (response) {
+      console.log('Number deleted successfully.');
+      return res.status(200).json({ success: true, message: 'Number deleted successfully.' });
+    } else {
+      console.log('Failed to delete number, API response:', response);
+      return res.status(400).json({ success: false, message: 'Failed to delete the number.' });
+    }
+  } catch (error: any) {
+    console.error('Error deleting own number:', error.response || error.message);
+    res.status(500).json({ success: false, message: 'Error occurred while deleting the number.' });
+  }
 });
+
+router.post('/deletetag', async (req: Request, res: Response) => {
+  const { id } = req.body; // Extract the tag ID from the request body
+  console.log('Request Body:', req.body); // Log the request body for debugging
+
+  if (!id) {
+    console.error('No ID provided'); // Log an error if ID is not provided
+    return res.status(400).json({ success: false, message: 'Alpha tag ID is required.' });
+  }
+
+  try {
+    // Replace with your ClickSend credentials
+    const clickSendAuth = {
+      username: 'bluebirdintegrated@gmail.com',
+      apiKey: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'
+    };
+
+    console.log(`Attempting to delete alpha tag with ID: ${id}`); // Log the ID being deleted
+
+    // Make DELETE request to ClickSend API to delete the alpha tag
+    const response = await axios.delete(`https://rest.clicksend.com/v3/alpha-tags/${id}`, {
+      auth: {
+        username: clickSendAuth.username,
+        password: clickSendAuth.apiKey // Use the API key as the password
+      }
+    });
+
+    // Check if the delete was successful
+    console.log('ClickSend API Response:', response); // Log the full response from ClickSend
+
+    if (response.status >= 200 && response.status <= 300) {
+      console.log('Alpha tag deleted successfully:', response);
+      return res.status(200).json({ success: true, message: 'Alpha tag deleted successfully.' });
+    } else {
+      console.error('Failed to delete alpha tag:', response);
+      return res.status(400).json({ success: false, message: 'Failed to delete alpha tag.' });
+    }
+  } catch (error: any) {
+    console.error('Error deleting alpha tag:', error.response || error.message); // Log detailed error information
+    res.status(500).json({ success: false, message: 'Error occurred while deleting the alpha tag.' });
+  }
+});
+
+router.post('/updateownnumber', async (req: Request, res: Response) => {
+  const { id, label } = req.body; // Extract id and label from the request body
+
+  console.log('Request body:', req.body); // Log the request body for debugging
+
+  // ClickSend API credentials
+  const username = 'bluebirdintegrated@gmail.com';
+  const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+  const clickSendUrl = `https://rest.clicksend.com/v3/own-numbers/${id}`; // Use id in the URL
+
+  try {
+    // Make a PATCH request to ClickSend API to update the own number label
+    const clickSendResponse = await axios.patch(
+      clickSendUrl, 
+      {
+        label: label // Payload for updating the label
+      }, 
+      {
+        headers: {
+          'Authorization': `Basic ${Buffer.from(`${username}:${apiKey}`).toString('base64')}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const responseBody = clickSendResponse.data; // Extract response data
+    console.log('ClickSend API Response:', responseBody); // Log the response
+
+    // Check if the response contains expected data
+    if (responseBody && responseBody.data) {
+      return res.status(200).json({ success: true, message: 'Own number updated successfully!', data: responseBody });
+    } else {
+      return res.status(400).json({ success: false, message: 'Failed to update own number in ClickSend.' });
+    }
+  } catch (err: any) {
+    console.error('Error updating own number:', err.response?.data || err.message); // Log error details
+    res.status(500).json({ success: false, message: 'Failed to update own number: ' + (err.message || 'Internal Server Error') });
+  }
+});
+
 
 
 
