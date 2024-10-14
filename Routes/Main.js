@@ -779,74 +779,84 @@ router.get('/purchaseno', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../Views/purchasenumber.html'));
 });
 router.post('/bulksms', async (req, res) => {
-    const { listId, message } = req.body;
+    console.log('Incoming bulk SMS request');
+    const { list_id, name, body, from, schedule } = req.body;
     console.log('Request body:', req.body);
-    if (!message) {
+    if (!body || !from || !name || !list_id) {
         console.log('Server Error 400: Missing required fields');
-        return res.status(400).json({ error: 'Please provide a message to send.' });
+        return res.status(400).json({
+            error: 'Please provide all required fields: body, from, name, and list_id.'
+        });
     }
     const user = res.locals.user;
+    console.log('User from res.locals:', user);
     const userId = user._id;
-    const packageName = user?.Details?.PackageName;
-    const coins = user?.Details?.Coins;
-    console.log(`User ID: ${userId}, Package Name: ${packageName}, Coins Available: ${coins}`);
-    if (!packageName || typeof coins !== 'number') {
-        console.log('Server Error 403: User package details are incomplete.');
-        return res.status(403).json({ error: 'You cannot send SMS. Please buy our package first.' });
+    console.log('User ID:', userId);
+    const { PackageName, Coins } = user?.Details || {};
+    console.log('User package and coins:', { PackageName, Coins });
+    if (!PackageName || typeof Coins !== 'number') {
+        console.log('Server Error 403: No package or coins invalid');
+        return res.status(403).json({
+            error: 'You cannot send SMS. Please buy our package first.'
+        });
     }
-    const listNumbers = await ListModel.findOne({ listId: listId });
-    // Ensure listNumbers is found and contacts are available
-    if (!listNumbers || !listNumbers.contacts || listNumbers.contacts.length === 0) {
-        console.log('Server Error 400: No phone numbers found');
-        return res.status(400).json({ error: 'No phone numbers available to send the message.' });
-    }
-    const phoneNumbers = listNumbers.contacts.map(contact => contact.mix); // Assuming mix contains the phone numbers
-    console.log('Phone Numbers Retrieved:', phoneNumbers);
-    if (coins < phoneNumbers.length) {
-        return res.status(400).send('Insufficient coins for sending all messages');
-    }
+    console.log('Fetching list of numbers for list_id:', list_id);
     try {
+        console.log('Fetching user from the database with userId:', userId);
         const dbUser = await SignModel.findById(userId);
-        if (!dbUser) {
-            return res.status(404).send('User not found');
+        console.log('Fetched user:', dbUser);
+        if (!dbUser || typeof dbUser.Details?.Coins !== 'number') {
+            console.log('Server Error 400: User details not found or invalid');
+            return res.status(400).send('User details not found or invalid.');
         }
-        if (!dbUser.Details || typeof dbUser.Details.Coins !== 'number') {
-            console.log('User details or coins are missing or invalid:', dbUser.Details);
-            return res.status(400).send('User details not found or coins are not valid');
-        }
-        // Set up the message for ClickSend
-        const messages = phoneNumbers.map(phoneNumber => ({
-            to: phoneNumber,
-            body: message
-        }));
-        const apiUrl = "https://rest.clicksend.com/v3/sms/send";
-        const response = await axios.post(apiUrl, { messages }, {
+        console.log('Preparing campaign payload');
+        const campaignPayload = {
+            list_id,
+            name,
+            body,
+            from,
+            schedule, // Optional: Included only if provided
+        };
+        console.log('Campaign payload:', campaignPayload);
+        const apiUrl = 'https://rest.clicksend.com/v3/sms-campaigns/send';
+        console.log('Sending campaign to ClickSend API at:', apiUrl);
+        const response = await axios.post(apiUrl, campaignPayload, {
             auth: {
-                username: "bluebirdintegrated@gmail.com",
-                password: "EA26A5D0-7AAC-6631-478B-FC155CE94C99"
-            }
+                username: 'bluebirdintegrated@gmail.com',
+                password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99',
+            },
         });
-        console.log('Response from ClickSend:', response.data);
-        const messagesDetails = response.data.data.messages;
-        messagesDetails.forEach((msg, index) => {
-            console.log(`Message ${index + 1}:`, msg);
-        });
-        const successfulMessages = messagesDetails.filter((sms) => sms.status === 'SUCCESS');
-        // Deduct coins for each successful message sent
-        if (successfulMessages.length > 0) {
-            dbUser.Details.Coins -= successfulMessages.length; // Deduct only for successful messages
+        console.log('ClickSend API response:', response.data);
+        const { http_code, response_code, response_msg, data } = response.data;
+        if (http_code === 200 && response_code === 'SUCCESS') {
+            console.log('Campaign sent successfully');
+            const { sms_campaign_id, name, from, body, status, _total_count } = data;
+            // Deduct coins for all messages
+            console.log('Deducting coins:', _total_count);
+            dbUser.Details.Coins -= _total_count;
             await dbUser.save();
-            console.log('Coins deducted successfully. Remaining Coins:', dbUser.Details.Coins);
+            console.log('Updated user coins:', dbUser.Details.Coins);
+            res.status(200).json({
+                message: response_msg,
+                campaignDetails: {
+                    campaignId: sms_campaign_id,
+                    campaignName: name,
+                    sender: from,
+                    messageBody: body,
+                    status,
+                    totalMessages: _total_count,
+                },
+            });
         }
         else {
-            console.log('No successful messages to deduct coins for.');
+            console.log('Server Error 500: Failed to send campaign');
+            res.status(500).json({
+                error: 'Failed to send the campaign. Please try again later.',
+            });
         }
-        // Log and respond
-        console.log('Data Updated Successfully:', dbUser);
-        res.status(200).json({ message: 'Messages sent successfully to all numbers!', successfulMessages });
     }
     catch (err) {
-        console.error(err.response ? err.response.data : err.message);
+        console.error('Error occurred while sending SMS campaign:', err.response?.data || err.message);
         res.status(500).json({ error: 'Failed to send SMS. Please try again later.' });
     }
 });
@@ -1300,6 +1310,58 @@ router.get('/profile-pic', async (req, res) => {
     catch (error) {
         console.error('Error retrieving profile picture:', error);
         return res.status(500).json({ message: 'Failed to retrieve profile picture', error });
+    }
+});
+router.get('/alphatags', async (req, res) => {
+    try {
+        // Fetch all AlphaTags from the database for the current user
+        const alphaTags = await AlphaTagModel.find({ user_id: res.locals.user._id }); // Fetch all alpha tags
+        // Check if any alpha tags are found
+        if (!alphaTags || alphaTags.length === 0) {
+            return res.status(404).json({ error: 'No AlphaTags found for the user.' });
+        }
+        // Map the alphaTags to get an array of relevant data
+        const formattedAlphaTags = alphaTags.map(tag => ({
+            senderId: tag.user_id_clicksend,
+            tagname: tag.alpha_tag
+        }));
+        // Send the AlphaTags data as JSON
+        res.json(formattedAlphaTags);
+    }
+    catch (error) {
+        console.error('Error fetching AlphaTags:', error);
+        res.status(500).json({ error: 'Failed to fetch AlphaTags' });
+    }
+});
+router.post('/view_campaigns', async (req, res) => {
+    try {
+        // Define the API endpoint URL for fetching SMS campaigns
+        const apiUrl = 'https://rest.clicksend.com/v3/sms-campaigns';
+        console.log('API URL:', apiUrl);
+        // Make a GET request to ClickSend to retrieve the SMS campaigns
+        console.log('Sending GET request to ClickSend API to fetch SMS campaigns...');
+        const response = await axios.get(apiUrl, {
+            auth: {
+                username: 'bluebirdintegrated@gmail.com', // Your ClickSend username
+                password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99' // Your ClickSend API key
+            }
+        });
+        // Log the response from the API
+        console.log('API response status:', response.status);
+        console.log('API response data:', response.data);
+        // Extract the response data
+        const campaigns = response.data;
+        console.log('Extracted campaigns data:', campaigns);
+        // Send the campaigns data back to the client
+        res.status(200).json(campaigns);
+        console.log('Campaigns sent to client.');
+    }
+    catch (error) {
+        // Log the error and respond with an error message
+        console.error('Error fetching campaigns:', error.response?.data || error.message);
+        res.status(500).json({
+            error: 'Failed to retrieve campaigns. Please try again later.'
+        });
     }
 });
 export default router;

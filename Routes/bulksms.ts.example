@@ -1,0 +1,94 @@
+router.post('/bulksms', async (req: Request, res: Response) => {
+  const { listId, message } = req.body;
+  console.log('Request body:', req.body);
+
+  if (!message) {
+    console.log('Server Error 400: Missing required fields');
+    return res.status(400).json({ error: 'Please provide a message to send.' });
+  }
+
+  const user = res.locals.user;
+  const userId = user._id;
+  const packageName = user?.Details?.PackageName;
+  const coins = user?.Details?.Coins;
+
+  console.log(`User ID: ${userId}, Package Name: ${packageName}, Coins Available: ${coins}`);
+
+  if (!packageName || typeof coins !== 'number') {
+    console.log('Server Error 403: User package details are incomplete.');
+    return res.status(403).json({ error: 'You cannot send SMS. Please buy our package first.' });
+  }
+
+  const listNumbers = await ListModel.findOne({ listId: listId });
+
+  // Ensure listNumbers is found and contacts are available
+  if (!listNumbers || !listNumbers.contacts || listNumbers.contacts.length === 0) {
+    console.log('Server Error 400: No phone numbers found');
+    return res.status(400).json({ error: 'No phone numbers available to send the message.' });
+  }
+
+  const phoneNumbers = listNumbers.contacts.map(contact => contact.mix); // Assuming mix contains the phone numbers
+
+  console.log('Phone Numbers Retrieved:', phoneNumbers);
+
+  if (coins < phoneNumbers.length) {
+    return res.status(400).send('Insufficient coins for sending all messages');
+  }
+
+  try {
+    const dbUser = await SignModel.findById(userId);
+
+    if (!dbUser) {
+      return res.status(404).send('User not found');
+    }
+
+    if (!dbUser.Details || typeof dbUser.Details.Coins !== 'number') {
+      console.log('User details or coins are missing or invalid:', dbUser.Details);
+      return res.status(400).send('User details not found or coins are not valid');
+    }
+
+    // Set up the message for ClickSend
+    const messages = phoneNumbers.map(phoneNumber => ({
+      to: phoneNumber,
+      body: message
+    }));
+
+    const apiUrl = "https://rest.clicksend.com/v3/sms/send";
+    const response = await axios.post(
+      apiUrl,
+      { messages },
+      {
+        auth: {
+          username: "bluebirdintegrated@gmail.com",
+          password: "EA26A5D0-7AAC-6631-478B-FC155CE94C99"
+        }
+      }
+    );
+
+    console.log('Response from ClickSend:', response.data);
+
+    const messagesDetails = response.data.data.messages;
+    messagesDetails.forEach((msg: SmsMessage, index: number) => {
+      console.log(`Message ${index + 1}:`, msg);
+    });
+
+    const successfulMessages = messagesDetails.filter((sms: SmsMessage) => sms.status === 'SUCCESS');
+
+    // Deduct coins for each successful message sent
+    if (successfulMessages.length > 0) {
+      dbUser.Details.Coins -= successfulMessages.length; // Deduct only for successful messages
+      await dbUser.save();
+      console.log('Coins deducted successfully. Remaining Coins:', dbUser.Details.Coins);
+    } else {
+      console.log('No successful messages to deduct coins for.');
+    }
+
+    // Log and respond
+    console.log('Data Updated Successfully:', dbUser);
+    res.status(200).json({ message: 'Messages sent successfully to all numbers!', successfulMessages });
+
+  } catch (err: any) {
+    console.error(err.response ? err.response.data : err.message);
+    res.status(500).json({ error: 'Failed to send SMS. Please try again later.' });
+  }
+});

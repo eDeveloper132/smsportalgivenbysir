@@ -4,6 +4,7 @@
   .dH{
     float: left;
   }
+
         .form-group {
             display: flex;
             align-items: center;
@@ -595,250 +596,282 @@ if (x.style.display === "none") {
                             <textarea id="additionalInfo" name="message" rows="5" class="form-control" placeholder="Type your message here" required></textarea>
                         </div>
                     </form>
-                    <div class="table-responsive">
-                      <table class="table table-striped table-hover table-bordered mt-2">
-                          <thead class="table-dark">
-                              <tr>
-                                  <th>List Name</th>
-                                  <th>Contacts Count</th>
-                                  <th>Actions</th>
-                              </tr>
-                          </thead>
-                          <tbody id="contactListTableBody">
-                              <!-- Rows will be populated by JavaScript -->
-                          </tbody>
-                      </table>
-                  </div>
-                  
-                </div>
+        <!-- Contact List Table -->
+        <div class="table-responsive">
+          <table class="table table-striped table-hover table-bordered mt-2">
+              <thead class="table-dark">
+                  <tr>
+                      <th>List Name</th>
+                      <th>Contacts Count</th>
+                      <th>Actions</th>
+                  </tr>
+              </thead>
+              <tbody id="contactListTableBody">
+                  <!-- Rows will be populated by JavaScript -->
+              </tbody>
+          </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="toolbar pb-4 px-3 px-lg-6 pt-4 bg-body">
+    <div class="position-relative container-fluid px-0">
+        <div class="row align-items-center position-relative">
+            <div class="col-md-8 mb-4 mb-lg-0">
+                <h3 class="mb-2">SMS Campaigns</h3>
+
+
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="content pt-5 px-4 px-lg-6 d-flex flex-column-fluid">
+  <div class="container p-5">
+          <table class="table table-hover table-bordered">
+            <thead class="thead-dark bg-dark text-white">
+              <tr>
+                <th>Campaign ID</th>
+                <th>Name</th>
+                <th>From</th>
+                <th>Message</th>
+                <th>Schedule</th>
+                <th>Status</th>
+                <th>Date Added</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="campaignTableBody">
+              <!-- Dynamic Rows will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+<!-- Modal Structure -->
+<div class="modal fade" id="sendSmsModal" tabindex="-1" aria-labelledby="sendSmsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="sendSmsModalLabel">Send SMS</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="modalForm">
+          <div class="mb-3">
+            <label for="campaignName" class="form-label">Campaign Name</label>
+            <input type="text" class="form-control" id="campaignName" placeholder="Enter Campaign Name" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="senderIdDropdown" class="form-label">Sender ID</label>
+            <select id="senderIdDropdown" class="form-select" required>
+              <option value="" selected>Select Sender ID</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Send Option</label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="sendOption" id="sendNow" value="now" checked>
+              <label class="form-check-label" for="sendNow">Now</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="sendOption" id="sendLater" value="schedule">
+              <label class="form-check-label" for="sendLater">Schedule</label>
+            </div>
+          </div>
+
+          <div id="scheduleSection" class="mb-3" style="display: none;">
+            <label class="form-label">Select Date & Time</label>
+            <div class="row">
+              <div class="col">
+                <input type="date" class="form-control" id="scheduleDate" required>
+              </div>
+              <div class="col">
+                <div class="input-group">
+                  <input type="text" class="form-control" id="scheduleTime" placeholder="HH:mm" required>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="modalSendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
             
-            <script>
-              document.addEventListener('DOMContentLoaded', async () => {
-                let userId = null; // Store the userId globally
-                fetch('/profile-pic')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Profile picture not found');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const imgElement = document.getElementById('userAvatar');
-            imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
-        })
-        .catch(error => {
-            console.error('Error:', error.message);
-            // Optionally set a default image if the profile picture is not found
-            const imgElement = document.getElementById('userAvatar');
-            imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
-        });
-                try {
-                    // Fetch user data after DOM is loaded
-                    const response = await fetch('/user', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({}) // Adjust payload if necessary
-                    });
-            
-                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                    
-                    const data = await response.json();
-            
-                    if (data) {
-                        // Update the user-related content in the DOM
-                        document.getElementById('userName').textContent = data.Name;
-                        document.getElementById('userFullName').textContent = data.Name;
-                        document.getElementById('userGreeting').textContent = data.Name;
-                        document.getElementById('packagename').textContent = data.PackageName;
-                        document.getElementById('packagecoins').textContent = data.Coins;
-                    }
-            
-                    // Call the function to set the greeting after user data is fetched
-                    updateGreeting();
-            
-                } catch (error) {
-                    console.error('Error fetching user data:', error);
-                }
-            
-                // Function to determine the greeting based on the current time
-                function getGreeting() {
-                    const now = new Date();
-                    const hours = now.getHours();
-                    
-                    if (hours >= 20 || hours < 6) {
-                        return 'Good night';
-                    } else if (hours >= 6 && hours < 12) {
-                        return 'Good morning';
-                    } else if (hours >= 12 && hours < 17) {
-                        return 'Good afternoon';
-                    } else {
-                        return 'Good evening';
-                    }
-                }
-            
-                // Update the greeting in the HTML
-                function updateGreeting() {
-                    const greetingElement = document.getElementById('greeting');
-                    const greeting = getGreeting();
-                    greetingElement.textContent = greeting;
-                }
-                
-                // Function to send message data to '/sms/bulksms'
-
-    // Function to fetch contact lists
-    async function fetchContactLists() {
-        try {
-            const response = await fetch('/getlist', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-            const data = await response.json();
-            console.log('Fetched Lists:', data); // Debug output
-
-            const contactListTableBody = document.getElementById('contactListTableBody');
-            contactListTableBody.innerHTML = ''; // Clear existing rows
-
-            const clickSendLists = data.clickSendLists?.data?.data || [];
-            const userLists = data.userLists || [];
-
-            // Populate the table with ClickSend lists
-            clickSendLists.forEach(list => {
-    console.log('List ID:', list.list_id); // Debugging
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td>${list.list_name}</td>
-        <td>${list._contacts_count || 0}</td>
-        <td>
-            <button class="btn btn-dark btn-sm" type="button" onclick="sendMessage('${list.list_id}')">Send</button>
-        </td>
-    `;
-    contactListTableBody.appendChild(row);
-});
-
-
-            showToast('Contact lists fetched successfully!', true); // Show success message
-        } catch (error) {
-            console.error('Error fetching lists:', error);
-            showToast('Error fetching contact lists.', false); // Show error message
-        }
-    }
-
-    // Call fetchContactLists
-    fetchContactLists();
-
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+      let selectedListId = null; // Store selected listId globally
+      let userId = null; // Store the userId globally
+  
+      // Fetch profile picture and handle errors
+      fetch('/profile-pic')
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error(`Failed to fetch profile picture. Status: ${response.status}`);
+              }
+              return response.json();
+          })
+          .then(data => {
+              const imgElement = document.getElementById('userAvatar');
+              imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
+          })
+          .catch(error => {
+              console.error('Error:', error.message);
+              const imgElement = document.getElementById('userAvatar');
+              imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
+              showToast('Failed to load profile picture. Default image used.', false);
+          });
+  
+      try {
+          // Fetch user data
+          const response = await fetch('/user', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({}) // Adjust payload if necessary
+          });
+  
+          if (!response.ok) {
+              throw new Error(`Failed to fetch user data. Status: ${response.status}`);
+          }
+  
+          const data = await response.json();
+          if (data) {
+              document.getElementById('userName').textContent = data.Name;
+              document.getElementById('userFullName').textContent = data.Name;
+              document.getElementById('userGreeting').textContent = data.Name;
+              document.getElementById('packagename').textContent = data.PackageName;
+              document.getElementById('packagecoins').textContent = data.Coins;
+          }
+  
+          // Update greeting message based on time of day
+          updateGreeting();
+  
+      } catch (error) {
+          console.error('Error fetching user data:', error);
+          showToast(`Error loading user details: ${error.message}`, false);
+      }
+  
+      // Fetch and display campaigns
+      try {
+          const response = await fetch('/view_campaigns', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+          });
+  
+          if (!response.ok) throw new Error(`Failed to fetch campaigns. Status: ${response.status}`);
+  
+          const result = await response.json();
+          const campaigns = result.data || [];
+  
+          const campaignTableBody = document.getElementById('campaignTableBody');
+          campaignTableBody.innerHTML = ''; // Clear existing rows
+  
+          campaigns.forEach(campaign => {
+              const dateAdded = new Date(campaign.date_added * 1000).toLocaleString();
+              const schedule = new Date(campaign.schedule * 1000).toLocaleString();
+  
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                  <td>${campaign.sms_campaign_id}</td>
+                  <td>${campaign.name}</td>
+                  <td>${campaign.from}</td>
+                  <td>${campaign.body}</td>
+                  <td>${schedule}</td>
+                  <td>${campaign.status}</td>
+                  <td>${dateAdded}</td>
+                  <td>
+                      <button class="btn btn-success btn-sm" onclick="updateCampaign(${campaign.sms_campaign_id})">Update</button>
+                      <button class="btn btn-danger btn-sm" onclick="cancelCampaign(${campaign.sms_campaign_id})">Cancel</button>
+                  </td>
+              `;
+              campaignTableBody.appendChild(row);
+          });
+  
+      } catch (error) {
+          console.error('Error fetching campaigns:', error);
+          showToast(`Failed to load campaigns: ${error.message}`, false);
+      }
+  
+      // Fetch contact lists
+      async function fetchContactLists() {
+          try {
+              const response = await fetch('/getlist', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' }
+              });
+  
+              if (!response.ok) {
+                  throw new Error(`Failed to fetch contact lists. Status: ${response.status}`);
+              }
+  
+              const data = await response.json();
+              const contactListTableBody = document.getElementById('contactListTableBody');
+              contactListTableBody.innerHTML = ''; // Clear existing rows
+  
+              const clickSendLists = data.clickSendLists?.data?.data || [];
+              clickSendLists.forEach(list => {
+                  const row = document.createElement('tr');
+                  row.innerHTML = `
+                      <td>${list.list_name}</td>
+                      <td>${list._contacts_count || 0}</td>
+                      <td>
+                          <button class="btn btn-dark btn-sm" type="button" onclick="sendMessage('${list.list_id}')">Send</button>
+                      </td>
+                  `;
+                  contactListTableBody.appendChild(row);
+              });
+  
+              showToast('Contact lists fetched successfully!', true);
+  
+          } catch (error) {
+              console.error('Error fetching contact lists:', error);
+              showToast(`Error loading contact lists: ${error.message}`, false);
+          }
+      }
+  
+      fetchContactLists();
   });
-
-  function sendMessage(listId) {
-    console.log('sendMessage triggered with:', listId); // Debugging
-
-    const message = document.getElementById('additionalInfo').value;
-
-    // Check if message input is empty
-    if (!message.trim()) {
-        showToast('Please enter a message before sending!', false); // Show error toast
-        return;
-    }
-
-    // Define the payload to send, including both listId and message
-    const payload = { listId, message };
-    console.log('payload: ',payload)
-
-    // Send the message to the server
-    fetch('/bulksms', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Message sent successfully!', true); // Show success toast
-        } else {
-            showToast('Failed to send the message. Please try again.', false); // Show error toast
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred while sending the message.', false); // Show error toast
-    });
-}
-
-
+  
   // Function to show toast notifications
   function showToast(message, isSuccess) {
-    const toastElement = document.createElement('div');
-    toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
-    toastElement.role = 'alert';
-    toastElement.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
+      const toastElement = document.createElement('div');
+      toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
+      toastElement.role = 'alert';
+      toastElement.innerHTML = `
+          <div class="d-flex">
+              <div class="toast-body">
+                  ${message}
+              </div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+      `;
+  
+      document.getElementById('toastContainer').appendChild(toastElement);
+      const toast = new bootstrap.Toast(toastElement);
+      toast.show();
+  
+      // Remove the toast after hidden
+      toastElement.addEventListener('hidden.bs.toast', () => {
+          toastElement.remove();
+      });
+  }
+  </script>
+  
 
-    document.getElementById('uploadForm').addEventListener('submit', async function(event) {
-    event.preventDefault(); // Prevent the default form submission
-
-    const fileInput = document.getElementById('profilePic');
-    const file = fileInput.files[0];
-
-    if (!file) {
-        alert('Please select a file to upload.');
-        return;
-    }
-
-    // Create FormData and append the file
-    const formData = new FormData();
-    formData.append('profilePic', file); // 'profilePic' should match the field name in multer
-
-    // Call the upload function
-    await uploadProfilePic(formData);
-});
-async function uploadProfilePic(formData) {
-    try {
-        const response = await fetch('/uploadProfilePic', { // Ensure this matches your server route
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-        console.log(data); // Handle success or error message
-        alert(data.message); // Show success message to user
-
-    } catch (error) {
-        console.error('Error uploading profile picture:', error);
-        alert('An error occurred while uploading the profile picture.');
-    }
-}
-    // Append the toast to the toast container instead of body
-    document.getElementById('toastContainer').appendChild(toastElement);
-
-    const toast = new bootstrap.Toast(toastElement);
-    toast.show();
-
-    // Optionally, remove the toast after it's hidden to avoid cluttering the DOM
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        toastElement.remove();
-    });
-}
-            
-            </script>
             
 
                     <!--//Page content End//-->
@@ -867,59 +900,3 @@ async function uploadProfilePic(formData) {
     </body>
 
 </html>
-
-
-  <!-- <h3>If You want to logout Press Here ===></h3><button id="logoutButton">LOGOUT</button> -->
-  <!-- <script>
-    async function resetSession() {
-                                      try {
-                                          // To reset the token, you'd need to provide the current token in some way,
-                                          // but since we're avoiding cookies and localStorage, this step may involve
-                                          // a session or some other server-side mechanism to identify the token.
-                                          await fetch('/reset-Session', {
-                                              method: 'POST'
-                                          });
-                                      } catch (error) {
-                                          console.error('Error resetting session:', error);
-                                      }
-                                  }
-                              
-                                  // Event listener for logout button click
-                                  document.getElementById('logoutButton').addEventListener('click', async () => {
-                                      try {
-                                          await resetSession();
-                                          window.location.href = '/signin';
-                                      } catch (error) {
-                                          console.error('Error during logout:', error);
-                                      }
-                                  });
-                              
-                                  // Load user info when the window is loaded
-                                  window.addEventListener(loadUserInfo);
-                              </script> -->
-<!--   
-  <script>
-    async function resetSession() {
-                                      try {
-                                          // To reset the token, you'd need to provide the current token in some way,
-                                          // but since we're avoiding cookies and localStorage, this step may involve
-                                          // a session or some other server-side mechanism to identify the token.
-                                          await fetch('/reset-Session', {
-                                              method: 'POST'
-                                          });
-                                      } catch (error) {
-                                          console.error('Error resetting session:', error);
-                                      }
-                                  }
-                              
-                                  // Event listener for logout button click
-                                  document.getElementById('logoutButton').addEventListener('click', async () => {
-                                      try {
-                                          await resetSession();
-                                          window.location.href = '/signin';
-                                      } catch (error) {
-                                          console.error('Error during logout:', error);
-                                      }
-                                  });
-                              
-    
