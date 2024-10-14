@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import bcrypt from "bcrypt";
 import axios from "axios";
-import { SignModel , ListModel , IList , IContact , MessageModel , FileUrlModel , PhotoUrlModel , VerifiedNumberModel , AlphaTagModel } from "../Schema/Post.js";
+import { SignModel , ListModel , IList , IContact , MessageModel , FileUrlModel , PhotoUrlModel , VerifiedNumberModel , AlphaTagModel , CampaignMessageModel } from "../Schema/Post.js";
 import SessionModel from '../Schema/Session.js'
 import {v4 as uuidv4} from 'uuid';
 import { AppRes } from "../index.js";
@@ -1574,13 +1574,18 @@ router.get('/alphatags', async (req: Request, res: Response) => {
 });
 
 router.post('/view_campaigns', async (req: Request, res: Response) => {
-  try {
-    // Define the API endpoint URL for fetching SMS campaigns
-    const apiUrl = 'https://rest.clicksend.com/v3/sms-campaigns';
-    console.log('API URL:', apiUrl);
+  const user = res.locals.user; // Get the authenticated user from middleware
 
-    // Make a GET request to ClickSend to retrieve the SMS campaigns
+  if (!user) {
+    return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; // User ID from the authenticated user
+  const apiUrl = 'https://rest.clicksend.com/v3/sms-campaigns'; // ClickSend API URL
+
+  try {
     console.log('Sending GET request to ClickSend API to fetch SMS campaigns...');
+
     const response = await axios.get(apiUrl, {
       auth: {
         username: 'bluebirdintegrated@gmail.com', // Your ClickSend username
@@ -1588,26 +1593,54 @@ router.post('/view_campaigns', async (req: Request, res: Response) => {
       }
     });
 
-    // Log the response from the API
-    console.log('API response status:', response.status);
     console.log('API response data:', response.data);
 
-    // Extract the response data
-    const campaigns = response.data;
-    console.log('Extracted campaigns data:', campaigns);
+    const campaigns = response.data.data; // Assuming `data` contains the list of campaigns
 
-    // Send the campaigns data back to the client
-    res.status(200).json(campaigns);
-    console.log('Campaigns sent to client.');
+    // Save campaigns to the database and collect their IDs
+    const savedCampaigns = await Promise.all(
+      campaigns.map(async (campaign: any) => {
+        const newCampaign = new CampaignMessageModel({
+          userId: userId,
+          sms_campaign_id: campaign.sms_campaign_id,
+          campaign_name: campaign.name,
+          list_id: campaign.list_id, // Assuming list_id is valid
+          from: campaign.from,
+          body: campaign.body,
+          schedule: new Date(parseInt(campaign.schedule) * 1000), // Convert UNIX timestamp to Date
+          status: campaign.status,
+          total_count: campaign._total_count
+        });
 
-  } catch (error: any) {
-    // Log the error and respond with an error message
-    console.error('Error fetching campaigns:', error.response?.data || error.message);
-    res.status(500).json({
-      error: 'Failed to retrieve campaigns. Please try again later.'
+        const savedCampaign = await newCampaign.save();
+        return savedCampaign._id; // Return the saved campaign's ID
+      })
+    );
+
+    // Push the saved campaign IDs into the user's campaigns array
+    await SignModel.findByIdAndUpdate(userId, {
+      $push: { campaigns: { $each: savedCampaigns } }
     });
+
+    // Response data format
+    const responseData = {
+      http_code: 200,
+      response_code: 'SUCCESS',
+      response_msg: 'Here are your SMS campaigns.',
+      data: savedCampaigns.map(campaignId => ({
+        sms_campaign_id: campaignId.toString(), // Return as string for consistency
+        // Add other fields if necessary...
+      }))
+    };
+
+    // Send the response
+    res.status(200).json(responseData);
+  } catch (error: any) {
+    console.error('Error fetching campaigns:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to retrieve campaigns. Please try again later.' });
   }
 });
+
 
 
 export default router;

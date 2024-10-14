@@ -4,6 +4,94 @@
   .dH{
     float: left;
   }
+  .aside-logo {
+            display: flex;
+            align-items: center; /* Align items vertically */
+            gap: 12px; /* Space between logo and text */
+            padding: 10px;
+            position: relative;
+        }
+      
+        /* Logo image styling */
+        .logo-image {
+            max-width: 100%;
+            height: auto;
+            width: auto;
+            border-radius: 8px; /* Optional: Rounded corners */
+            transition: background-color 0.3s ease, filter 0.3s ease; /* Smooth transition */
+        }
+      
+        /* Default (Light Mode) Styles */
+        body {
+            background-color: #fff; /* Default light background */
+            color: #000;
+        }
+      
+        .logo-image {
+            background-color: #000; /* Dark background for light mode */
+            filter: invert(0); /* Ensure logo stays normal */
+        }
+      
+        /* Dark Mode Styles */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1a1a1a; /* Dark background for dark mode */
+                color: #fff;
+            }
+      
+            .logo-image {
+                background-color: #fff; /* Light background for dark mode */
+                filter: invert(1); /* Optional: Invert logo color for contrast */
+            }
+        }
+      
+        /* Responsive font size for logo name */
+        .logo-name {
+            font-size: calc(1.8rem + 1vw);
+            margin: 0;
+            font-weight: bold;
+            line-height: 1.2;
+            text-align: left;
+        }
+      
+        /* Adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .logo-image {
+                max-width: 50px;
+            }
+      
+            .logo-name {
+                font-size: 1.5rem;
+            }
+        }
+      
+        @media (min-width: 769px) and (max-width: 1199px) {
+            .logo-image {
+                max-width: 60px;
+            }
+      
+            .logo-name {
+                font-size: 2rem;
+            }
+        }
+      
+        @media (min-width: 1200px) {
+            .logo-image {
+                max-width: 80px;
+            }
+      
+            .logo-name {
+                font-size: 2.5rem;
+            }
+        }
+      
+        /* Sidebar text styling */
+        .sidebar-text {
+            display: flex;
+            align-items: center;
+            text-align: left;
+        }
+
 
         .form-group {
             display: flex;
@@ -112,26 +200,28 @@
         <div class="h-100 flex-column d-flex justify-content-start">
 
           <!--Aside-logo-->
-          <div class="aside-logo d-flex flex-shrink-0 justify-content-start position-relative dH">
-            <a href="/" class="d-block">
-              <div class="d-flex flex-no-wrap text-truncate">
-                <!--Sidebar-icon-->
-                
-                <span class="sidebar-text d-flex justify-content-start">
-                  <!--Sidebar-text-->
-                  <div class="d-flex justify-content-start">
-                  <span class="d-flex justify-content-start mx-4">
-                  <img src="/assets/media/WPcodersProfile.png" alt="" width="40px" height="30px" >
-                  <p class="fs-4 fw-bold" id="myDIV">
-                  Datastream Send
-                  </p>
+ <!-- Aside-logo -->
+ <div class="aside-logo d-flex flex-shrink-0 justify-content-start position-relative dH">
+  <a href="/" class="d-block">
+      <div class="d-flex flex-no-wrap text-truncate">
+          <!-- Sidebar-icon -->
+          <span class="sidebar-text d-flex justify-content-start">
+              <!-- Sidebar-text -->
+              <div class="d-flex align-items-center"> <!-- Align items vertically -->
+                  <span class="d-flex justify-content-start mx-4" id="myDIVA"  style="height: 80%;width: 80%;">
+                      <img src="/assets/media/WPcodersProfileu.png" alt="Logo" class="logo-image">
                   </span>
-                  </div>
-                </span>
-                
+                  <span id="myDIV">
+                  <p class="fs-4 fw-bold mb-0 logo-name"> <!-- Added mb-0 to remove bottom margin -->
+                      Datastream <br> Send
+                  </p>
+              </span>
               </div>
-            </a>
-          </div>
+          </span>
+      </div>
+  </a>
+</div>              
+
           <div class="aside-menu px-3" data-simplebar>
             <nav class="flex-grow-1 h-100" id="page-navbar">
               <!--:Sidebar nav-->
@@ -314,14 +404,48 @@ chat
       <!--///.Sidebar close end///-->
 
 
-<script>function myFunction() {
-var x = document.getElementById("myDIV");
-if (x.style.display === "none") {
-  x.style.display = "block";
-} else {
-  x.style.display = "none";
-}
-}</script>
+        <script>
+            // Ensure myDIV is displayed when the page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                var x = document.getElementById("myDIV");
+                var y = document.getElementById("myDIVA");
+                x.style.display = "block"; // Make sure it's displayed initially
+                y.classList.remove("mx-0"); // Ensure proper class
+                y.classList.add("mx-4"); // Set padding
+            });
+    
+            function myFunction() {
+                var x = document.getElementById("myDIV");
+                var y = document.getElementById("myDIVA");
+                
+                // Toggle display state
+                if (x.style.display === "none" || x.style.display === "") {
+                    x.style.display = "block";
+                    y.classList.remove("mx-0");
+                    y.classList.add("mx-4");
+                } else {
+                    x.style.display = "none";
+                    y.classList.remove("mx-4");
+                    y.classList.add("mx-0");
+                }
+            }
+    
+            // Function to check and toggle display every second
+            function checkDisplay() {
+                const x = document.getElementById("myDIV");
+                const y = document.getElementById("myDIVA");
+    
+                // Check the display state and toggle if needed
+                if (x.style.display === "none" || x.style.display === "") {
+                    x.style.display = "block"; // Make it visible
+                    y.classList.remove("mx-0"); // Remove no padding class
+                    y.classList.add("mx-4"); // Set padding
+                }
+            }
+    
+            // Set an interval to check every second (1000 milliseconds)
+            setInterval(checkDisplay, 1000);
+        </script>
       <!--///////////Page content wrapper///////////////-->
       <main class="page-content d-flex flex-column flex-row-fluid">
 
@@ -614,7 +738,7 @@ if (x.style.display === "none") {
     </div>
   </div>
 
-<div class="content pt-5 px-4 px-lg-6 d-flex flex-column-fluid">
+<div class="content pt-2 px-4 px-lg-6 d-flex flex-column-fluid">
   <div class="container p-5">
     <h2 class="mb-4 text-center">SMS Campaigns</h2>
 
@@ -669,7 +793,7 @@ if (x.style.display === "none") {
             </div>
             <div class="form-check">
               <input class="form-check-input" type="radio" name="sendOption" id="sendLater" value="schedule">
-              <label class="form-check-label" for="sendLater">Schedule</label>
+              <label class="form-check-label" for="sendLater">Later</label>
             </div>
           </div>
 
@@ -701,7 +825,6 @@ if (x.style.display === "none") {
 
 
 
-            
 <script>
   document.addEventListener('DOMContentLoaded', async () => {
       let selectedListId = null; // Store selected listId globally
@@ -819,7 +942,7 @@ if (x.style.display === "none") {
                       <td>${list.list_name}</td>
                       <td>${list._contacts_count || 0}</td>
                       <td>
-                          <button class="btn btn-dark btn-sm" type="button" onclick="sendMessage('${list.list_id}')">Send</button>
+                          <button class="btn btn-dark btn-sm" type="button" onmouseover="selectList('${list.list_id}')" onclick="sendMessage('${list.list_id}')">Send</button>
                       </td>
                   `;
                   contactListTableBody.appendChild(row);
@@ -835,31 +958,168 @@ if (x.style.display === "none") {
   
       fetchContactLists();
   });
-  
+
+  document.querySelectorAll('input[name="sendOption"]').forEach((radio) => {
+      radio.addEventListener('change', (event) => {
+          const scheduleSection = document.getElementById('scheduleSection');
+          scheduleSection.style.display = event.target.value === 'schedule' ? 'block' : 'none';
+      });
+  });
+
+  // Function to set selectedListId when a list is selected
+  function selectList(listId) {
+      selectedListId = listId; // Set the selected list ID
+      console.log(selectList)
+  }
+
+  // Function to send message data to '/sms/bulksms'
+  async function sendMessage(listId) {
+      console.log('sendMessage triggered with:', listId);
+
+      // Ensure selectedListId is set
+      if (!selectedListId) {
+          showToast('Please select a contact list before sending.', false);
+          return;
+      }
+
+      // Fetch sender IDs
+      try {
+          const response = await fetch('/alphatags');
+          if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+          const alphaTagData = await response.json();
+          const senderIdDropdown = document.getElementById('senderIdDropdown');
+          senderIdDropdown.innerHTML = ''; // Clear existing options
+
+          if (alphaTagData.length > 0) {
+              alphaTagData.forEach(tag => {
+                  const option = document.createElement('option');
+                  option.value = tag.senderId;
+                  option.textContent = tag.tagname;
+                  senderIdDropdown.appendChild(option);
+              });
+          } else {
+              const defaultOption = document.createElement('option');
+              defaultOption.value = "";
+              defaultOption.textContent = "No Sender ID Available";
+              defaultOption.disabled = true;
+              senderIdDropdown.appendChild(defaultOption);
+          }
+      } catch (error) {
+          console.error('Error fetching AlphaTags:', error);
+          showToast('Error fetching sender IDs: ' + error.message, false); // Show error message
+      }
+
+      const sendSmsModal = new bootstrap.Modal(document.getElementById('sendSmsModal'));
+      sendSmsModal.show();
+  }
+
+  document.getElementById('modalSendBtn').addEventListener('click', () => {
+      const campaignName = document.getElementById('campaignName').value.trim();
+      const senderId = document.getElementById('senderIdDropdown').value;
+      const sendOption = document.querySelector('input[name="sendOption"]:checked').value;
+
+      // Fetch message from the input field (assuming it exists)
+      const message = document.getElementById('additionalInfo').value.trim(); // Update with the correct input field ID
+
+      // Validate fields
+      if (!campaignName) {
+          showToast('Campaign name is required.', false);
+          return;
+      }
+      if (!senderId) {
+          showToast('Sender ID is required.', false);
+          return;
+      }
+      if (!message) {
+          showToast('Message is required.', false);
+          return;
+      }
+
+      // Prepare schedule timestamp if scheduling is selected
+      let scheduleTimestamp = null;
+      if (sendOption === 'schedule') {
+          const scheduleDate = document.getElementById('scheduleDate').value;
+          const scheduleTime = document.getElementById('scheduleTime').value;
+
+          if (!scheduleDate || !scheduleTime) {
+              showToast('Please select both date and time for scheduling.', false);
+              return;
+          }
+
+          // Combine date and time into a timestamp
+          scheduleTimestamp = new Date(`${scheduleDate}T${scheduleTime}`).getTime() / 1000; // Convert to UNIX timestamp (seconds)
+      }
+
+      // Create the payload matching CampaignPayload interface
+      const payload = {
+          list_id: selectedListId,
+          name: campaignName,
+          body: message,
+          from: senderId,
+          schedule: scheduleTimestamp || undefined, // Include only if scheduled
+      };
+
+      console.log('Payload:', payload);
+
+      // Send the payload to the server
+      fetch('/bulksms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              showToast('Message sent successfully!', true);
+          } else {
+              showToast('Failed to send message: ' + data.message, false);
+          }
+      })
+      .catch(error => {
+          console.error('Error sending message:', error);
+          showToast('Error sending message: ' + error.message, false);
+      });
+  });
+
   // Function to show toast notifications
   function showToast(message, isSuccess) {
-      const toastElement = document.createElement('div');
-      toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
-      toastElement.role = 'alert';
-      toastElement.innerHTML = `
-          <div class="d-flex">
-              <div class="toast-body">
-                  ${message}
-              </div>
-              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-          </div>
-      `;
-  
-      document.getElementById('toastContainer').appendChild(toastElement);
-      const toast = new bootstrap.Toast(toastElement);
-      toast.show();
-  
-      // Remove the toast after hidden
-      toastElement.addEventListener('hidden.bs.toast', () => {
-          toastElement.remove();
-      });
+                    const toastElement = document.createElement('div');
+                    toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
+                    toastElement.role = 'alert';
+                    toastElement.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+            
+                    // Append the toast to the toast container
+                    document.getElementById('toastContainer').appendChild(toastElement);
+            
+                    const toast = new bootstrap.Toast(toastElement);
+                    toast.show();
+            
+                    // Remove the toast after it's hidden to avoid cluttering the DOM
+                    toastElement.addEventListener('hidden.bs.toast', () => {
+                        toastElement.remove();
+                    });
+                }
+  // Function to update greeting based on time of day
+  function updateGreeting() {
+      const hours = new Date().getHours();
+      const greetingMessage = (hours < 12) ? 'Good Morning' :
+                              (hours < 18) ? 'Good Afternoon' : 'Good Evening';
+      document.getElementById('userGreeting').innerText = greetingMessage + ', ' + document.getElementById('userName').innerText;
   }
-  </script>
+</script>
+
+
+
+
+
   
 
             

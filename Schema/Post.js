@@ -1,4 +1,17 @@
 import mongoose, { Schema } from 'mongoose';
+const CampaignMessageSchema = new Schema({
+    userId: { type: Schema.Types.ObjectId, ref: 'Sign', required: true }, // Foreign key to the Sign (User) model
+    sms_campaign_id: { type: String, required: true }, // Unique campaign ID
+    campaign_name: { type: String, required: true }, // Campaign name
+    list_id: { type: Schema.Types.ObjectId, ref: 'List', required: true }, // Contact list reference
+    from: { type: String, required: true }, // Sender's ID or alpha tag
+    body: { type: String, required: true }, // Message content
+    schedule: { type: Date, required: true }, // Scheduled time
+    status: { type: String, enum: ['pending', 'sent', 'failed'], default: 'pending' }, // Status of the campaign
+    total_count: { type: Number, required: true }, // Total recipients count
+}, { timestamps: true } // Automatically manage createdAt and updatedAt fields
+);
+const CampaignMessageModel = mongoose.model('CampaignMessage', CampaignMessageSchema);
 const VerifiedNumberSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'Sign', required: true }, // Foreign key to the Sign (User) model
     number: { type: String, required: true }, // Phone number
@@ -51,7 +64,8 @@ const SignSchema = new Schema({
     package: [{ type: Schema.Types.ObjectId, ref: 'PackageModel' }], // Array of package references
     lists: [{ type: Schema.Types.ObjectId, ref: 'List' }], // Array of list references
     verifiedNumbers: [{ type: Schema.Types.ObjectId, ref: VerifiedNumberModel }], // Array of verified number references
-    alphaTags: [{ type: Schema.Types.ObjectId, ref: AlphaTagModel }] // Array of alpha tag references
+    alphaTags: [{ type: Schema.Types.ObjectId, ref: AlphaTagModel }], // Array of alpha tag references
+    campaigns: [{ type: Schema.Types.ObjectId, ref: CampaignMessageModel }] // Array of campaign references
 }, { timestamps: true });
 const SignModel = mongoose.model('Sign', SignSchema);
 const ListSchema = new Schema({
@@ -87,7 +101,7 @@ const PhotoUrlSchema = new Schema({
 });
 const PhotoUrlModel = mongoose.model('PhotoUrl', PhotoUrlSchema);
 // Export models and interfaces
-export { MessageModel, SignModel, ListModel, AlphaTagModel, TokenModel, FileUrlModel, PhotoUrlModel, VerifiedNumberModel };
+export { MessageModel, SignModel, ListModel, AlphaTagModel, TokenModel, FileUrlModel, PhotoUrlModel, VerifiedNumberModel, CampaignMessageModel };
 // VerifiedNumberModel: Represents phone numbers that have been verified for a user. Each number has an associated userId, country code, and an optional label for categorization.
 // AlphaTagModel: Used for managing alpha tags, which are sender IDs registered with ClickSend. Each alpha tag is linked to a user and includes a status (e.g., pending, approved) and a reason for creation.
 // MessageModel: Represents messages sent by users. It stores details like the sender, recipient, content, message status, and scheduling options.

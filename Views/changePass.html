@@ -5,6 +5,94 @@
     .dH{
       float: left;
     }
+    .aside-logo {
+            display: flex;
+            align-items: center; /* Align items vertically */
+            gap: 12px; /* Space between logo and text */
+            padding: 10px;
+            position: relative;
+        }
+      
+        /* Logo image styling */
+        .logo-image {
+            max-width: 100%;
+            height: auto;
+            width: auto;
+            border-radius: 8px; /* Optional: Rounded corners */
+            transition: background-color 0.3s ease, filter 0.3s ease; /* Smooth transition */
+        }
+      
+        /* Default (Light Mode) Styles */
+        body {
+            background-color: #fff; /* Default light background */
+            color: #000;
+        }
+      
+        .logo-image {
+            background-color: #000; /* Dark background for light mode */
+            filter: invert(0); /* Ensure logo stays normal */
+        }
+      
+        /* Dark Mode Styles */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1a1a1a; /* Dark background for dark mode */
+                color: #fff;
+            }
+      
+            .logo-image {
+                background-color: #fff; /* Light background for dark mode */
+                filter: invert(1); /* Optional: Invert logo color for contrast */
+            }
+        }
+      
+        /* Responsive font size for logo name */
+        .logo-name {
+            font-size: calc(1.8rem + 1vw);
+            margin: 0;
+            font-weight: bold;
+            line-height: 1.2;
+            text-align: left;
+        }
+      
+        /* Adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .logo-image {
+                max-width: 50px;
+            }
+      
+            .logo-name {
+                font-size: 1.5rem;
+            }
+        }
+      
+        @media (min-width: 769px) and (max-width: 1199px) {
+            .logo-image {
+                max-width: 60px;
+            }
+      
+            .logo-name {
+                font-size: 2rem;
+            }
+        }
+      
+        @media (min-width: 1200px) {
+            .logo-image {
+                max-width: 80px;
+            }
+      
+            .logo-name {
+                font-size: 2.5rem;
+            }
+        }
+      
+        /* Sidebar text styling */
+        .sidebar-text {
+            display: flex;
+            align-items: center;
+            text-align: left;
+        }
+
     .data-item {
         border: 1px solid #ddd;
         padding: 10px;
@@ -115,26 +203,28 @@
           <div class="h-100 flex-column d-flex justify-content-start">
 
             <!--Aside-logo-->
-            <div class="aside-logo d-flex flex-shrink-0 justify-content-start position-relative dH">
-              <a href="/" class="d-block">
-                <div class="d-flex flex-no-wrap text-truncate">
-                  <!--Sidebar-icon-->
-                  
-                  <span class="sidebar-text d-flex justify-content-start">
-                    <!--Sidebar-text-->
-                    <div class="d-flex justify-content-start">
-                    <span class="d-flex justify-content-start mx-4">
-                    <img src="/assets/media/WPcodersProfile.png" alt="" width="40px" height="30px" >
-                    <p class="fs-4 fw-bold" id="myDIV">
-                    Datastream Send
-                    </p>
-                    </span>
-                    </div>
+ <!-- Aside-logo -->
+ <div class="aside-logo d-flex flex-shrink-0 justify-content-start position-relative dH">
+  <a href="/" class="d-block">
+      <div class="d-flex flex-no-wrap text-truncate">
+          <!-- Sidebar-icon -->
+          <span class="sidebar-text d-flex justify-content-start">
+              <!-- Sidebar-text -->
+              <div class="d-flex align-items-center"> <!-- Align items vertically -->
+                  <span class="d-flex justify-content-start mx-4" id="myDIVA"  style="height: 80%;width: 80%;">
+                      <img src="/assets/media/WPcodersProfileu.png" alt="Logo" class="logo-image">
                   </span>
-                  
-                </div>
-              </a>
-            </div>
+                  <span id="myDIV">
+                  <p class="fs-4 fw-bold mb-0 logo-name"> <!-- Added mb-0 to remove bottom margin -->
+                      Datastream <br> Send
+                  </p>
+              </span>
+              </div>
+          </span>
+      </div>
+  </a>
+</div>              
+
             <div class="aside-menu px-3" data-simplebar>
               <nav class="flex-grow-1 h-100" id="page-navbar">
                 <!--:Sidebar nav-->

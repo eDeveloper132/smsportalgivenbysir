@@ -1,5 +1,37 @@
 import mongoose, { Document, Model, Schema, Types } from 'mongoose';
 
+interface ICampaignMessage extends Document {
+    userId: Types.ObjectId; // Reference to the User (SignModel)
+    sms_campaign_id: string; // Unique identifier for the SMS campaign
+    campaign_name: string; // Name of the campaign
+    list_id: Types.ObjectId; // Reference to the contact list (ListModel)
+    from: string; // Sender's identifier or alpha tag
+    body: string; // Content of the message
+    schedule: Date; // Scheduled time for sending the campaign
+    status: string; // Campaign status (e.g., pending, sent, failed)
+    total_count: number; // Total number of recipients in the campaign
+}
+
+const CampaignMessageSchema: Schema<ICampaignMessage> = new Schema(
+    {
+        userId: { type: Schema.Types.ObjectId, ref: 'Sign', required: true }, // Foreign key to the Sign (User) model
+        sms_campaign_id: { type: String, required: true }, // Unique campaign ID
+        campaign_name: { type: String, required: true }, // Campaign name
+        list_id: { type: Schema.Types.ObjectId, ref: 'List', required: true }, // Contact list reference
+        from: { type: String, required: true }, // Sender's ID or alpha tag
+        body: { type: String, required: true }, // Message content
+        schedule: { type: Date, required: true }, // Scheduled time
+        status: { type: String, enum: ['pending', 'sent', 'failed'], default: 'pending' }, // Status of the campaign
+        total_count: { type: Number, required: true }, // Total recipients count
+    },
+    { timestamps: true } // Automatically manage createdAt and updatedAt fields
+);
+
+const CampaignMessageModel: Model<ICampaignMessage> = mongoose.model<ICampaignMessage>(
+    'CampaignMessage',
+    CampaignMessageSchema
+);
+
 // Interface and Schema for VerifiedNumber
 interface IVerifiedNumber extends Document {
     userId: Types.ObjectId; // Reference to the User (SignModel)
@@ -94,6 +126,7 @@ interface ISign extends Document {
     lists: Types.ObjectId[];  // Reference to ListModel
     verifiedNumbers: Types.ObjectId[]; // Reference to VerifiedNumberModel
     alphaTags: Types.ObjectId[]; // Reference to AlphaTagModel
+    campaigns: Types.ObjectId[]; // Reference to VerifiedNumberModel
 }
 
 const SignSchema: Schema<ISign> = new Schema({
@@ -117,7 +150,8 @@ const SignSchema: Schema<ISign> = new Schema({
     package: [{ type: Schema.Types.ObjectId, ref: 'PackageModel' }], // Array of package references
     lists: [{ type: Schema.Types.ObjectId, ref: 'List' }], // Array of list references
     verifiedNumbers: [{ type: Schema.Types.ObjectId, ref: VerifiedNumberModel }], // Array of verified number references
-    alphaTags: [{ type: Schema.Types.ObjectId, ref: AlphaTagModel }] // Array of alpha tag references
+    alphaTags: [{ type: Schema.Types.ObjectId, ref: AlphaTagModel }], // Array of alpha tag references
+    campaigns: [{ type: Schema.Types.ObjectId, ref: CampaignMessageModel }] // Array of campaign references
 }, { timestamps: true });
 
 const SignModel: Model<ISign> = mongoose.model<ISign>('Sign', SignSchema);
@@ -217,7 +251,9 @@ export {
     PhotoUrlModel,
     IPhotoUrl,
     IVerifiedNumber,
-    VerifiedNumberModel
+    VerifiedNumberModel,
+    ICampaignMessage,
+    CampaignMessageModel 
 };
 
 
