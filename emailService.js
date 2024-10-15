@@ -13,7 +13,7 @@ async function sendVerificationEmail(Email, verificationToken) {
         from: process.env.EMAIL_USER,
         to: Email, // Ensure this is correctly defined
         subject: 'Verify Your Email',
-        text: `Please verify your email for using SMS PORTAL by clicking on the following link: ${verificationURL}`,
+        text: `Thank you for signing up on DatastreamSend. To activate your account kindly click the link below then sign in with your credentials: ${verificationURL}`,
         html: `
             <p>Please verify your email for using SMS PORTAL by clicking on the following link:</p>
             <p><a href="${verificationURL}">Verify Email</a></p>
