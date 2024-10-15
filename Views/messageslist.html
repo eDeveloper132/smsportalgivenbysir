@@ -374,15 +374,47 @@
         <!--///Sidebar close button for 991px or below devices///-->
         <!--///.Sidebar close end///-->
         <script>
+          // Ensure myDIV is displayed when the page loads
+          document.addEventListener('DOMContentLoaded', function() {
+              var x = document.getElementById("myDIV");
+              var y = document.getElementById("myDIVA");
+              x.style.display = "block"; // Make sure it's displayed initially
+              y.classList.remove("mx-0"); // Ensure proper class
+              y.classList.add("mx-4"); // Set padding
+          });
+  
           function myFunction() {
-            var x = document.getElementById("myDIV");
-            if (x.style.display === "none") {
-              x.style.display = "block";
-            } else {
-              x.style.display = "none";
-            }
+              var x = document.getElementById("myDIV");
+              var y = document.getElementById("myDIVA");
+              
+              // Toggle display state
+              if (x.style.display === "none" || x.style.display === "") {
+                  x.style.display = "block";
+                  y.classList.remove("mx-0");
+                  y.classList.add("mx-4");
+              } else {
+                  x.style.display = "none";
+                  y.classList.remove("mx-4");
+                  y.classList.add("mx-0");
+              }
           }
-        </script>
+  
+          // Function to check and toggle display every second
+          function checkDisplay() {
+              const x = document.getElementById("myDIV");
+              const y = document.getElementById("myDIVA");
+  
+              // Check the display state and toggle if needed
+              if (x.style.display === "none" || x.style.display === "") {
+                  x.style.display = "block"; // Make it visible
+                  y.classList.remove("mx-0"); // Remove no padding class
+                  y.classList.add("mx-4"); // Set padding
+              }
+          }
+  
+          // Set an interval to check every second (1000 milliseconds)
+          setInterval(checkDisplay, 1000);
+      </script>
         <!--///////////Page content wrapper///////////////-->
         <main class="page-content d-flex flex-column flex-row-fluid">
           <!--//page-header//-->
