@@ -440,46 +440,77 @@ router.post('/deleteownnumber', async (req: Request, res: Response) => {
 });
 
 router.post('/deletetag', async (req: Request, res: Response) => {
-  const { id } = req.body; // Extract the tag ID from the request body
-  console.log('Request Body:', req.body); // Log the request body for debugging
+  const { id } = req.body; 
+  console.log('Request Body:', req.body); 
 
   if (!id) {
-    console.error('No ID provided'); // Log an error if ID is not provided
+    console.error('No ID provided'); 
     return res.status(400).json({ success: false, message: 'Alpha tag ID is required.' });
   }
 
   try {
-    // Replace with your ClickSend credentials
-    const clickSendAuth = {
-      username: 'bluebirdintegrated@gmail.com',
-      apiKey: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'
-    };
+    // Find the alpha tag by _id
+    console.log(`Searching for alpha tag associated with _id: ${id}`);
+    const findout = await AlphaTagModel.findOne({ _id: id });
+    console.log('Alpha tag found:', findout);
 
-    console.log(`Attempting to delete alpha tag with ID: ${id}`); // Log the ID being deleted
-
-    // Make DELETE request to ClickSend API to delete the alpha tag
-    const response = await axios.delete(`https://rest.clicksend.com/v3/alpha-tags/${id}`, {
-      auth: {
-        username: clickSendAuth.username,
-        password: clickSendAuth.apiKey // Use the API key as the password
-      }
-    });
-
-    // Check if the delete was successful
-    console.log('ClickSend API Response:', response); // Log the full response from ClickSend
-
-    if (response.status >= 200 && response.status <= 300) {
-      console.log('Alpha tag deleted successfully:', response);
-      return res.status(200).json({ success: true, message: 'Alpha tag deleted successfully.' });
-    } else {
-      console.error('Failed to delete alpha tag:', response);
-      return res.status(400).json({ success: false, message: 'Failed to delete alpha tag.' });
+    if (!findout) {
+      console.warn('No alpha tag found for the provided _id');
+      return res.status(404).json({ success: false, message: 'Alpha tag not found.' });
     }
+
+    const extract_tagid = findout?.pid;
+    const extract_alpha_tag = findout?.alpha_tag;
+    console.log('Extracted tag ID (pid):', extract_tagid);
+    console.log('Extracted alpha tag:', extract_alpha_tag);
+
+    if (extract_tagid != null) {
+      console.log(`Attempting to delete alpha tag with ClickSend ID: ${extract_tagid}`);
+      
+      const clickSendAuth = {
+        username: 'bluebirdintegrated@gmail.com',
+        apiKey: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'
+      };
+
+      try {
+        const response = await axios.delete(`https://rest.clicksend.com/v3/alpha-tags/${extract_tagid}`, {
+          auth: {
+            username: clickSendAuth.username,
+            password: clickSendAuth.apiKey
+          }
+        });
+
+        console.log('ClickSend API Response Status:', response.status);
+        if (response.status >= 200 && response.status < 300) {
+          const deletedTag = await AlphaTagModel.findOneAndDelete({ _id: id });
+          console.log('Alpha tag deleted from MongoDB:', deletedTag);
+          return res.status(200).json({ success: true, message: 'Alpha tag deleted successfully.' });
+        } else {
+          console.warn('Failed to delete alpha tag from ClickSend');
+        }
+      } catch {
+        console.error('Error from ClickSend API while deleting alpha tag');
+        return res.status(500).json({ success: false, message: 'Failed to delete alpha tag in ClickSend.' });
+      }
+    }
+
+    console.log('No ClickSend ID, deleting alpha tag from MongoDB only...');
+    const deletedTag = await AlphaTagModel.findOneAndDelete({ _id: id });
+    console.log('Alpha tag deleted successfully from MongoDB:', deletedTag);
+
+    // No need to query the document again after deletion
+    return res.status(200).json({ success: true, message: 'Alpha tag deleted successfully from MongoDB.' });
+
   } catch (error: any) {
-    console.error('Error deleting alpha tag:', error.response || error.message); // Log detailed error information
-    res.status(500).json({ success: false, message: 'Error occurred while deleting the alpha tag.' });
+    console.error('Error occurred while deleting the alpha tag:', error.message || error);
+    return res.status(500).json({ success: false, message: 'Error occurred while deleting the alpha tag.' });
   }
 });
+
+
+
+
+
 
 router.post('/updateownnumber', async (req: Request, res: Response) => {
   const { id, label } = req.body; // Extract id and label from the request body
@@ -1410,115 +1441,82 @@ router.get('/alphatag',(req:Request,res:Response)=>{
   res.sendFile(path.resolve(__dirname, '../Views/alphatag.html'));
 })
 router.post('/getalpha', async (req: Request, res: Response) => {
-  const username = 'bluebirdintegrated@gmail.com';
-const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+  console.log('Received request to fetch all alpha tags for user:', res.locals.user._id); // Log user ID
+
   try {
-    // Prepare the API call to ClickSend Alpha Tags API
-    const apiResponse = await fetch('https://rest.clicksend.com/v3/alpha-tags', {
-      method: 'GET',
-      headers: {
-        'Authorization': 'Basic ' + Buffer.from(`${username}:${apiKey}`).toString('base64') // Basic Auth
-      }
-    });
+    // Attempt to find all alpha tags for the user
+    const results = await AlphaTagModel.find({ user_id: res.locals.user._id });
+    console.log('Alpha tag query results:', results); // Log the results of the query
 
-    // Parse the response from ClickSend
-    const result = await apiResponse.json();
-
-    if (apiResponse.ok) {
-      // Respond with the result if the request is successful
+    if (results && results.length > 0) {
+      console.log('Alpha tags found, responding with data...'); // Log successful find
+      // Respond with the results if the request is successful
       res.status(200).json({
         success: true,
         message: 'Alpha tags fetched successfully',
-        data: result
+        data: results
       });
     } else {
-      // Handle error response from ClickSend API
-      res.status(apiResponse.status).json({
+      console.warn('No alpha tags found for user:', res.locals.user._id); // Warn if no data found
+      res.json({
         success: false,
-        error: result.message || 'Failed to fetch alpha tags',
-        details: result
+        error: 'No alpha tags found for this user',
+        details: []
       });
     }
-  } catch (error) {
-    console.error('Error fetching alpha tags:', error);
+  } catch (error: any) {
+    console.error('Error fetching alpha tags:', error.message || error); // Log error details
     res.status(500).json({
       success: false,
       message: 'Server error occurred while fetching alpha tags'
     });
   }
 });
+
+
 router.post('/alphatag', async (req: Request, res: Response) => {
-  const { alpha_tag, reason } = req.body; // Extract the alpha_tag and reason from request body
+  const { alpha_tag, reason } = req.body; // Extract alpha_tag and reason from the request body
   console.log(req.body); // Log the request body to verify data is being received correctly
   const user = res.locals.user; // Get the user from middleware
 
   if (!user) {
-      console.error('User not authenticated');
-      return res.status(401).json({ message: 'User not authenticated' });
+    console.error('User not authenticated');
+    return res.status(401).json({ message: 'User not authenticated' });
   }
 
   const userId = user._id;
 
-  // Your ClickSend credentials
-  const username = 'bluebirdintegrated@gmail.com';
-  const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
-  
   // Validate alpha_tag
   if (!alpha_tag || alpha_tag.length < 3 || alpha_tag.length > 11 || !/[A-Za-z]+/.test(alpha_tag)) {
     return res.status(400).json({ message: 'Invalid alpha tag. Must be between 3-11 characters and contain at least one letter.' });
   }
 
   try {
-    console.log('Attempting to send alpha tag request to ClickSend...');
-    const apiResponse = await fetch('https://rest.clicksend.com/v3/alpha-tags', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Basic ' + Buffer.from(`${username}:${apiKey}`).toString('base64')
-      },
-      body: JSON.stringify({
-        alpha_tag: alpha_tag,
-        reason: reason || ''
-      })
+    // Save the alpha tag data to MongoDB (without ClickSend)
+    const saver = await AlphaTagModel.create({
+      user_id: userId,
+      alpha_tag: alpha_tag,
+      status: 'PENDING', // Example status
+      reason: reason
     });
-    
-    const result = await apiResponse.json();
-    console.log('API Response:', result);  // Log the result here
-  
-    if (apiResponse.ok) {
-      const saver = await AlphaTagModel.create({
-        pid: result.id,
-        account_id: result.account_id,
-        workspace_id: result.workspace_id,
-        user_id_clicksend: result.user_id,
-        user_id: userId,
-        alpha_tag: result.alpha_tag,
-        status: result.status,
-        reason: result.reason
-      })
-      await saver.save();
-      console.log(saver);
-      res.status(200).json({
-        success: true,
-        message: 'Alpha tag created successfully',
-        data: result
-      });
-    } else {
-      console.error('Error from ClickSend:', result); // Log any errors from the API
-      res.status(apiResponse.status).json({
-        success: false,
-        error: result.message || 'Failed to create alpha tag',
-        details: result
-      });
-    }
-  } catch (error:any) {
-    console.error('Error creating alpha tag:', error.message || error);
+    await saver.save();
+
+    console.log(saver);
+    res.status(200).json({
+      success: true,
+      message: 'Alpha tag created and saved successfully',
+      data: saver,
+      user: user // Return current user's data in response
+    });
+  } catch (error: any) {
+    console.error('Error saving alpha tag:', error.message || error);
     res.status(500).json({
       success: false,
-      message: 'Server error occurred while creating alpha tag'
+      message: 'Server error occurred while saving alpha tag'
     });
   }
 });
+
 
 router.get('/profilepage',(req:Request , res:Response)=>{
   res.sendFile(path.resolve(__dirname, '../Views/profile.html'));

@@ -851,55 +851,56 @@ chat
 
 // Function to open the delete confirmation modal
             
-                    // Function to fetch alpha tags
-                    async function fetchAlphaTags() {
-                        try {
-                            const response = await fetch('/getalpha', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            });
-            
-                            const result = await response.json();
-                            console.log('API Response:', result); // Log the entire response to see its structure
-                            
-                            if (response.ok) {
-                                // Access the alpha tags correctly
-                                displayAlphaTags(result.data.alpha_tags); // Update here to point to the correct path
-                            } else {
-                                showToast(result.error || 'Failed to fetch alpha tags.', false);
-                            }
-                        } catch (error) {
-                            console.error('Error fetching alpha tags:', error);
-                            showToast('An error occurred while fetching alpha tags.', false);
-                        }
-                    }
-            
-                    function displayAlphaTags(alphaTags) {
-                        const tableBody = document.getElementById('alphaTagsTableBody');
-                        tableBody.innerHTML = ''; // Clear previous results
-            
-                        if (!Array.isArray(alphaTags) || alphaTags.length === 0) {
-                            tableBody.innerHTML = '<tr><td colspan="3" class="text-center">No alpha tags found.</td></tr>';
-                            return;
-                        }
-            
-                        alphaTags.forEach(tag => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${tag.alpha_tag}</td>
-                                <td>${tag.status}</td>
-                                <td>${tag.reason}</td>
-                                <td>
-                                    <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${tag.id}')">delete</button>  
-                                </td>
-                            `;
-                            tableBody.appendChild(row);
-                        });
-                        showToast('Alpha tags fetched successfully!', true); // Alert user about successful fetch
-                    }
-            
+// Function to fetch alpha tags
+async function fetchAlphaTags() {
+    try {
+        const response = await fetch('/getalpha', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+        console.log('API Response:', result); // Log the entire response to see its structure
+        
+        if (response.ok && result.success) {
+            // Assuming the alpha tag data is an array of tags
+            displayAlphaTags(result.data); // Pass the array directly
+        } else {
+            showToast(result.error || 'Failed to fetch alpha tags.', false);
+        }
+    } catch (error) {
+        console.error('Error fetching alpha tags:', error);
+        showToast('An error occurred while fetching alpha tags.', false);
+    }
+}
+
+// Function to display alpha tags in the table
+function displayAlphaTags(alphaTags) {
+    const tableBody = document.getElementById('alphaTagsTableBody');
+    tableBody.innerHTML = ''; // Clear previous results
+
+    if (!Array.isArray(alphaTags) || alphaTags.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center">No alpha tags found.</td></tr>';
+        return;
+    }
+
+    alphaTags.forEach(tag => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${tag.alpha_tag}</td>
+            <td>${tag.status}</td>
+            <td>${tag.reason}</td>
+            <td>
+                <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${tag._id}')">delete</button>  
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+    showToast('Alpha tags fetched successfully!', true); // Alert user about successful fetch
+}
+        
                     function getGreeting() {
                         const now = new Date();
                         const hours = now.getHours();

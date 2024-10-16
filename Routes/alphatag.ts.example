@@ -1,0 +1,36 @@
+        const apiResponse = await fetch('https://rest.clicksend.com/v3/alpha-tags', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic ' + Buffer.from(`${username}:${apiKey}`).toString('base64')
+      },
+      body: JSON.stringify({
+        alpha_tag: alpha_tag,
+        reason: reason || ''
+      })
+    });
+    if (apiResponse.ok) {
+      const saver = await AlphaTagModel.create({
+        pid: result.id,
+        account_id: result.account_id,
+        workspace_id: result.workspace_id,
+        user_id_clicksend: result.user_id,
+        user_id: userId,
+        alpha_tag: result.alpha_tag,
+        status: result.status,
+        reason: result.reason
+      })
+
+        const username = 'bluebirdintegrated@gmail.com';
+const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+  
+    // Prepare the API call to ClickSend Alpha Tags API
+    const apiResponse = await fetch('https://rest.clicksend.com/v3/alpha-tags', {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(`${username}:${apiKey}`).toString('base64') // Basic Auth
+      }
+    });
+
+    // Parse the response from ClickSend
+    const result = await apiResponse.json();

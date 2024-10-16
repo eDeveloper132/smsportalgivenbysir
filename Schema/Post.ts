@@ -53,10 +53,10 @@ const VerifiedNumberModel: Model<IVerifiedNumber> = mongoose.model<IVerifiedNumb
 
 // Interface and Schema for AlphaTag
 interface IAlphaTag extends Document {
-    pid: string; // Unique process ID for the alpha tag
-    account_id: string; // Account ID from the ClickSend API
-    workspace_id: string; // Workspace ID from ClickSend
-    user_id_clicksend: string; // ClickSend's User ID associated with the alpha tag
+    pid?: string; // Unique process ID for the alpha tag
+    account_id?: string; // Account ID from the ClickSend API
+    workspace_id?: string; // Workspace ID from ClickSend
+    user_id_clicksend?: string; // ClickSend's User ID associated with the alpha tag
     user_id: Types.ObjectId; // Reference to the User (SignModel)
     alpha_tag: string; // The name of the alpha tag (e.g., Sender ID)
     status: string; // Status of the alpha tag (e.g., pending, approved, rejected)
@@ -64,12 +64,12 @@ interface IAlphaTag extends Document {
 }
 
 const AlphaTagSchema: Schema<IAlphaTag> = new Schema({
-    pid: { type: String, required: true }, // Unique process ID
-    account_id: { type: String, required: true }, // ClickSend Account ID
-    workspace_id: { type: String, required: true }, // ClickSend Workspace ID
-    user_id_clicksend: { type: String, required: true }, // ClickSend User ID
+    pid: { type: String, required: false , default: null }, // Unique process ID
+    account_id: { type: String, required: false , default: null }, // ClickSend Account ID
+    workspace_id: { type: String, required: false , default: null }, // ClickSend Workspace ID
+    user_id_clicksend: { type: String, required: false , default: null }, // ClickSend User ID
     user_id: { type: Schema.Types.ObjectId, ref: 'Sign', required: true }, // Reference to User model
-    alpha_tag: { type: String, required: true }, // Alpha tag name
+    alpha_tag: { type: String, required: true , unique:true }, // Alpha tag name
     status: { type: String, required: true }, // Status of the alpha tag
     reason: { type: String, required: true } // Reason for creating the alpha tag
 }, { timestamps: true });
