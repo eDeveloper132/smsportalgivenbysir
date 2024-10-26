@@ -445,9 +445,9 @@
                    aria-expanded="false" data-bs-toggle="dropdown" data-bs-auto-close="outside">
                     <div class="d-flex align-items-center">
                         <!--Avatar with status-->
-                        <div class="avatar-status status-online me-sm-2 avatar xs">
+                        <!-- <div class="avatar-status status-online me-sm-2 avatar xs">
                             <img src="/assets/media/avatars/01.jpg" class="rounded-circle img-fluid" alt="" id="userAvatar">
-                        </div>
+                        </div> -->
                         <span class="d-none d-md-inline-block" id="userName">Noah</span>
                     </div>
                 </a>
@@ -466,7 +466,7 @@
                       </div>
                   </div>
               
-                  <div class="pt-2">
+                  <!-- <div class="pt-2">
                       <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#uploadModal">
                           <div>
                               <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="grey">
@@ -475,7 +475,7 @@
                           </div>
                           <span class="px-2">Upload Profile Pic</span>
                       </a>
-                  </div>
+                  </div> -->
                   <div class="pt-2">
                       <a class="dropdown-item d-flex align-items-center" href="/changepass">
                           <div>
@@ -509,7 +509,7 @@
           </header>
           <!--Main Header End-->
 
-          <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+          <!-- <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -527,7 +527,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
 
           <!--Main Search Modal-->
           <!-- Modal -->
@@ -760,25 +760,25 @@
                     <script>
                       document.addEventListener('DOMContentLoaded', () => {
                         // Fetch and load the profile picture
-                        fetch('/profile-pic')
-                          .then(response => {
-                            if (!response.ok) {
-                              showToast('Profile picture not found. Using default avatar.', false);
-                              throw new Error('Profile picture not found');
-                            }
-                            return response.json();
-                          })
-                          .then(data => {
-                            const imgElement = document.getElementById('userAvatar');
-                            imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
-                            showToast('Profile picture loaded successfully!', true);
-                          })
-                          .catch(error => {
-                            console.error('Error:', error.message);
-                            const imgElement = document.getElementById('userAvatar');
-                            imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
-                            showToast('Error loading profile picture. Using default avatar.', false);
-                          });
+                        // fetch('/profile-pic')
+                        //   .then(response => {
+                        //     if (!response.ok) {
+                        //       showToast('Profile picture not found. Using default avatar.', false);
+                        //       throw new Error('Profile picture not found');
+                        //     }
+                        //     return response.json();
+                        //   })
+                        //   .then(data => {
+                        //     const imgElement = document.getElementById('userAvatar');
+                        //     imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
+                        //     showToast('Profile picture loaded successfully!', true);
+                        //   })
+                        //   .catch(error => {
+                        //     console.error('Error:', error.message);
+                        //     const imgElement = document.getElementById('userAvatar');
+                        //     imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
+                        //     showToast('Error loading profile picture. Using default avatar.', false);
+                        //   });
                     
                         // Set the greeting message based on time
                         function getGreeting() {

@@ -480,9 +480,9 @@ chat
                  aria-expanded="false" data-bs-toggle="dropdown" data-bs-auto-close="outside">
                   <div class="d-flex align-items-center">
                       <!--Avatar with status-->
-                      <div class="avatar-status status-online me-sm-2 avatar xs">
+                      <!-- <div class="avatar-status status-online me-sm-2 avatar xs">
                         <img src="/assets/media/avatars/default.jpg" class="rounded-circle img-fluid" alt="" id="userAvatar">
-                    </div>
+                    </div> -->
                       <span class="d-none d-md-inline-block" id="userName">Noah</span>
                   </div>
               </a>
@@ -501,7 +501,7 @@ chat
                     </div>
                 </div>
             
-                <div class="pt-2">
+                <!-- <div class="pt-2">
                     <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#uploadModal">
                         <div>
                             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="grey">
@@ -510,7 +510,7 @@ chat
                         </div>
                         <span class="px-2">Upload Profile Pic</span>
                     </a>
-                </div>
+                </div> -->
                 <div class="pt-2">
                     <a class="dropdown-item d-flex align-items-center" href="/changepass">
                         <div>
@@ -544,7 +544,7 @@ chat
         </header>
         <!--Main Header End-->
 
-        <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <!-- <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered">
               <div class="modal-content">
                   <div class="modal-header">
@@ -563,7 +563,7 @@ chat
               </div>
           </div>
       </div>
-      
+       -->
       
 
         <!--Main Search Modal-->
@@ -831,23 +831,23 @@ chat
       let userId = null; // Store the userId globally
   
       // Fetch profile picture and handle errors
-      fetch('/profile-pic')
-          .then(response => {
-              if (!response.ok) {
-                  throw new Error(`Failed to fetch profile picture. Status: ${response.status}`);
-              }
-              return response.json();
-          })
-          .then(data => {
-              const imgElement = document.getElementById('userAvatar');
-              imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
-          })
-          .catch(error => {
-              console.error('Error:', error.message);
-              const imgElement = document.getElementById('userAvatar');
-              imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
-              showToast('Failed to load profile picture. Default image used.', false);
-          });
+      // fetch('/profile-pic')
+      //     .then(response => {
+      //         if (!response.ok) {
+      //             throw new Error(`Failed to fetch profile picture. Status: ${response.status}`);
+      //         }
+      //         return response.json();
+      //     })
+      //     .then(data => {
+      //         const imgElement = document.getElementById('userAvatar');
+      //         imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
+      //     })
+      //     .catch(error => {
+      //         console.error('Error:', error.message);
+      //         const imgElement = document.getElementById('userAvatar');
+      //         imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
+      //         showToast('Failed to load profile picture. Default image used.', false);
+      //     });
   
       try {
           // Fetch user data
