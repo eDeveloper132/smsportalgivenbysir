@@ -243,6 +243,7 @@ app.get("/verify-email", async (req, res) => {
         }
         // Mark the user as verified
         user.isVerified = true;
+        user.verificationToken = "";
         // Clear the token expiry
         await user.save();
         // Send the success message and delay the redirect by 3 seconds

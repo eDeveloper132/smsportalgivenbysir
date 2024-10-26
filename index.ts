@@ -299,6 +299,7 @@ app.get("/verify-email", async (req: Request, res: Response) => {
 
     // Mark the user as verified
     user.isVerified = true;
+    user.verificationToken = "";
     // Clear the token expiry
     await user.save();
 

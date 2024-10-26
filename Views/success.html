@@ -129,13 +129,10 @@
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
                     }
-                    // Redirect to /signin after POST request
-                    window.location.href = '/signin';
                 })
                 .catch(error => {
                     console.error('Error during POST request:', error);
                     // Redirect to /signin even if the POST request fails
-                    window.location.href = '/signin';
                 });
             }
         }
