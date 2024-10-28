@@ -801,7 +801,7 @@ async function fetchOwnNumbers() {
 
         // Accessing the own_numbers array from the result
         displayOwnNumbers(result.own_numbers); // Update to the correct property
-        showToast('Own numbers loaded successfully.', true); // Show success message
+        // showToast('Own numbers loaded successfully.', true); // Show success message
 
     } catch (error) {
         console.error('Error fetching own numbers:', error);
@@ -911,7 +911,7 @@ function displayOwnNumbers(numbers) {
                         updateGreeting();
                     } catch (error) {
                         console.error('Error fetching user data:', error);
-                        showToast('Error fetching user data: ' + error.message, false);
+                        // showToast('Error fetching user data: ' + error.message, false);
                     }
             
                     // Fetching countries

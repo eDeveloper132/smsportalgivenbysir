@@ -747,27 +747,6 @@
                     
                     <script>
                       document.addEventListener('DOMContentLoaded', () => {
-                        // Fetch and load the profile picture
-                        // fetch('/profile-pic')
-                        //   .then(response => {
-                        //     if (!response.ok) {
-                        //       showToast('Profile picture not found. Using default avatar.', false);
-                        //       throw new Error('Profile picture not found');
-                        //     }
-                        //     return response.json();
-                        //   })
-                        //   .then(data => {
-                        //     const imgElement = document.getElementById('userAvatar');
-                        //     imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
-                        //     showToast('Profile picture loaded successfully!', true);
-                        //   })
-                        //   .catch(error => {
-                        //     console.error('Error:', error.message);
-                        //     const imgElement = document.getElementById('userAvatar');
-                        //     imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
-                        //     showToast('Error loading profile picture. Using default avatar.', false);
-                        //   });
-                    
                         // Set the greeting message based on time
                         function getGreeting() {
                           const now = new Date();
@@ -791,7 +770,6 @@
                           const greeting = getGreeting();
                           if (greetingElement) {
                             greetingElement.textContent = greeting;
-                            showToast(`Greeting updated to "${greeting}"`, true);
                           }
                         }
                     
@@ -821,7 +799,6 @@
                             document.getElementById('userGreeting').textContent = data.Name;
                             document.getElementById('packagename').textContent = data.PackageName;
                             document.getElementById('packagecoins').textContent = data.Coins;
-                            showToast('User data fetched successfully!', true);
                           }
                         } catch (error) {
                           console.error('Error fetching user data:', error);
@@ -834,10 +811,7 @@
                         try {
                           const response = await fetch('/sms/api/messages');
                     
-                          if (!response.ok) {
-                            showToast('Failed to fetch messages.', false);
-                            throw new Error('Failed to fetch messages');
-                          }
+                          if (!response.ok) throw new Error('Failed to fetch messages');
                     
                           const data = await response.json();
                           console.log('Messages Data:', data); // Debug output
@@ -870,10 +844,6 @@
                     
                             // Update the message counter
                             messagesCounter.textContent = messageCount;
-                    
-                            showToast('Messages loaded successfully.', true);
-                          } else {
-                            showToast('No messages found.', true);
                           }
                         } catch (error) {
                           console.error('Error loading messages:', error);
@@ -907,6 +877,7 @@
                         });
                       }
                     </script>
+                    
                     
                     <!--//Page content End//-->
             <!--//Page-footer//-->

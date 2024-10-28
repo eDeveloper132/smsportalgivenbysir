@@ -1198,11 +1198,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Now that userId is available, fetch and filter the contact lists
                 fetchContactLists();
-                showToast('User data fetched successfully!', true); // Show success message
+                // showToast('User data fetched successfully!', true); // Show success message
             }
         } catch (error) {
             console.error('Error fetching user data:', error);
-            showToast('Error fetching user data.', false); // Show error message
+            // showToast('Error fetching user data.', false); // Show error message
         }
     }
 
@@ -1262,10 +1262,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
 
-        showToast('Contact lists fetched successfully!', true); // Show success message
+        // showToast('Contact lists fetched successfully!', true); // Show success message
     } catch (error) {
         console.error('Error fetching lists:', error);
-        showToast('Error fetching contact lists.', false); // Show error message
+        // showToast('Error fetching contact lists.', false); // Show error message
     }
 }
     // Function to update a list
@@ -1468,7 +1468,7 @@ async function viewList(listId) {
 
             // Display contacts in the modal
             displayContacts(result.list.contacts); // Call to display the contacts
-            showToast('success', 'List retrieved successfully!');
+            showToast('List retrieved successfully!',true);
 
             // Show the modal with contact details
             const contactDetailsModal = new bootstrap.Modal(document.getElementById('contactDetailsModal'));
@@ -1476,11 +1476,11 @@ async function viewList(listId) {
         } else {
             const errorData = await response.json();
             console.error('Failed to retrieve list:', errorData);
-            showToast('error', 'Failed to retrieve the list');
+            showToast('Failed to retrieve the list',false);
         }
     } catch (error) {
         console.error('Error retrieving list:', error);
-        showToast('error', 'Error retrieving the list.');
+        showToast('Error retrieving the list.',false);
     }
 }
 function openupdatenumberModal(contactId) {
@@ -1618,7 +1618,7 @@ const form = document.getElementById('contactListForm');
                       
                               const listName = document.getElementById('listName').value;
                               if (!listName) {
-                                  showToast('error', 'List name cannot be empty.');
+                                  showToast('List name cannot be empty.',false);
                                   return;
                               }
                       
@@ -1635,16 +1635,16 @@ const form = document.getElementById('contactListForm');
                                   console.log('API Response:', data);
                       
                                   if (response.ok) {
-                                      showToast('success', 'Contact list created successfully!');
+                                      showToast('Contact list created successfully!',true);
                                       window.location.reload();
                                       // window.location.reload();
                                   } else {
-                                      showToast('error', data.message || 'Failed to create contact list.');
+                                      showToast( data.message || 'Failed to create contact list.',false);
                                       window.location.reload();
                                   }
                               } catch (error) {
                                   console.error('Error creating contact list:', error);
-                                  showToast('error', 'Failed to create contact list.');
+                                  showToast('Failed to create contact list.',false);
                               }
                           });
                       

@@ -717,25 +717,17 @@ chat
             
               <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
             
-              <!-- Include Bootstrap JS and Popper.js -->
-              <script 
-                src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js">
-              </script>
-              <script 
-                src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
-              </script>
             
               <script>
                 document.addEventListener('DOMContentLoaded', async () => {
                   try {
                     await fetchUserData();
                     await fetchCampaigns();
-                    showToast("Application initialized successfully.", true);
                   } catch (error) {
                     showToast(`Error during initialization: ${error.message}`, false);
                   }
                 });
-            
+              
                 // Fetch user data and update the UI
                 async function fetchUserData() {
                   try {
@@ -743,71 +735,71 @@ chat
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' }
                     });
-            
+              
                     if (!response.ok) throw new Error(`Failed to fetch user data. Status: ${response.status}`);
-            
+              
                     const data = await response.json();
                     updateUserData(data);
                   } catch (error) {
                     showToast(`Error loading user details: ${error.message}`, false);
                   }
                 }
-            
+              
                 function updateUserData(data) {
                   document.getElementById('userName').textContent = data.Name;
                   document.getElementById('userFullName').textContent = data.Name;
                   document.getElementById('packagename').textContent = data.PackageName || 'N/A';
                   document.getElementById('packagecoins').textContent = data.Coins || 'N/A';
                 }
-            
+              
                 // Fetch and populate campaigns
                 async function fetchCampaigns() {
-  try {
-    const response = await fetch('/view_campaigns', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    if (!response.ok) throw new Error(`Failed to fetch campaigns. Status: ${response.status}`);
-
-    const result = await response.json();
-    const campaigns = result.data || [];
-
-    const campaignTableBody = document.getElementById('campaignTableBody');
-    campaignTableBody.innerHTML = ''; // Clear existing rows
-
-    if (campaigns.length === 0) {
-      const row = document.createElement('tr');
-      row.innerHTML = `<td colspan="8" class="text-center">No campaigns available</td>`;
-      campaignTableBody.appendChild(row);
-    } else {
-      campaigns.forEach(campaign => {
-        const dateAdded = new Date(campaign.date_added).toLocaleString();
-        const schedule = new Date(campaign.schedule).toLocaleString();
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${campaign.sms_campaign_id}</td>
-          <td>${campaign.name}</td>
-          <td>${campaign.from}</td>
-          <td>${campaign.body}</td>
-          <td>${schedule}</td>
-          <td>${campaign.status}</td>
-          <td>${dateAdded}</td>
-          <td>
-            <button class="btn btn-success btn-sm" onclick="updateCampaign(${campaign.sms_campaign_id})">Update</button>
-            <button class="btn btn-danger btn-sm" onclick="cancelCampaign(${campaign.sms_campaign_id})">Cancel</button>
-          </td>
-        `;
-        campaignTableBody.appendChild(row);
-      });
-    }
-  } catch (error) {
-    console.error('Error fetching campaigns:', error);
-    showToast(`Failed to load campaigns: ${error.message}`, false);
-  }
-}
-
+                  try {
+                    const response = await fetch('/view_campaigns', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' }
+                    });
+              
+                    if (!response.ok) throw new Error(`Failed to fetch campaigns. Status: ${response.status}`);
+              
+                    const result = await response.json();
+                    const campaigns = result.data || [];
+              
+                    const campaignTableBody = document.getElementById('campaignTableBody');
+                    campaignTableBody.innerHTML = ''; // Clear existing rows
+              
+                    if (campaigns.length === 0) {
+                      const row = document.createElement('tr');
+                      row.innerHTML = `<td colspan="8" class="text-center">No campaigns available</td>`;
+                      campaignTableBody.appendChild(row);
+                    } else {
+                      campaigns.forEach(campaign => {
+                        const dateAdded = new Date(campaign.date_added).toLocaleString();
+                        const schedule = new Date(campaign.schedule).toLocaleString();
+              
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                          <td>${campaign.sms_campaign_id}</td>
+                          <td>${campaign.name}</td>
+                          <td>${campaign.from}</td>
+                          <td>${campaign.body}</td>
+                          <td>${schedule}</td>
+                          <td>${campaign.status}</td>
+                          <td>${dateAdded}</td>
+                          <td>
+                            <button class="btn btn-success btn-sm" onclick="updateCampaign(${campaign.sms_campaign_id})">Update</button>
+                            <button class="btn btn-danger btn-sm" onclick="cancelCampaign(${campaign.sms_campaign_id})">Cancel</button>
+                          </td>
+                        `;
+                        campaignTableBody.appendChild(row);
+                      });
+                    }
+                  } catch (error) {
+                    console.error('Error fetching campaigns:', error);
+                    showToast(`Failed to load campaigns: ${error.message}`, false);
+                  }
+                }
+              
                 function showToast(message, isSuccess) {
                   const toastContainer = document.getElementById('toastContainer');
                   const toast = document.createElement('div');
@@ -815,24 +807,25 @@ chat
                   toast.role = 'alert';
                   toast.innerHTML = `<div class="toast-body">${message}</div>`;
                   toastContainer.appendChild(toast);
-            
+              
                   const bsToast = new bootstrap.Toast(toast);
                   bsToast.show();
-            
+              
                   toast.addEventListener('hidden.bs.toast', () => {
                     toastContainer.removeChild(toast);
                   });
                 }
-            
+              
                 // Placeholder functions for update and cancel actions
                 function updateCampaign(id) {
                   showToast(`Update campaign ${id}`, true);
                 }
-            
+              
                 function cancelCampaign(id) {
                   showToast(`Cancel campaign ${id}`, false);
                 }
               </script>
+              
           
             
             

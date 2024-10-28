@@ -736,27 +736,6 @@ chat
                 document.addEventListener('DOMContentLoaded', async () => {
                     let userId = null; // Store the userId globally
                     let currentTagIdToDelete = null; // Variable to store the ID of the tag to delete
-            
-                    // Fetching user profile picture
-                    // fetch('/profile-pic')
-                    //     .then(response => {
-                    //         if (!response.ok) {
-                    //             throw new Error('Profile picture not found');
-                    //         }
-                    //         return response.json();
-                    //     })
-                    //     .then(data => {
-                    //         const imgElement = document.getElementById('userAvatar');
-                    //         imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
-                    //     })
-                    //     .catch(error => {
-                    //         console.error('Error:', error.message);
-                    //         const imgElement = document.getElementById('userAvatar');
-                    //         imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
-                    //         showToast('Using default profile picture.', false); // Alert user about default image
-                    //     });
-            
-                    // Fetch user data
                     try {
                         const response = await fetch('/user', {
                             method: 'POST',
