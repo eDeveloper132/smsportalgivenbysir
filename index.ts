@@ -15,6 +15,7 @@ import { lstat } from "fs";
 import SessionModel from "./Schema/Session.js";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
+import sendTemporaryCode from "./RecoverpassService.js";
 const PORT = process.env.PORT || 3437;
 const app = express();
 
@@ -35,8 +36,8 @@ await connection();
 mongoose.set('debug', true);
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static('profilephoto'));
-app.use('/profilephoto', express.static('profilephoto'));
+// app.use(express.static('profilephoto'));
+// app.use('/profilephoto', express.static('profilephoto'));
 
 
 export type AppRes = Response<any, { user: ISign | null }>;
@@ -53,6 +54,9 @@ const sessionMiddleware = async (
     "/verify-email",
     "/resend-verification",
     "/recoverpass",
+    "/recaver",
+    "/tempassauth",
+
   ];
 
   // If the request path is in the excluded paths, skip session check
@@ -243,23 +247,18 @@ app.post("/recoverpass", async (req: Request, res: Response) => {
     const temporaryPassword = generateTemporaryPassword(12);
     const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
     arrey.push(hashedPassword);
-
-    const FORVERIFICATION = arrey[0];
     const updatedUser = await SignModel.findByIdAndUpdate(
       Id,
       {
         $set: {
           Password: arrey[0],
-          verificationToken: FORVERIFICATION,
-          verificationTokenExpiry: Date.now() + 3600000,
-          isVerified: false,
         },
       },
       { new: true, runValidators: true }
     );
     updatedUser?.save();
 
-    await sendVerificationEmail(email, FORVERIFICATION);
+    await sendTemporaryCode(email, temporaryPassword);
 
     if (!updatedUser) {
       return res
@@ -276,6 +275,44 @@ app.post("/recoverpass", async (req: Request, res: Response) => {
     res
       .status(500)
       .send("An internal server error occurred. Please try again later.");
+  }
+});
+
+app.post("/tempassauth", async (req: Request, res: Response) => {
+  const { email, tempPassword } = req.body;
+  try {
+    if (!email || !tempPassword) {
+      return res.status(400).send("Error: Missing fields");
+    }
+
+    const user = await SignModel.findOne({ Email: email });
+    if (!user) {
+      return res.status(401).send("Error: Invalid email or password");
+    }
+
+    const isMatch = await bcrypt.compare(tempPassword, user.Password!);
+    if (!isMatch) {
+      return res.status(401).send("Error: Invalid password");
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).send("Error: Account not verified. Please verify.");
+    }
+    const sessionId = uuidv4();
+    const session = new SessionModel({
+      userId: user._id,
+      sessionId,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 3600000), // 1 hour
+    });
+
+    await session.save();
+    res.cookie("sessionId", sessionId, { httpOnly: true, secure: true });
+    res.redirect("/");
+
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 

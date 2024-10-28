@@ -203,35 +203,13 @@
                                         
                                             // Forgot Password Button Click Event
                                             document.getElementById('forgotPasswordButton').addEventListener('click', async function() {
-                                                const email = document.getElementById('floatingInputEmail').value;
-                                                if (!email) {
-                                                    showToast('Please enter your email address to recover your password.', 'error');
-                                                    return;
-                                                }
+
                                         
-                                                await recoverPassword(email);
+                                                await recoverPassword();
                                             });
                                         
-                                            async function recoverPassword(email) {
-                                                try {
-                                                    const response = await fetch('/recoverpass', {
-                                                        method: 'POST',
-                                                        headers: {
-                                                            'Content-Type': 'application/json',
-                                                        },
-                                                        body: JSON.stringify({ email: email }),
-                                                    });
-                                        
-                                                    if (response.ok) {
-                                                        const data = await response.json();
-                                                        showToast(`Success: ${data.message}`, 'success');
-                                                    } else {
-                                                        const errorMessage = await response.text();
-                                                        showToast(`Error: ${errorMessage}`, 'error');
-                                                    }
-                                                } catch (error) {
-                                                    showToast('An unexpected error occurred. Please try again.', 'error');
-                                                }
+                                            async function recoverPassword() {
+                                                window.location.href = '/recaver'
                                             }
                                         
                                             function showToast(message, isSuccess) {

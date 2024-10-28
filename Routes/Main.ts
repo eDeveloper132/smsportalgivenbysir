@@ -938,20 +938,17 @@ router.get("/changepass", (req, res) => {
 
 router.post("/changepass", async (req: Request, res: AppRes) => {
   const { current_password, new_password, confirm_password } = req.body;
-
+  console.log(req.body);
   if (!current_password || !new_password || !confirm_password) {
     return res.status(400).send("All fields are required.");
   }
 
   // Fetch user details from FetchUserDetails
   const user = res.locals.user; // Modify as needed
-  if (!user) {
-    return res.status(404).send("User not found.");
-  }
 
   try {
     // Verify current password
-    const match = await bcrypt.compare(current_password, user.Password!);
+    const match = await bcrypt.compare(current_password, user?.Password!);
     if (!match) {
       return res.status(400).send("Current password is incorrect.");
     }
@@ -963,7 +960,7 @@ router.post("/changepass", async (req: Request, res: AppRes) => {
     };
 
     // Update user password
-    await findAndUpdateUserById(user._id as string, updated_data);
+    await findAndUpdateUserById(user?._id as string, updated_data);
 
     res.send("Password changed successfully.");
   } catch (error: any) {
@@ -1562,7 +1559,7 @@ router.get('/alphatags', async (req: Request, res: Response) => {
       senderId: tag.user_id_clicksend,
       tagname: tag.alpha_tag
     }));
-
+    console.log(alphaTags)
     // Send the AlphaTags data as JSON
     res.json(formattedAlphaTags);
   } catch (error) {
@@ -1572,73 +1569,88 @@ router.get('/alphatags', async (req: Request, res: Response) => {
 });
 
 router.post('/view_campaigns', async (req: Request, res: Response) => {
-  const user = res.locals.user; // Get the authenticated user from middleware
+  const user = res.locals.user;
 
   if (!user) {
     return res.status(401).json({ message: 'User not authenticated' });
   }
 
-  const userId = user._id; // User ID from the authenticated user
-  const apiUrl = 'https://rest.clicksend.com/v3/sms-campaigns'; // ClickSend API URL
+  const userId = user._id;
+  const apiUrl = 'https://rest.clicksend.com/v3/sms-campaigns';
 
   try {
     console.log('Sending GET request to ClickSend API to fetch SMS campaigns...');
 
     const response = await axios.get(apiUrl, {
       auth: {
-        username: 'bluebirdintegrated@gmail.com', // Your ClickSend username
-        password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99' // Your ClickSend API key
+        username: 'bluebirdintegrated@gmail.com',
+        password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'
       }
     });
 
     console.log('API response data:', response.data);
 
-    const campaigns = response.data.data; // Assuming `data` contains the list of campaigns
+    const campaigns = response.data.data.data || []; // Correctly access the campaigns list
 
-    // Save campaigns to the database and collect their IDs
+    if (campaigns.length === 0) {
+      return res.status(200).json({
+        http_code: 200,
+        response_code: 'SUCCESS',
+        response_msg: 'No SMS campaigns found.',
+        data: []
+      });
+    }
+
     const savedCampaigns = await Promise.all(
       campaigns.map(async (campaign: any) => {
         const newCampaign = new CampaignMessageModel({
           userId: userId,
           sms_campaign_id: campaign.sms_campaign_id,
           campaign_name: campaign.name,
-          list_id: campaign.list_id, // Assuming list_id is valid
+          list_id: campaign.list_id || null,
           from: campaign.from,
           body: campaign.body,
-          schedule: new Date(parseInt(campaign.schedule) * 1000), // Convert UNIX timestamp to Date
+          schedule: new Date(parseInt(campaign.schedule) * 1000),
           status: campaign.status,
           total_count: campaign._total_count
         });
 
         const savedCampaign = await newCampaign.save();
-        return savedCampaign._id; // Return the saved campaign's ID
+        return {
+          sms_campaign_id: savedCampaign.sms_campaign_id,
+          name: savedCampaign.campaign_name,
+          from: savedCampaign.from,
+          body: savedCampaign.body,
+          schedule: savedCampaign.schedule,
+          status: savedCampaign.status
+        };
       })
     );
 
-    // Push the saved campaign IDs into the user's campaigns array
     await SignModel.findByIdAndUpdate(userId, {
-      $push: { campaigns: { $each: savedCampaigns } }
+      $push: { campaigns: { $each: savedCampaigns.map(c => c.sms_campaign_id) } }
     });
 
-    // Response data format
-    const responseData = {
+    res.status(200).json({
       http_code: 200,
       response_code: 'SUCCESS',
       response_msg: 'Here are your SMS campaigns.',
-      data: savedCampaigns.map(campaignId => ({
-        sms_campaign_id: campaignId.toString(), // Return as string for consistency
-        // Add other fields if necessary...
-      }))
-    };
-
-    // Send the response
-    res.status(200).json(responseData);
+      data: savedCampaigns
+    });
   } catch (error: any) {
     console.error('Error fetching campaigns:', error.response?.data || error.message);
     res.status(500).json({ error: 'Failed to retrieve campaigns. Please try again later.' });
   }
 });
 
+
+router.get('/campaigns',(req:Request , res:Response)=>{
+  res.sendFile(path.resolve(__dirname, '../Views/campaign.html'));
+})
+
+router.get('/recaver',(req:Request , res:Response)=>{
+  res.sendFile(path.resolve(__dirname, '../Views/recover.html'));
+})
 
 
 export default router;

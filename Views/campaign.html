@@ -691,241 +691,148 @@ chat
                       </div>
                   </div>
               </div><!-- Page Content -->
-              <div class="content pt-5 px-4 px-lg-6 d-flex flex-column-fluid">
-                <div class="container p-5 shadow rounded">
-                    <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
+              <div class="content pt-2 px-4 px-lg-6 d-flex flex-column-fluid">
+                <div class="container p-5">
+                  <h2 class="mb-4 text-center">SMS Campaigns</h2>
             
-                    <!-- Form Title -->
-                    <h2 class="h2 text-center mb-4">Bulk SMS Campaign</h2>
-            
-                    <!-- Form Fields -->
-                    <form id="bulkSmsForm">
-                        <div class="mb-3">
-                            <label for="campaignName" class="form-label">Campaign Name</label>
-                            <input type="text" class="form-control" id="campaignName" placeholder="Enter Campaign Name" required />
-                        </div>
-            
-                        <div class="mb-3">
-                            <label for="senderIdDropdown" class="form-label">Sender ID</label>
-                            <select id="senderIdDropdown" class="form-select" required>
-                                <option value="" selected>Select Sender ID</option>
-                            </select>
-                        </div>
-            
-                        <div class="mb-3">
-                            <label for="additionalInfo" class="form-label">Message</label>
-                            <textarea id="additionalInfo" name="message" rows="5" class="form-control" placeholder="Type your message here" required></textarea>
-                        </div>
-            
-                        <div class="mb-3">
-                            <label class="form-label">Send Option</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="sendOption" id="sendNow" value="now" checked />
-                                <label class="form-check-label" for="sendNow">Now</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="sendOption" id="sendLater" value="schedule" />
-                                <label class="form-check-label" for="sendLater">Later</label>
-                            </div>
-                        </div>
-            
-                        <div id="scheduleSection" class="mb-3" style="display: none;">
-                            <label class="form-label">Select Date & Time</label>
-                            <div class="row">
-                                <div class="col">
-                                    <input type="date" class="form-control" id="scheduleDate" />
-                                </div>
-                                <div class="col">
-                                    <input type="time" class="form-control" id="scheduleTime" />
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-            
-                    <!-- Contact List Dropdown -->
-                    <div class="mb-3">
-                        <label for="contactListDropdown" class="form-label">Select Contact List</label>
-                        <select id="contactListDropdown" class="form-select" required>
-                            <option value="" selected>Select Contact List</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Send Button -->
-                    <div class="text-center">
-                        <button id="sendButton" class="btn btn-primary" onclick="sendMessageFromDropdown()">Send Message</button>
-                    </div>
+                  <table class="table table-hover table-bordered">
+                    <thead class="thead-dark bg-dark text-white">
+                      <tr>
+                        <th>Campaign ID</th>
+                        <th>Name</th>
+                        <th>From</th>
+                        <th>Message</th>
+                        <th>Schedule</th>
+                        <th>Status</th>
+                        <th>Date Added</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="campaignTableBody">
+                      <!-- Dynamic rows will be inserted here -->
+                    </tbody>
+                  </table>
                 </div>
-            </div>
+              </div>
             
-            <!-- Include Bootstrap CSS in your HTML head -->
+              <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
             
-            <script>
-              document.addEventListener('DOMContentLoaded', async () => {
-                  let selectedListId = null;
-          
+              <!-- Include Bootstrap JS and Popper.js -->
+              <script 
+                src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js">
+              </script>
+              <script 
+                src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
+              </script>
+            
+              <script>
+                document.addEventListener('DOMContentLoaded', async () => {
                   try {
-                      await fetchUserData();
-                      await fetchContactLists();
-                      await fetchAlphaTags(); // Fetch the AlphaTags to populate the sender ID dropdown
-                      showToast("Application initialized successfully.", true);
+                    await fetchUserData();
+                    await fetchCampaigns();
+                    showToast("Application initialized successfully.", true);
                   } catch (error) {
-                      showToast(`Error during initialization: ${error.message}`, false);
+                    showToast(`Error during initialization: ${error.message}`, false);
                   }
-          
-                  setupSendOptionListener();
-              });
-          
-              // Fetch user data and update UI
-              async function fetchUserData() {
+                });
+            
+                // Fetch user data and update the UI
+                async function fetchUserData() {
                   try {
-                      const response = await fetch('/user', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-                      if (!response.ok) throw new Error(`Failed to fetch user data. Status: ${response.status}`);
-          
-                      const data = await response.json();
-                      updateUserData(data);
-                      // showToast("User data loaded successfully.", true);
+                    const response = await fetch('/user', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' }
+                    });
+            
+                    if (!response.ok) throw new Error(`Failed to fetch user data. Status: ${response.status}`);
+            
+                    const data = await response.json();
+                    updateUserData(data);
                   } catch (error) {
-                      showToast(`Error loading user details: ${error.message}`, false);
+                    showToast(`Error loading user details: ${error.message}`, false);
                   }
-              }
-          
-              function updateUserData(data) {
+                }
+            
+                function updateUserData(data) {
                   document.getElementById('userName').textContent = data.Name;
                   document.getElementById('userFullName').textContent = data.Name;
                   document.getElementById('packagename').textContent = data.PackageName || 'N/A';
                   document.getElementById('packagecoins').textContent = data.Coins || 'N/A';
-              }
-          
-              // Fetch contact lists and populate the dropdown
-              async function fetchContactLists() {
-                  try {
-                      const response = await fetch('/getlist', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-                      if (!response.ok) throw new Error(`Failed to fetch contact lists. Status: ${response.status}`);
-          
-                      const data = await response.json();
-                      populateContactListDropdown(data.clickSendLists?.data?.data || []);
-                      // showToast("Contact lists loaded successfully.", true);
-                  } catch (error) {
-                      showToast(`Error loading contact lists: ${error.message}`, false);
-                  }
-              }
-          
-// Fetch AlphaTags and populate the sender ID dropdown
-async function fetchAlphaTags() {
-    try {
-        const response = await fetch('/alphatags', { method: 'GET' });
-        if (!response.ok) throw new Error(`Failed to fetch AlphaTags. Status: ${response.status}`);
-
-        const data = await response.json();
-
-        // Apply filter: Only keep records where user_id_clicksend is not null
-        const filteredData = data.filter(tag => tag.user_id_clicksend !== null);
-
-        populateSenderIdDropdown(filteredData);
-        // showToast("AlphaTags loaded successfully.", true);
-    } catch (error) {
-        showToast(`Error loading AlphaTags: ${error.message}`, false);
-    }
-}
-
-function populateSenderIdDropdown(alphaTags) {
-    const dropdown = document.getElementById('senderIdDropdown');
-    dropdown.innerHTML = '<option value="" selected>Select Sender ID</option>'; // Reset dropdown
-
-    alphaTags.forEach(tag => {
-        const option = document.createElement('option');
-        option.value = tag.senderId; // Use senderId as the value
-        option.textContent = tag.alpha_tag; // Display alpha_tag
-        dropdown.appendChild(option);
+                }
+            
+                // Fetch and populate campaigns
+                async function fetchCampaigns() {
+  try {
+    const response = await fetch('/view_campaigns', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
     });
+
+    if (!response.ok) throw new Error(`Failed to fetch campaigns. Status: ${response.status}`);
+
+    const result = await response.json();
+    const campaigns = result.data || [];
+
+    const campaignTableBody = document.getElementById('campaignTableBody');
+    campaignTableBody.innerHTML = ''; // Clear existing rows
+
+    if (campaigns.length === 0) {
+      const row = document.createElement('tr');
+      row.innerHTML = `<td colspan="8" class="text-center">No campaigns available</td>`;
+      campaignTableBody.appendChild(row);
+    } else {
+      campaigns.forEach(campaign => {
+        const dateAdded = new Date(campaign.date_added).toLocaleString();
+        const schedule = new Date(campaign.schedule).toLocaleString();
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${campaign.sms_campaign_id}</td>
+          <td>${campaign.name}</td>
+          <td>${campaign.from}</td>
+          <td>${campaign.body}</td>
+          <td>${schedule}</td>
+          <td>${campaign.status}</td>
+          <td>${dateAdded}</td>
+          <td>
+            <button class="btn btn-success btn-sm" onclick="updateCampaign(${campaign.sms_campaign_id})">Update</button>
+            <button class="btn btn-danger btn-sm" onclick="cancelCampaign(${campaign.sms_campaign_id})">Cancel</button>
+          </td>
+        `;
+        campaignTableBody.appendChild(row);
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching campaigns:', error);
+    showToast(`Failed to load campaigns: ${error.message}`, false);
+  }
 }
-          
-              function populateContactListDropdown(lists) {
-                  const dropdown = document.getElementById('contactListDropdown');
-                  dropdown.innerHTML = '<option value="" selected>Select Contact List</option>'; // Reset dropdown
-          
-                  lists.forEach(list => {
-                      const option = document.createElement('option');
-                      option.value = list.list_id; // Use list_id as the value
-                      option.textContent = `${list.list_name} (${list._contacts_count || 0} Contacts)`; // Display name and count
-                      dropdown.appendChild(option);
-                  });
-              }
-          
-              // Setup radio button change listener for scheduling
-              function setupSendOptionListener() {
-                  document.querySelectorAll('input[name="sendOption"]').forEach(radio => {
-                      radio.addEventListener('change', (event) => {
-                          const scheduleSection = document.getElementById('scheduleSection');
-                          scheduleSection.style.display = event.target.value === 'schedule' ? 'block' : 'none';
-                      });
-                  });
-              }
-          
-              async function sendMessageFromDropdown() {
-                  const campaignName = document.getElementById('campaignName').value;
-                  const senderId = document.getElementById('senderIdDropdown').value;
-                  const message = document.getElementById('additionalInfo').value;
-                  const sendOption = document.querySelector('input[name="sendOption"]:checked').value;
-                  const selectedListId = document.getElementById('contactListDropdown').value; // Get selected list ID
-          
-                  let scheduleDateTime = null;
-                  if (sendOption === 'schedule') {
-                      const scheduleDate = document.getElementById('scheduleDate').value;
-                      const scheduleTime = document.getElementById('scheduleTime').value;
-                      if (!scheduleDate || !scheduleTime) {
-                          showToast("Please select both date and time for scheduling.", false);
-                          return;
-                      }
-                      scheduleDateTime = new Date(`${scheduleDate}T${scheduleTime}`);
-                      if (isNaN(scheduleDateTime.getTime())) {
-                          showToast("Invalid date or time selected.", false);
-                          return;
-                      }
-                  }
-          
-                  const sendData = {
-                      campaignName,
-                      senderId,
-                      message,
-                      sendOption,
-                      scheduleDateTime,
-                      selectedListId
-                  };
-          
-                  try {
-                      const response = await fetch('/bulksms', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(sendData)
-                      });
-                      if (!response.ok) throw new Error(`Failed to send message. Status: ${response.status}`);
-          
-                      const result = await response.json();
-                      showToast("Bulk SMS sent successfully!", true);
-                  } catch (error) {
-                      showToast(`missing required params : ${error.message}`, false);
-                  }
-              }
-          
-              function showToast(message, isSuccess) {
+
+                function showToast(message, isSuccess) {
                   const toastContainer = document.getElementById('toastContainer');
                   const toast = document.createElement('div');
                   toast.className = `toast ${isSuccess ? 'bg-success' : 'bg-danger'}`;
                   toast.role = 'alert';
                   toast.innerHTML = `<div class="toast-body">${message}</div>`;
                   toastContainer.appendChild(toast);
-          
+            
                   const bsToast = new bootstrap.Toast(toast);
                   bsToast.show();
-          
+            
                   toast.addEventListener('hidden.bs.toast', () => {
-                      toastContainer.removeChild(toast);
+                    toastContainer.removeChild(toast);
                   });
-              }
-          
-              // Add additional helper functions as necessary
-          </script>
+                }
+            
+                // Placeholder functions for update and cancel actions
+                function updateCampaign(id) {
+                  showToast(`Update campaign ${id}`, true);
+                }
+            
+                function cancelCampaign(id) {
+                  showToast(`Cancel campaign ${id}`, false);
+                }
+              </script>
           
             
             
