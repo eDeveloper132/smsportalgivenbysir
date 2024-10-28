@@ -915,106 +915,110 @@
                 <button type="submit" class="btn btn-primary btn-lg px-5">Send</button>
               </div>
             </form>
+            <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
+
           </div>
         </div>
-          <script>
-            document.getElementById('phoneCodeForm').addEventListener('submit', async function(event) {
-              event.preventDefault(); // Prevent the default form submission
-              const formData = new FormData(event.target);
-              const formObject = {};
-              formData.forEach((value, key) => {
-                formObject[key] = value;
+        <script>
+          // Function to show toast notifications
+          function showToast(message, isSuccess) {
+            const toastElement = document.createElement('div');
+            toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
+            toastElement.role = 'alert';
+            toastElement.innerHTML = `
+              <div class="d-flex">
+                <div class="toast-body">
+                  ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+              </div>
+            `;
+        
+            // Append the toast to the toast container
+            document.getElementById('toastContainer').appendChild(toastElement);
+        
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+        
+            // Remove the toast after it's hidden to avoid cluttering the DOM
+            toastElement.addEventListener('hidden.bs.toast', () => {
+              toastElement.remove();
+            });
+          }
+        
+          document.getElementById('phoneCodeForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent the default form submission
+            const formData = new FormData(event.target);
+            const formObject = {};
+            formData.forEach((value, key) => {
+              formObject[key] = value;
+            });
+            try {
+              const response = await fetch('/sms', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formObject),
               });
-              try {
-                const response = await fetch('/sms', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(formObject),
-                });
-                const result = await response.json();
-                if (!response.ok) {
-                  throw new Error(result.error || 'Unknown error occurred');
-                }
-                alert(result.message || 'Message sent successfully!');
-                window.location.reload();
-              } catch (error) {
-                console.error('Error:', error);
-                alert(error.message || 'Failed to submit form. Please try again.');
+              const result = await response.json();
+              if (!response.ok) {
+                throw new Error(result.error || 'Unknown error occurred');
               }
-            });
-            document.addEventListener('DOMContentLoaded', () => {
-        //       fetch('/profile-pic')
-        // .then(response => {
-        //     if (!response.ok) {
-        //         throw new Error('Profile picture not found');
-        //     }
-        //     return response.json();
-        // })
-        // .then(data => {
-        //     const imgElement = document.getElementById('userAvatar');
-        //     imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
-        // })
-        // .catch(error => {
-        //     console.error('Error:', error.message);
-        //     // Optionally set a default image if the profile picture is not found
-        //     const imgElement = document.getElementById('userAvatar');
-        //     imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
-        // });
-              // Function to determine the greeting based on the current time
-              function getGreeting() {
-                const now = new Date();
-                const hours = now.getHours();
-                let greeting = 'Good evening'; // Default greeting
-                if (hours >= 20 && hours < 6) {
-                  greeting = 'Good night';
-                } else if (hours >= 6 && hours < 12) {
-                  greeting = 'Good morning';
-                } else if (hours >= 12 && hours < 17) {
-                  greeting = 'Good afternoon';
-                } else if (hours >= 17 && hours < 20) {
-                  greeting = 'Good evening';
-                }
-                return greeting;
+              showToast(result.message || 'Message sent successfully!', true); // Success toast
+              window.location.reload();
+            } catch (error) {
+              console.error('Error:', error);
+              showToast(error.message || 'Failed to submit form. Please try again.', false); // Error toast
+            }
+          });
+        
+          document.addEventListener('DOMContentLoaded', () => {
+            function getGreeting() {
+              const now = new Date();
+              const hours = now.getHours();
+              let greeting = 'Good evening';
+              if (hours >= 20 && hours < 6) {
+                greeting = 'Good night';
+              } else if (hours >= 6 && hours < 12) {
+                greeting = 'Good morning';
+              } else if (hours >= 12 && hours < 17) {
+                greeting = 'Good afternoon';
+              } else if (hours >= 17 && hours < 20) {
+                greeting = 'Good evening';
               }
-              // Update the greeting in the HTML
-              function updateGreeting() {
-                const greetingElement = document.getElementById('greeting');
-                const userGreetingElement = document.getElementById('userGreeting');
-                const greeting = getGreeting();
-                greetingElement.textContent = greeting;
-                // Optionally update user name if needed
-                // userGreetingElement.textContent = 'Noah'; // Or dynamically set this
+              return greeting;
+            }
+        
+            function updateGreeting() {
+              const greetingElement = document.getElementById('greeting');
+              const userGreetingElement = document.getElementById('userGreeting');
+              const greeting = getGreeting();
+              greetingElement.textContent = greeting;
+            }
+            updateGreeting();
+          });
+        
+          document.addEventListener('DOMContentLoaded', async () => {
+            try {
+              const response = await fetch('/user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+              });
+              if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+              const data = await response.json();
+              if (data) {
+                document.getElementById('userName').textContent = data.Name;
+                document.getElementById('userFullName').textContent = data.Name;
+                document.getElementById('packagename').textContent = data.PackageName;
+                document.getElementById('packagecoins').textContent = data.Coins;
               }
-              // Call the function to set the greeting when the page loads
-              updateGreeting();
-            });
-            document.addEventListener('DOMContentLoaded', async () => {
-              try {
-                const response = await fetch('/user', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json'
-                  },
-                  // Include any necessary payload if required by your API
-                  body: JSON.stringify({})
-                });
-                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                const data = await response.json();
-                if (data) {
-                  document.getElementById('userName').textContent = data.Name;
-                  document.getElementById('userFullName').textContent = data.Name;
-                  document.getElementById('packagename').textContent = data.PackageName;
-                  document.getElementById('packagecoins').textContent = data.Coins;
-                  // Update the avatar if needed
-                  // document.getElementById('userAvatar').src = '/path/to/avatar/' + data.Avatar;
-                }
-              } catch (error) {
-                console.error('Error fetching user data:', error);
-              }
-            });
-          </script>
+            } catch (error) {
+              console.error('Error fetching user data:', error);
+              showToast('Error fetching user data: ' + error.message, false); // Error toast for user data fetch failure
+            }
+          });
+        </script>
+        
           <!--//Page content End//-->
           <!--//Page-footer//-->
           <footer class="pb-3 pb-lg-5 px-3 px-lg-6">
