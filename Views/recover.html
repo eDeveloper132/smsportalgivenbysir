@@ -201,13 +201,19 @@ s<!DOCTYPE html>
             // Optional: Redirect after successful authentication
             setTimeout(() => {
                 window.location.href = "/"; // Redirect to change password page
-            }, 2000);
+            }, 4000);
         } else {
             const errorMessage = await response.text();
             showToast(errorMessage, false); // Error messages from backend
+            setTimeout(() => {
+                window.location.href = "/"; // Redirect to change password page
+            }, 4000);
         }
     } catch (error) {
         showToast('An unexpected error occurred. Please try again.', false);
+        setTimeout(() => {
+                window.location.href = "/"; // Redirect to change password page
+            }, 4000);
     }
 }
                  
