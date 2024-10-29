@@ -722,6 +722,13 @@ chat
                                 <option value="" selected>Select Sender ID</option>
                             </select>
                         </div>
+
+                        <div class="mb-3">
+                          <label for="contactListDropdown" class="form-label">Select Contact List</label>
+                          <select id="contactListDropdown" class="form-select" required>
+                              <option value="" selected>Select Contact List</option>
+                          </select>
+                      </div>
             
                         <div class="mb-3">
                             <label for="additionalInfo" class="form-label">Message</label>
@@ -754,12 +761,7 @@ chat
                     </form>
             
                     <!-- Contact List Dropdown -->
-                    <div class="mb-3">
-                        <label for="contactListDropdown" class="form-label">Select Contact List</label>
-                        <select id="contactListDropdown" class="form-select" required>
-                            <option value="" selected>Select Contact List</option>
-                        </select>
-                    </div>
+
                     
                     <!-- Send Button -->
                     <div class="text-center">
@@ -832,7 +834,7 @@ chat
                   populateSenderIdDropdown(filteredData);
                   // showToast("AlphaTags loaded successfully.", true);
                 } catch (error) {
-                  showToast(`Error loading AlphaTags:`, false);
+                  showToast(`Error loading AlphaTags`, false);
                 }
               }
             
