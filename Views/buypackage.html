@@ -701,47 +701,47 @@
             <!-- Bootstrap JS Bundle with Popper -->
             <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
             <script>
-              document.addEventListener('DOMContentLoaded', async () => {
-                // Initialize data and greetings
+              document.addEventListener('DOMContentLoaded', () => {
+
                 updateGreeting();
-                await fetchUserData();
-                await fetchData();
               });
             
-              async function fetchUserData() {
+              document.addEventListener('DOMContentLoaded', async () => {
                 try {
                   const response = await fetch('/user', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({})
                   });
                   if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            
                   const data = await response.json();
                   if (data) {
                     document.getElementById('userName').textContent = data.Name;
                     document.getElementById('userFullName').textContent = data.Name;
                     document.getElementById('packagename').textContent = data.PackageName;
                     document.getElementById('packagecoins').textContent = data.Coins;
-                    showToast('User data fetched successfully!', true);
+                    // showToast('User data fetched successfully!', true);
                   }
                 } catch (error) {
                   console.error('Error fetching user data:', error);
-                  showToast('Error fetching user data. Please try again later.', false);
+                  // showToast('Error fetching user data. Please try again later.', false);
                 }
-              }
+              });
             
               let currentPackageDetails = null;
-              let selectedPaymentMethod = 'stripe';
+              let selectedPaymentMethod = 'stripe'; // Default payment method is now Stripe
             
               async function fetchData() {
                 try {
                   const response = await fetch('/buypackage/api/getpackages');
-                  if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            
+                  if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                  }
                   const data = await response.json();
                   displayData(data);
-                  showToast('Package data loaded successfully!', true);
+                  // showToast('Package data loaded successfully!', true);
                 } catch (error) {
                   console.error('Error fetching data:', error);
                   showToast('Failed to load package data. Please try again later.', false);
@@ -750,7 +750,7 @@
             
               function displayData(data) {
                 const container = document.getElementById('data-container');
-                container.innerHTML = '';
+                container.innerHTML = ''; // Clear previous content
                 data.documents.forEach(doc => {
                   const col = document.createElement('div');
                   col.className = 'col';
@@ -763,7 +763,6 @@
                   headerTitle.textContent = doc.Name;
                   cardHeader.appendChild(headerTitle);
                   card.appendChild(cardHeader);
-            
                   const cardBody = document.createElement('div');
                   cardBody.className = 'card-body';
                   const row = document.createElement('div');
@@ -775,7 +774,6 @@
                   priceSymbol.textContent = '$';
                   colAuto1.appendChild(priceSymbol);
                   row.appendChild(colAuto1);
-            
                   const colAuto2 = document.createElement('div');
                   colAuto2.className = 'col-auto';
                   const priceAmount = document.createElement('div');
@@ -784,14 +782,9 @@
                   colAuto2.appendChild(priceAmount);
                   row.appendChild(colAuto2);
                   cardBody.appendChild(row);
-            
                   const featureList = document.createElement('ul');
                   featureList.className = 'list-unstyled pt-4 mb-4';
-                  const features = [
-                    `Package Duration: ${doc.Duration} days`,
-                    `Package Description: ${doc.Description}`,
-                    `Coins you will have: ${doc.Coins}`
-                  ];
+                  const features = [`Package Duration: ${doc.Duration} days`, `Package Description: ${doc.Description}`, `Coins you will have: ${doc.Coins}`, ];
                   features.forEach(feature => {
                     const li = document.createElement('li');
                     li.className = 'mb-2 pb-2 border-bottom';
@@ -803,7 +796,6 @@
                     featureList.appendChild(li);
                   });
                   cardBody.appendChild(featureList);
-            
                   const buyButton = document.createElement('button');
                   buyButton.type = 'button';
                   buyButton.className = 'btn w-100 btn-outline-primary buy-button';
@@ -842,11 +834,16 @@
                   try {
                     const response = await fetch('/buypackage/buy', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ currentPackageDetails })
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        currentPackageDetails
+                      }),
                     });
-                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
                     const result = await response.json();
                     showToast('Package purchased successfully! Redirecting...', true);
                     window.location.href = `${result.link}`;
@@ -857,21 +854,28 @@
                 }
               });
             
+              window.onload = fetchData;
+            
               function showToast(message, isSuccess) {
                 const toastElement = document.createElement('div');
                 toastElement.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
                 toastElement.role = 'alert';
                 toastElement.innerHTML = `
                   <div class="d-flex">
-                    <div class="toast-body">${message}</div>
+                    <div class="toast-body">
+                      ${message}
+                    </div>
                     <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                   </div>
                 `;
             
+                // Append the toast to the toast container
                 document.getElementById('toastContainer').appendChild(toastElement);
+            
                 const toast = new bootstrap.Toast(toastElement);
                 toast.show();
             
+                // Remove the toast after it's hidden to avoid cluttering the DOM
                 toastElement.addEventListener('hidden.bs.toast', () => {
                   toastElement.remove();
                 });
