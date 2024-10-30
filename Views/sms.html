@@ -991,7 +991,7 @@
                 body: JSON.stringify({})
               });
               if (!response.ok) throw new Error('Failed to send verification link.');
-              showToast('Verification link sent successfully!', true);
+              showToast('Verification link sent successfully to your email!', true);
             } catch (error) {
               console.error('Error sending verification link:', error);
               showToast('Error sending verification link: ' + error.message, false);
