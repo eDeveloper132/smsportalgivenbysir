@@ -760,73 +760,98 @@
               }
             
               function displayData(data) {
-                const container = document.getElementById('data-container');
-                container.innerHTML = ''; // Clear previous content
-                data.documents.forEach(doc => {
-                  const col = document.createElement('div');
-                  col.className = 'col';
-                  const card = document.createElement('div');
-                  card.className = 'card mb-3 mb-lg-5 data-item';
-                  const cardHeader = document.createElement('div');
-                  cardHeader.className = 'card-header py-3';
-                  const headerTitle = document.createElement('h5');
-                  headerTitle.className = 'my-0';
-                  headerTitle.textContent = doc.Name;
-                  cardHeader.appendChild(headerTitle);
-                  card.appendChild(cardHeader);
-                  const cardBody = document.createElement('div');
-                  cardBody.className = 'card-body';
-                  const row = document.createElement('div');
-                  row.className = 'row g-0 align-items-center';
-                  const colAuto1 = document.createElement('div');
-                  colAuto1.className = 'col-auto';
-                  const priceSymbol = document.createElement('div');
-                  priceSymbol.className = 'h5 text-muted mb-0 me-1';
-                  priceSymbol.textContent = '$';
-                  colAuto1.appendChild(priceSymbol);
-                  row.appendChild(colAuto1);
-                  const colAuto2 = document.createElement('div');
-                  colAuto2.className = 'col-auto';
-                  const priceAmount = document.createElement('div');
-                  priceAmount.className = 'display-2 mb-0';
-                  priceAmount.textContent = doc.Amount;
-                  colAuto2.appendChild(priceAmount);
-                  row.appendChild(colAuto2);
-                  cardBody.appendChild(row);
-                  const featureList = document.createElement('ul');
-                  featureList.className = 'list-unstyled pt-4 mb-4';
-                  const features = [`Package Duration: ${doc.Duration} days`, `Package Description: ${doc.Description}`, `Coins you will have: ${doc.Coins}`, ];
-                  features.forEach(feature => {
-                    const li = document.createElement('li');
-                    li.className = 'mb-2 pb-2 border-bottom';
-                    const icon = document.createElement('span');
-                    icon.className = 'material-symbols-rounded me-2 fs-5 align-middle';
-                    icon.textContent = 'check_circle';
-                    li.appendChild(icon);
-                    li.appendChild(document.createTextNode(feature));
-                    featureList.appendChild(li);
-                  });
-                  cardBody.appendChild(featureList);
-                  const buyButton = document.createElement('button');
-                  buyButton.type = 'button';
-                  buyButton.className = 'btn w-100 btn-outline-primary buy-button';
-                  buyButton.textContent = `Get started with ${doc.Name}`;
-                  buyButton.onclick = () => handleBuyClick({
-                    id: doc._id,
-                    userId: doc.id,
-                    name: doc.Name,
-                    amount: doc.Amount,
-                    duration: doc.Duration,
-                    coins: doc.Coins,
-                    description: doc.Description,
-                  });
-                  cardBody.appendChild(buyButton);
-                  card.appendChild(cardBody);
-                  col.appendChild(card);
-                  container.appendChild(col);
-                });
-              }
-            
+  const container = document.getElementById('data-container');
+  container.innerHTML = ''; // Clear previous content
+  
+  data.documents.forEach(doc => {
+    const col = document.createElement('div');
+    col.className = 'col';
+    
+    // Card element with smaller padding and margin
+    const card = document.createElement('div');
+    card.className = 'card mb-2 data-item';
+    card.style.padding = '10px';
+    
+    // Card header with reduced padding
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'card-header py-2';
+    const headerTitle = document.createElement('h6');  // Smaller font size
+    headerTitle.className = 'my-0';
+    headerTitle.style.fontSize = '1rem';
+    headerTitle.textContent = doc.Name;
+    cardHeader.appendChild(headerTitle);
+    card.appendChild(cardHeader);
+    
+    // Card body with reduced font size for price display
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body p-2';
+    const row = document.createElement('div');
+    row.className = 'row g-0 align-items-center';
+
+    const colAuto1 = document.createElement('div');
+    colAuto1.className = 'col-auto';
+    const priceSymbol = document.createElement('div');
+    priceSymbol.className = 'h6 text-muted mb-0 me-1';
+    priceSymbol.style.fontSize = '1rem';
+    priceSymbol.textContent = '$';
+    colAuto1.appendChild(priceSymbol);
+    row.appendChild(colAuto1);
+
+    const colAuto2 = document.createElement('div');
+    colAuto2.className = 'col-auto';
+    const priceAmount = document.createElement('div');
+    priceAmount.className = 'h5 mb-0';
+    priceAmount.style.fontSize = '1.5rem';
+    priceAmount.textContent = doc.Amount;
+    colAuto2.appendChild(priceAmount);
+    row.appendChild(colAuto2);
+    cardBody.appendChild(row);
+    
+    // Feature list with smaller spacing
+    const featureList = document.createElement('ul');
+    featureList.className = 'list-unstyled pt-2 mb-3';
+    const features = [
+      `Package Duration: ${doc.Duration} days`, 
+      `Package Description: ${doc.Description}`, 
+      `Coins you will have: ${doc.Coins}`
+    ];
+    
+    features.forEach(feature => {
+      const li = document.createElement('li');
+      li.className = 'mb-1 pb-1 border-bottom';
+      li.style.fontSize = '0.875rem'; // Smaller font size
+      const icon = document.createElement('span');
+      icon.className = 'material-symbols-rounded me-2 fs-6 align-middle';
+      icon.textContent = 'check_circle';
+      li.appendChild(icon);
+      li.appendChild(document.createTextNode(feature));
+      featureList.appendChild(li);
+    });
+    cardBody.appendChild(featureList);
+
+    // Smaller "Get started" button
+    const buyButton = document.createElement('button');
+    buyButton.type = 'button';
+    buyButton.className = 'btn w-100 btn-sm btn-outline-primary buy-button';
+    buyButton.style.fontSize = '0.875rem';
+    buyButton.textContent = `Get started with ${doc.Name}`;
+    buyButton.onclick = () => handleBuyClick({
+      id: doc._id,
+      userId: doc.id,
+      name: doc.Name,
+      amount: doc.Amount,
+      duration: doc.Duration,
+      coins: doc.Coins,
+      description: doc.Description,
+    });
+    cardBody.appendChild(buyButton);
+
+    card.appendChild(cardBody);
+    col.appendChild(card);
+    container.appendChild(col);
+  });
+}
+     
               function handleBuyClick(packageDetails) {
                 currentPackageDetails = packageDetails;
                 const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
