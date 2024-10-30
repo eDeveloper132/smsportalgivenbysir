@@ -845,7 +845,8 @@ chat
                   populateSenderIdDropdown(filteredData);
                   // showToast("AlphaTags loaded successfully.", true);
                 } catch (error) {
-                  showToast(`Error loading AlphaTags`, false);
+                  console.log(error , error.message)
+                  // showToast(`Error loading AlphaTags`, false);
                 }
               }
             
