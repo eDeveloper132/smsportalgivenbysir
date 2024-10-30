@@ -103,9 +103,9 @@
                                             <button class="w-100 btn btn-lg btn-primary" id="BuTtOn" type="submit">Log In</button>
                                             
                                             <!-- Resend Verification Code Link -->
-                                            <p class="text-center mt-3">
+                                            <!-- <p class="text-center mt-3">
                                                 <a href="#" id="resendVerificationLink" class="text-body">Resend Verification Code</a>
-                                            </p>
+                                            </p> -->
                     
                                             <hr class="mt-4">
                                             <p class="text-muted text-center">
@@ -172,33 +172,33 @@
                                                 }
                                             });
                                         
-                                            document.getElementById('resendVerificationLink').addEventListener('click', async function(event) {
-                                                event.preventDefault();
+                                            // document.getElementById('resendVerificationLink').addEventListener('click', async function(event) {
+                                            //     event.preventDefault();
                                         
-                                                const email = document.getElementById('floatingInputEmail').value;
-                                                if (!email) {
-                                                    showToast('Please enter your email address to resend the verification code.', 'error');
-                                                    return;
-                                                }
+                                            //     const email = document.getElementById('floatingInputEmail').value;
+                                            //     if (!email) {
+                                            //         showToast('Please enter your email address to resend the verification code.', 'error');
+                                            //         return;
+                                            //     }
                                         
-                                                try {
-                                                    const response = await fetch('/resend-verification', {
-                                                        method: 'POST',
-                                                        headers: {
-                                                            'Content-Type': 'application/json',
-                                                        },
-                                                        body: JSON.stringify({ Email: email }),
-                                                    });
+                                            //     try {
+                                            //         const response = await fetch('/resend-verification', {
+                                            //             method: 'POST',
+                                            //             headers: {
+                                            //                 'Content-Type': 'application/json',
+                                            //             },
+                                            //             body: JSON.stringify({ Email: email }),
+                                            //         });
                                         
-                                                    if (response.ok) {
-                                                        showToast('Verification code has been resent to your email address.', 'success');
-                                                    } else {
-                                                        showToast('An error occurred while resending the verification code. Please try again.', 'error');
-                                                    }
-                                                } catch (error) {
-                                                    showToast('An error occurred while resending the verification code. Please try again.', 'error');
-                                                }
-                                            });
+                                            //         if (response.ok) {
+                                            //             showToast('Verification code has been resent to your email address.', 'success');
+                                            //         } else {
+                                            //             showToast('An error occurred while resending the verification code. Please try again.', 'error');
+                                            //         }
+                                            //     } catch (error) {
+                                            //         showToast('An error occurred while resending the verification code. Please try again.', 'error');
+                                            //     }
+                                            // });
                                         
                                             // Forgot Password Button Click Event
                                             document.getElementById('forgotPasswordButton').addEventListener('click', async function() {

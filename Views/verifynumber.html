@@ -710,7 +710,10 @@ chat
       </div>
   </div>
 </div>
-
+<div id="verificationStatus" class="alert alert-warning text-center d-none" role="alert">
+    <h4>You are not verified, Please click here to verify your account:</h4> 
+    <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
+  </div>
                     <!-- Existing Form for Verifying Number -->
                     <form id="verifyNumberForm">
                         <div class="mb-3">
@@ -775,6 +778,8 @@ chat
             </div>
             
             <script>
+                                                                  let isVerified = false; // Initialize isVerified status
+
                 document.addEventListener('DOMContentLoaded', async () => {
                     let userId = null; // Store the userId globally
             
@@ -917,6 +922,13 @@ function displayOwnNumbers(numbers) {
                             document.getElementById('userFullName').textContent = data.Name;
                             document.getElementById('packagename').textContent = data.PackageName;
                             document.getElementById('packagecoins').textContent = data.Coins;
+
+                            isVerified = data.isVerified;
+                            if (!isVerified) {
+                              // Show verification status div and disable submit button if not verified
+                              document.getElementById('verificationStatus').classList.remove('d-none');
+                              document.querySelector('#verifyNumberForm button[type="submit"]').disabled = true;
+                            }
                         }
             
                         updateGreeting();

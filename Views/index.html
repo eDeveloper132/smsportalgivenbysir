@@ -675,7 +675,10 @@
                     <div class="content pt-3 px-3 px-lg-6 d-flex flex-column-fluid">
                       <div class="container-fluid px-0">
                         <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
-
+                        <div id="verificationStatus" class="alert alert-warning text-center d-none" role="alert">
+                          <h4>You are not verified, Please click here to verify your account:</h4> 
+                          <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
+                        </div>
                         <div class="col-xl-3 col-md-6 mb-3 mb-lg-5">
 
                           <!--//Card start//-->
@@ -757,6 +760,7 @@
                     </style>
                     
                     <script>
+                                    let isVerified = false; // Initialize isVerified status
                       document.addEventListener('DOMContentLoaded', () => {
                         // Set the greeting message based on time
                         function getGreeting() {
@@ -810,6 +814,13 @@
                             document.getElementById('userGreeting').textContent = data.Name;
                             document.getElementById('packagename').textContent = data.PackageName;
                             document.getElementById('packagecoins').textContent = data.Coins;
+
+                            isVerified = data.isVerified;
+                            if (!isVerified) {
+                              // Show verification status div and disable submit button if not verified
+                              document.getElementById('verificationStatus').classList.remove('d-none');
+                              // document.querySelector('#sendButton').disabled = true;
+                            }
                           }
                         } catch (error) {
                           console.error('Error fetching user data:', error);

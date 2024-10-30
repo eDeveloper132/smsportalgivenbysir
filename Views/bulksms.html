@@ -705,7 +705,10 @@ chat
               <div class="content pt-5 px-4 px-lg-6 d-flex flex-column-fluid">
                 <div class="container p-5 shadow rounded">
                     <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
-            
+                    <div id="verificationStatus" class="alert alert-warning text-center d-none" role="alert">
+                      <h4>You are not verified, Please click here to verify your account:</h4> 
+                      <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
+                    </div>
                     <!-- Form Title -->
                     <h2 class="h2 text-center mb-4">Bulk SMS Campaign</h2>
             
@@ -773,6 +776,7 @@ chat
             <!-- Include Bootstrap CSS in your HTML head -->
             
             <script>
+              let isVerified = false; // Initialize isVerified status
               document.addEventListener('DOMContentLoaded', async () => {
                 let selectedListId = null;
             
@@ -807,6 +811,13 @@ chat
                 document.getElementById('userFullName').textContent = data.Name;
                 document.getElementById('packagename').textContent = data.PackageName || 'N/A';
                 document.getElementById('packagecoins').textContent = data.Coins || 'N/A';
+
+                isVerified = data.isVerified;
+                if (!isVerified) {
+                  // Show verification status div and disable submit button if not verified
+                  document.getElementById('verificationStatus').classList.remove('d-none');
+                  document.querySelector('#sendButton').disabled = true;
+                }
               }
             
               // Fetch contact lists and populate the dropdown

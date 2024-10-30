@@ -705,7 +705,10 @@ chat
               <div class="content pt-2 px-4 px-lg-6 d-flex flex-column-fluid">
                 <div class="container p-5">
                   <h2 class="mb-4 text-center">SMS Campaigns</h2>
-            
+                  <div id="verificationStatus" class="alert alert-warning text-center d-none" role="alert">
+                    <h4>You are not verified, Please click here to verify your account:</h4> 
+                    <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
+                  </div>
                   <table class="table table-hover table-bordered">
                     <thead class="thead-dark bg-dark text-white">
                       <tr>
@@ -730,6 +733,7 @@ chat
             
             
               <script>
+                let isVerified = false;
                 document.addEventListener('DOMContentLoaded', async () => {
                   try {
                     await fetchUserData();
@@ -752,7 +756,8 @@ chat
                     const data = await response.json();
                     updateUserData(data);
                   } catch (error) {
-                    showToast(`Error loading user details: ${error.message}`, false);
+                    console.error(error.message)
+                    // showToast(`Error loading user details: ${error.message}`, false);
                   }
                 }
               
@@ -761,6 +766,12 @@ chat
                   document.getElementById('userFullName').textContent = data.Name;
                   document.getElementById('packagename').textContent = data.PackageName || 'N/A';
                   document.getElementById('packagecoins').textContent = data.Coins || 'N/A';
+                  isVerified = data.isVerified;
+                            if (!isVerified) {
+                              // Show verification status div and disable submit button if not verified
+                              document.getElementById('verificationStatus').classList.remove('d-none');
+                              // document.querySelector('#verifyNumberForm button[type="submit"]').disabled = true;
+                            }
                 }
               
                 // Fetch and populate campaigns

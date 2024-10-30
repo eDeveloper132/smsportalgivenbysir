@@ -715,7 +715,10 @@
     </div>
   </div>
   
-
+  <div id="verificationStatus" class="alert alert-warning text-center d-none" role="alert">
+    <h4>You are not verified, Please click here to verify your account:</h4> 
+    <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
+  </div>
                         <form id="contactListForm" class="my-3">
                           <div class="mb-3">
                               <label for="listName" class="form-label">Contact List Name</label>
@@ -1130,31 +1133,13 @@
                     
                     <!-- Include Bootstrap JS and Popper.js -->
 <script>
+let isVerified = false; // Initialize isVerified status
 document.addEventListener('DOMContentLoaded', () => {
-    let userId = null; // Store the userId globally
-    // fetch('/profile-pic')
-    //     .then(response => {
-    //         if (!response.ok) {
-    //             throw new Error('Profile picture not found');
-    //         }
-    //         return response.json();
-    //     })
-    //     .then(data => {
-    //         const imgElement = document.getElementById('userAvatar');
-    //         imgElement.src = data.fileUrl; // Update the src attribute with the fetched URL
-    //     })
-    //     .catch(error => {
-    //         console.error('Error:', error.message);
-    //         // Optionally set a default image if the profile picture is not found
-    //         const imgElement = document.getElementById('userAvatar');
-    //         imgElement.src = '/assets/media/avatars/default.jpg'; // Path to default avatar
-    //     });
-    // Function to determine the greeting based on the current time
+    let userId = null;
     function getGreeting() {
         const now = new Date();
         const hours = now.getHours();
         let greeting = 'Good evening'; // Default greeting
-
         if (hours >= 20 || hours < 6) {
             greeting = 'Good night';
         } else if (hours >= 6 && hours < 12) {
@@ -1162,11 +1147,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (hours >= 12 && hours < 17) {
             greeting = 'Good afternoon';
         }
-
         return greeting;
     }
-
-    // Update the greeting in the HTML
     function updateGreeting() {
         const greetingElement = document.getElementById('greeting');
         const greeting = getGreeting();
@@ -1174,17 +1156,9 @@ document.addEventListener('DOMContentLoaded', () => {
             greetingElement.textContent = greeting;
         }
     }
-
-    // Call the function to set the greeting when the page loads
     updateGreeting();
-
-    // Fetch user data
     fetchUserData();
-
-    // Fetch contact lists
     fetchContactLists();
-
-    // Function to fetch user data
     async function fetchUserData() {
         try {
             const response = await fetch('/user', {
@@ -1194,30 +1168,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({})
             });
-
             if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
             const data = await response.json();
             console.log('User Data:', data); // Debug output
-
             if (data) {
                 userId = data.id; // Extract and store the userId
                 document.getElementById('userName').textContent = `${data.Name || 'Default Name'}`;
                 document.getElementById('userFullName').textContent = `${data.Name || 'Default Name'}`;
                 document.getElementById('packagename').textContent = `${data.PackageName || 'No Package'}`;
                 document.getElementById('packagecoins').textContent = `${data.Coins || '0'}`;
-
-                // Now that userId is available, fetch and filter the contact lists
                 fetchContactLists();
-                // showToast('User data fetched successfully!', true); // Show success message
+                isVerified = data.isVerified;
+                if (!isVerified) {
+                  // Show verification status div and disable submit button if not verified
+                  document.getElementById('verificationStatus').classList.remove('d-none');
+                  document.querySelector('#contactListForm button[type="submit"]').disabled = true;
+                }
             }
         } catch (error) {
             console.error('Error fetching user data:', error);
             // showToast('Error fetching user data.', false); // Show error message
         }
     }
-
-    // Function to fetch contact lists and filter by userId
     async function fetchContactLists() {
     try {
         const response = await fetch('/getlist', {
@@ -1226,35 +1198,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Content-Type': 'application/json'
             }
         });
-
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
         const data = await response.json();
         console.log('Fetched Lists:', data); // Debug output
-
         const contactListTableBody = document.getElementById('contactListTableBody');
         contactListTableBody.innerHTML = ''; // Clear existing rows
-
         const clickSendLists = data.clickSendLists?.data?.data || [];
         const userLists = data.userLists || [];
-
-        // Log the data to ensure it has the expected structure
         console.log('ClickSend Lists:', clickSendLists);
         console.log('User Lists:', userLists);
         console.log('Current User ID:', userId);
-
-        // Filter lists based on userId
         const filteredClickSendLists = clickSendLists.filter(list => {
             console.log('Checking list:', list);
             return list.list_id === userId; // Adjust this line if necessary
         });
         const filteredUserLists = userLists.filter(list => list.createdBy === userId);
-
-        // Log the filtered results
         console.log('Filtered ClickSend Lists:', filteredClickSendLists);
         console.log('Filtered User Lists:', filteredUserLists);
-
-        // Populate the table with filtered ClickSend lists
         clickSendLists.forEach(list => {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -1272,24 +1232,15 @@ document.addEventListener('DOMContentLoaded', () => {
             contactListTableBody.appendChild(row);
         });
         
-
-        // showToast('Contact lists fetched successfully!', true); // Show success message
     } catch (error) {
         console.error('Error fetching lists:', error);
-        // showToast('Error fetching contact lists.', false); // Show error message
     }
 }
-    // Function to update a list
-
-
-    // Function to open the add contact modal
     window.openAddContactModal = function(listId) {
         document.getElementById('listId').value = listId; // Set the list_id in hidden input
         const modal = new bootstrap.Modal(document.getElementById('addContactModal'));
         modal.show();
     }
-
-    // Function to save the contact details
     document.getElementById('saveContactBtn').addEventListener('click', async () => {
         const firstName = document.getElementById('firstName').value;
         const lastName = document.getElementById('lastName').value;
@@ -1297,7 +1248,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const phone = document.getElementById('phone').value;
         const code = document.getElementById('code').value;
         const userid = document.getElementById('listId').value; // Get the list_id
-
         const contactData = {
             firstName,
             lastName,
@@ -1307,7 +1257,6 @@ document.addEventListener('DOMContentLoaded', () => {
             userid // Include list_id in the contact data
         };
         console.log(contactData);
-
         try {
             const response = await fetch('/addcontact', {
                 method: 'POST',
@@ -1316,7 +1265,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify(contactData)
             });
-
             if (response.ok) {
                 console.log('Contact added successfully');
                 const modal = bootstrap.Modal.getInstance(document.getElementById('addContactModal'));
@@ -1334,20 +1282,15 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Error adding contact.', false); // Show error message
         }
     });
-
 });
-
-// Function to filter table rows based on search input
 function filterTable() {
     const input = document.getElementById("searchInput").value.toLowerCase();
     const table = document.getElementById("contactListTableBody");
     const rows = table.getElementsByTagName("tr");
-
     for (let i = 0; i < rows.length; i++) {
         const listName = rows[i].getElementsByTagName("td")[0].textContent.toLowerCase();
         const userId = rows[i].getElementsByTagName("td")[1].textContent.toLowerCase();
         const contactsCount = rows[i].getElementsByTagName("td")[2].textContent.toLowerCase();
-
         if (listName.includes(input) || userId.includes(input) || contactsCount.includes(input)) {
             rows[i].style.display = "";
         } else {
@@ -1355,52 +1298,36 @@ function filterTable() {
         }
     }
 }
-
 function showToast(message, isSuccess = true) {
     const toastContainer = document.getElementById('toastContainer');
-    const toastTemplate = document.getElementById('toastTemplate').cloneNode(true);
-    
+    const toastTemplate = document.getElementById('toastTemplate').cloneNode(true);    
     toastTemplate.style.display = 'block'; // Show the toast
     toastTemplate.classList.remove('bg-success', 'bg-danger'); // Remove any previous background color
     toastTemplate.classList.add(isSuccess ? 'bg-success' : 'bg-danger'); // Set the background color based on success or error
     toastTemplate.querySelector('.toast-body').textContent = message; // Set the message
-    
     toastContainer.appendChild(toastTemplate); // Append the new toast to the container
-    
-    // Initialize the toast
     const toastInstance = new bootstrap.Toast(toastTemplate);
     toastInstance.show();
-
-    // Remove the toast after it’s hidden to avoid memory leaks
     toastTemplate.addEventListener('hidden.bs.toast', function () {
         toastTemplate.remove();
     });
 }
 function importContacts(listId) {
-    // Set the listId in the hidden input field in the modal
     document.getElementById('listIdInput').value = listId;
-
-    // Open the import modal
     const importModal = new bootstrap.Modal(document.getElementById('importContactsModal'));
     importModal.show();
 }
-
 async function handleImportContactsForm(event) {
     event.preventDefault(); // Prevent the default form submission
-
     const formData = new FormData(document.getElementById('importContactsForm'));
     const listId = document.getElementById('listIdInput').value;
-
-    // Add the file to FormData
     const fileInput = document.getElementById('fileInput');
     formData.append('file', fileInput.files[0]); // Add the selected file
-
     try {
         const response = await fetch(`/importContacts`, {
             method: 'POST',
             body: formData,
         });
-
         const result = await response.json();
         if (response.ok) {
             console.log('Success:', result);
@@ -1415,30 +1342,23 @@ async function handleImportContactsForm(event) {
         showToast('Error importing contacts.', false); // Show error message
     }
 }
-
 async function updateList(listId) {
     document.getElementById('updateListId').value = listId; // Set the listId in hidden input
     const modal = new bootstrap.Modal(document.getElementById('updateListModal')); // Initialize modal
     modal.show(); // Show the modal
 }
-
-// Function to handle the saving of the updated list name
 document.getElementById('saveUpdatedListBtn').addEventListener('click', async (event) => {
     event.preventDefault(); // Prevent the form from refreshing the page
-
     const newListName = document.getElementById('newListName').value; // Get the new list name from input
     const listId = document.getElementById('updateListId').value; // Get the listId
-
     if (!newListName) {
         alert("Please enter a new list name.");
         return;
     }
-
     const updatedListData = {
         listId,
         newListName // Send both listId and newListName to the backend
     };
-
     try {
         const response = await fetch('/listupdate', {
             method: 'PUT',
@@ -1447,7 +1367,6 @@ document.getElementById('saveUpdatedListBtn').addEventListener('click', async (e
             },
             body: JSON.stringify(updatedListData) // Send listId and newListName to the server
         });
-
         if (response.ok) {
             console.log('List updated successfully');
             const modal = bootstrap.Modal.getInstance(document.getElementById('updateListModal')); // Get the modal instance
@@ -1472,16 +1391,11 @@ async function viewList(listId) {
             },
             body: JSON.stringify({ listId }) // Send listId in the body
         });
-
         if (response.ok) {
             const result = await response.json();
             console.log('List retrieved successfully:', result.list);
-
-            // Display contacts in the modal
             displayContacts(result.list.contacts); // Call to display the contacts
             showToast('List retrieved successfully!',true);
-
-            // Show the modal with contact details
             const contactDetailsModal = new bootstrap.Modal(document.getElementById('contactDetailsModal'));
             contactDetailsModal.show();
         } else {
@@ -1495,30 +1409,21 @@ async function viewList(listId) {
     }
 }
 function openupdatenumberModal(contactId) {
-    // Set the contact ID in the hidden input field
     document.getElementById('updateContactId').value = contactId;
-    
-    // Open the update number modal
     const updateNumberModal = new bootstrap.Modal(document.getElementById('updateNumberModal'));
     updateNumberModal.show();
 }
-
-// Handling the save action for updating contact number
 document.getElementById('saveUpdatedNumberBtn').addEventListener('click', async () => {
     const contactId = document.getElementById('updateContactId').value;
     const newPhoneNumber = document.getElementById('newPhoneNumber').value;
-
-    // Function to validate the phone number format
     const isValidPhoneNumber = (number) => {
         const phoneRegex = /^\+\d{12}$/; // Matches the format +XXXXXXXXXXXX (total of 13 characters)
         return phoneRegex.test(number);
     };
-
     if (!newPhoneNumber || !isValidPhoneNumber(newPhoneNumber)) {
         showToast('Please enter a valid phone number in the format +923190000000.', false);
         return;
     }
-
     try {
         const response = await fetch(`/updatecontactnumber`, {
             method: 'PUT',
@@ -1527,7 +1432,6 @@ document.getElementById('saveUpdatedNumberBtn').addEventListener('click', async 
             },
             body: JSON.stringify({ contactId, newPhoneNumber }),
         });
-
         if (response.ok) {
             const result = await response.json();
             showToast('Contact number updated successfully!', true);
@@ -1542,20 +1446,13 @@ document.getElementById('saveUpdatedNumberBtn').addEventListener('click', async 
         showToast('Error updating contact number.', false);
     }
 });
-
 function opendeletenumberModal(contactId) {
-    // Set the contact ID in the hidden input field
     document.getElementById('deleteContactId').value = contactId;
-
-    // Open the delete confirmation modal
     const deleteNumberModal = new bootstrap.Modal(document.getElementById('deleteNumberModal'));
     deleteNumberModal.show();
 }
-
-// Handling the delete confirmation action
 document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
     const contactId = document.getElementById('deleteContactId').value;
-
     try {
         const response = await fetch(`/deletecontact`, {
             method: 'DELETE',
@@ -1564,7 +1461,6 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
             },
             body: JSON.stringify({ contactId }),
         });
-
         if (response.ok) {
             showToast('Contact deleted successfully!', true);
             const deleteNumberModal = bootstrap.Modal.getInstance(document.getElementById('deleteNumberModal'));
@@ -1578,22 +1474,15 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
         showToast('Error deleting contact.', false);
     }
 });
-
-
 function displayContacts(contacts) {
     const contactDetailsContent = document.getElementById('contactDetailsContent');
     contactDetailsContent.innerHTML = ''; // Clear previous details
-
     if (contacts.length === 0) {
         contactDetailsContent.innerHTML = '<p>No contacts found for this list.</p>';
         return;
     }
-
-    // Create a table to display contact details
     const contactsTable = document.createElement('table');
     contactsTable.classList.add('table', 'table-bordered');
-
-    // Create table headers
     contactsTable.innerHTML = `
         <thead>
             <tr>
@@ -1619,20 +1508,16 @@ function displayContacts(contacts) {
         `).join('')}
         </tbody>
     `;
-
     contactDetailsContent.appendChild(contactsTable);
 }
-
 const form = document.getElementById('contactListForm');
                           form.addEventListener('submit', async (event) => {
-                              event.preventDefault(); // Prevent the default form submission
-                      
+                              event.preventDefault(); // Prevent the default form submission                     
                               const listName = document.getElementById('listName').value;
                               if (!listName) {
                                   showToast('List name cannot be empty.',false);
                                   return;
                               }
-                      
                               try {
                                   const response = await fetch('/list', {
                                       method: 'POST',
@@ -1641,14 +1526,11 @@ const form = document.getElementById('contactListForm');
                                       },
                                       body: JSON.stringify({ listName }), // Send the list name to the server
                                   });
-                      
                                   const data = await response.json();
                                   console.log('API Response:', data);
-                      
                                   if (response.ok) {
                                       showToast('Contact list created successfully!',true);
                                       window.location.reload();
-                                      // window.location.reload();
                                   } else {
                                       showToast( data.message || 'Failed to create contact list.',false);
                                       window.location.reload();
@@ -1658,13 +1540,10 @@ const form = document.getElementById('contactListForm');
                                   showToast('Failed to create contact list.',false);
                               }
                           });
-                      
-
 async function deleteList(listId) {
     if (!confirm('Are you sure you want to delete this list?')) {
         return; // If user cancels, do nothing
     }
-
     try {
         const response = await fetch(`/listdel`, {
             method: 'DELETE',
@@ -1673,7 +1552,6 @@ async function deleteList(listId) {
             },
             body: JSON.stringify({ listId }) // Send listId in the body
         });
-
         if (response.ok) {
             console.log('List deleted successfully');
             showToast('List deleted successfully!', true); // Show success message
@@ -1692,7 +1570,6 @@ async function removeduplicate(listId) {
     if (!confirm('Are you sure you want to remove duplicate contacts from this list?')) {
         return; // If user cancels, do nothing
     }
-
     try {
         const response = await fetch(`/removeduplicate`, {
             method: 'POST',
@@ -1701,7 +1578,6 @@ async function removeduplicate(listId) {
             },
             body: JSON.stringify({ listId }) // Send listId in the body
         });
-
         if (response.ok) {
             console.log('removed duplicate numbers successfully!');
             showToast('removed duplicate numbers successfully!', true); // Show success message
@@ -1716,7 +1592,6 @@ async function removeduplicate(listId) {
         showToast('Error deleting the list.', false); // Show error message
     }
 }
-
 </script>
 
                       

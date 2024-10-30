@@ -670,6 +670,10 @@ chat
                 <div class="container p-5">
                     <!-- Toast notifications -->
                     <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
+                    <div id="verificationStatus" class="alert alert-warning text-center d-none" role="alert">
+                      <h4>You are not verified, Please click here to verify your account:</h4> 
+                      <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
+                    </div>
                     <!-- Confirmation Modal -->
 <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -753,12 +757,14 @@ chat
         </div>
             
             <script>
+              let isVerified = false; // Initialize isVerified status
               document.addEventListener('DOMContentLoaded', async () => {
                   let userId = null; // Store the userId globally
                   let currentPage = 1;
                   const itemsPerPage = 5;
                   let allNumbers = [];
-                  
+
+
                   async function fetchCountries() {
                       try {
                           const response = await fetch('https://rest.clicksend.com/v3/countries', {
@@ -900,6 +906,10 @@ chat
                   await fetchCountries();    
                   
                   document.getElementById('confirmPurchaseBtn').addEventListener('click', async () => {
+                    if (!isVerified) {
+                      showToast('You are not verified to buy numbers.', false)
+                      return;
+                    }
                       const response = await fetch('/purchaseno', {
                           method: 'POST',
                           headers: {
@@ -978,6 +988,7 @@ chat
                   //     });
                   
                   // Fetch user data after DOM is loaded
+
                   try {
                       const response = await fetch('/user', {
                           method: 'POST',
@@ -997,39 +1008,23 @@ chat
                           document.getElementById('userFullName').textContent = data.Name;
                           document.getElementById('packagename').textContent = data.PackageName;
                           document.getElementById('packagecoins').textContent = data.Coins;
-                          showToast('User data loaded successfully.', true); // Success alert
+
+                          isVerified = data.isVerified;
+                            if (!isVerified) {
+                              // Show verification status div and disable submit button if not verified
+                              document.getElementById('verificationStatus').classList.remove('d-none');
+                              // document.querySelector('.buy-btn').disabled = true;
+                            }
+                        
                       }
           
                       // Call the function to set the greeting after user data is fetched
-                      updateGreeting();
           
                   } catch (error) {
                       console.error('Error fetching user data:', error);
-                      showToast('Error fetching user data: ' + error.message, false); // Error alert
+                      // showToast('Error fetching user data: ' + error.message, false); // Error alert
                   }
               
-                  // Function to determine the greeting based on the current time
-                  function getGreeting() {
-                      const now = new Date();
-                      const hours = now.getHours();
-                      
-                      if (hours >= 20 || hours < 6) {
-                          return 'Good night';
-                      } else if (hours >= 6 && hours < 12) {
-                          return 'Good morning';
-                      } else if (hours >= 12 && hours < 17) {
-                          return 'Good afternoon';
-                      } else {
-                          return 'Good evening';
-                      }
-                  }
-              
-                  // Update the greeting in the HTML
-                  function updateGreeting() {
-                      const greetingElement = document.getElementById('greeting');
-                      const greeting = getGreeting();
-                      greetingElement.textContent = greeting;
-                  }
               });
               
               // Function to show toast notifications

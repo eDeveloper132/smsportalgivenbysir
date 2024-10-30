@@ -52,7 +52,6 @@ const sessionMiddleware = async (
     "/signin",
     "/signup",
     "/verify-email",
-    "/resend-verification",
     "/recoverpass",
     "/recaver",
     "/tempassauth",
@@ -166,9 +165,9 @@ app.post("/signin", async (req: Request, res: Response) => {
       return res.status(401).send("Error: Invalid password");
     }
 
-    if (!user.isVerified) {
-      return res.redirect("/signup");
-    }
+    // if (!user.isVerified) {
+    //   return res.status(401).send("You are not verified");
+    // }
 
     const sessionId = uuidv4();
     const session = new SessionModel({
@@ -210,6 +209,7 @@ app.post("/user", async (req: Request, res: AppRes) => {
     PhoneNumber: user.PhoneNumber,
     PackageName: user.Details?.PackageName,
     Coins: user.Details?.Coins,
+    isVerified: user.isVerified,
     messages: user.messages
   };
 
@@ -355,10 +355,13 @@ app.get("/verify-email", async (req: Request, res: Response) => {
 
 
 app.post("/resend-verification", async (req, res) => {
-  const { Email } = req.body;
-
+  console.log(res.locals)
+  const usero = res.locals.user as unknown as ISign;
+  console.log(`Usero:${usero}`)
+  const email = usero.Email;
+  console.log(`Email: ${email}`)
   try {
-    const user = await SignModel.findOne({ Email });
+    const user = await SignModel.findOne({Email: email });
     if (!user) {
       return res.status(404).send("Error: User not found");
     }
@@ -375,13 +378,15 @@ app.post("/resend-verification", async (req, res) => {
       (user.verificationTokenExpiry = new Date(Date.now() + 3600000));
 
     user.save();
-    await sendVerificationEmail(Email, verificationToken);
+    await sendVerificationEmail(email, verificationToken);
 
     res.status(200).send("Verification email sent");
+
   } catch (error: any) {
     console.error("Error resending verification email:", error.message);
     res.status(500).send("Internal Server Error");
   }
+
 });
 
 app.use("*", (req: Request, res: Response) => {

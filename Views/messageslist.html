@@ -639,6 +639,10 @@
           <!--//Page content//-->
           <div class="content pt-3 px-3 px-lg-6 d-flex flex-column-fluid">
             <div class="container-fluid px-0">
+              <div id="verificationStatus" class="alert alert-warning text-center d-none" role="alert">
+                <h4>You are not verified, Please click here to verify your account:</h4> 
+                <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
+              </div>
               <div class="row">
                 <div class="col-12 mb-3 mb-lg-5">
                   <div class="card shadow-sm">
@@ -716,6 +720,8 @@
           </style>
           
           <script>
+                            let isVerified = false;
+
             document.addEventListener('DOMContentLoaded', () => {
         //       fetch('/profile-pic')
         // .then(response => {
@@ -788,6 +794,12 @@
                   document.getElementById('userFullName').textContent = data.Name || 'Default Name';
                   document.getElementById('packagename').textContent = data.PackageName || 'No Package';
                   document.getElementById('packagecoins').textContent = data.Coins || '0';
+                  isVerified = data.isVerified;
+                            if (!isVerified) {
+                              // Show verification status div and disable submit button if not verified
+                              document.getElementById('verificationStatus').classList.remove('d-none');
+                              // document.querySelector('#verifyNumberForm button[type="submit"]').disabled = true;
+                            }
                 }
               } catch (error) {
                 console.error('Error fetching user data:', error);
