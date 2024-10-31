@@ -3,11 +3,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 import bcrypt from "bcrypt";
 import axios from "axios";
-import { SignModel, ListModel, FileUrlModel, PhotoUrlModel, VerifiedNumberModel, AlphaTagModel, CampaignMessageModel } from "../Schema/Post.js";
+import { SignModel, ListModel, FileUrlModel, PhotoUrlModel, VerifiedNumberModel, AlphaTagModel, CampaignMessageModel, SubaccountModel } from "../Schema/Post.js";
 import SessionModel from '../Schema/Session.js';
 import multer from 'multer';
 import fs from 'fs';
 import "dotenv/config";
+import { datas } from "../index.js";
+let subapi = datas[0];
+let subusername = datas[1];
 // Resolve file and directory paths   
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,29 +57,45 @@ const findAndUpdateUserById = async (id, updateData) => {
     }
 };
 // Route to serve the HTML page
-router.get("/", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../Views/index.html"));
+router.get("/", async (req, res) => {
+    try {
+        res.sendFile(path.resolve(__dirname, "../Views/index.html"));
+    }
+    catch (error) {
+        console.error("Error fetching user data:", error);
+        res.status(500).send("Failed to load user data.");
+    }
 });
 router.get("/alllists", (req, res) => {
     res.sendFile(path.resolve(__dirname, "../Views/alllists.html"));
 });
 router.post("/list", async (req, res) => {
-    console.log(req.body); // Log the request body
+    console.log(req.body); // Log the request body for debugging
     const { listName } = req.body; // Get the list name from the request body
-    const user = res.locals.user; // Get the user from res.locals (modify as needed)
+    // Get the user from res.locals (should be set in a prior middleware)
+    const user = res.locals.user; // Assumes user info is set in res.locals
+    if (!user) {
+        return res.status(401).send("Unauthorized"); // Check authorization
+    }
     const userId = user._id;
-    console.log(userId); // Log userId for debugging
-    // ClickSend API credentials
-    const username = 'bluebirdintegrated@gmail.com';
-    const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
-    const clickSendUrl = 'https://rest.clicksend.com/v3/lists';
+    console.log("UserId:", userId); // Log userId for debugging
     try {
-        // Make a POST request to ClickSend API to create a contact list
-        const clickSendResponse = await axios.post(clickSendUrl, {
-            list_name: listName // Payload for creating a list
-        }, {
+        // Find the user's subaccount details
+        const subaccount = await SubaccountModel.findOne({ userId });
+        if (!subaccount) {
+            return res.status(404).json({ success: false, message: "Subaccount not found." });
+        }
+        // Extract subaccount ClickSend API credentials
+        const subaccountApiKey = subapi;
+        const subaccountUsername = subusername;
+        // Construct the ClickSend API URL and credentials for authorization
+        const clickSendUrl = 'https://rest.clicksend.com/v3/lists';
+        const authHeader = `Basic ${Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64')}`;
+        // Make a POST request to the ClickSend API to create a contact list
+        const clickSendResponse = await axios.post(clickSendUrl, { list_name: listName }, // Payload for creating a list
+        {
             headers: {
-                'Authorization': `Basic ${Buffer.from(`${username}:${apiKey}`).toString('base64')}`,
+                'Authorization': authHeader,
                 'Content-Type': 'application/json'
             }
         });
@@ -84,7 +103,7 @@ router.post("/list", async (req, res) => {
         console.log('ClickSend API Response:', responseBody); // Log the response
         // Check if the response contains the expected data (list_id)
         if (responseBody && responseBody.data && responseBody.data.list_id) {
-            // Create a new List document
+            // Create a new List document in the database
             const newList = new ListModel({
                 listName: listName,
                 createdBy: userId, // Set createdBy as the user ID
@@ -93,15 +112,23 @@ router.post("/list", async (req, res) => {
             });
             await newList.save(); // Save the new list to the database
             console.log('List saved to database:', newList);
-            return res.status(200).json({ success: true, message: 'Contact list created and saved successfully!', data: responseBody });
+            return res.status(200).json({
+                success: true,
+                message: 'Contact list created and saved successfully!',
+                data: responseBody
+            });
         }
         else {
+            // Handle cases where the ClickSend API response is missing the list_id
             return res.status(400).json({ success: false, message: 'Failed to create contact list in ClickSend.' });
         }
     }
     catch (err) {
         console.error('Error creating contact list:', err.response?.data || err.message);
-        res.status(500).json({ success: false, message: 'Failed to create contact list: ' + (err.message || 'Internal Server Error') });
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create contact list: ' + (err.message || 'Internal Server Error')
+        });
     }
 });
 const upload1 = multer({ dest: 'uploads/' });
@@ -121,7 +148,7 @@ const sendContactsToClickSend = async (listId, fileUrl) => {
         const response = await axios.post(url, fileData, {
             headers: {
                 'Content-Type': 'application/json', // Ensure Content-Type is JSON
-                'Authorization': 'Basic ' + Buffer.from('bluebirdintegrated@gmail.com:EA26A5D0-7AAC-6631-478B-FC155CE94C99').toString('base64'), // Your credentials
+                'Authorization': 'Basic ' + Buffer.from(`${subusername}:${subapi}`).toString('base64'), // Your credentials
             },
         });
         console.log('Contacts successfully imported to ClickSend:', response.data);
@@ -173,8 +200,8 @@ router.delete('/deletecontact', async (req, res) => {
         // Make a request to ClickSend API to delete the contact
         const response = await axios.delete(clickSendUrl, {
             auth: {
-                username: 'bluebirdintegrated@gmail.com', // Replace with your ClickSend username
-                password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99' // Replace with your ClickSend API key
+                username: `${subapi}`, // Replace with your ClickSend username
+                password: `${subusername}` // Replace with your ClickSend API key
             }
         });
         console.log('Response from ClickSend API:', response.status);
@@ -233,7 +260,7 @@ router.put('/updatecontactnumber', async (req, res) => {
         const clickSendResponse = await fetch(clickSendUrl, {
             method: 'PUT',
             headers: {
-                'Authorization': `Basic ${Buffer.from('bluebirdintegrated@gmail.com:EA26A5D0-7AAC-6631-478B-FC155CE94C99').toString('base64')}`, // Replace with your ClickSend credentials
+                'Authorization': `Basic ${Buffer.from(`${subusername}:${subapi}`).toString('base64')}`, // Replace with your ClickSend credentials
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -292,7 +319,7 @@ router.post('/removeduplicate', async (req, res) => {
         const clickSendResponse = await fetch(clickSendUrl, {
             method: 'PUT',
             headers: {
-                'Authorization': `Basic ${Buffer.from('bluebirdintegrated@gmail.com:EA26A5D0-7AAC-6631-478B-FC155CE94C99').toString('base64')}`, // Replace with your ClickSend credentials
+                'Authorization': `Basic ${Buffer.from(`${subusername}:${subapi}`).toString('base64')}`, // Replace with your ClickSend credentials
                 'Content-Type': 'application/json',
             }
         });
@@ -324,8 +351,8 @@ router.post('/deleteownnumber', async (req, res) => {
     try {
         // Replace with your ClickSend credentials
         const clickSendAuth = {
-            username: 'bluebirdintegrated@gmail.com',
-            apiKey: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'
+            username: `${subapi}`,
+            apiKey: `${subusername}`
         };
         console.log(`Sending DELETE request to ClickSend for number ID: ${id}`);
         // Make DELETE request to ClickSend API
@@ -374,8 +401,8 @@ router.post('/deletetag', async (req, res) => {
         if (extract_tagid != null) {
             console.log(`Attempting to delete alpha tag with ClickSend ID: ${extract_tagid}`);
             const clickSendAuth = {
-                username: 'bluebirdintegrated@gmail.com',
-                apiKey: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'
+                username: `${subapi}`,
+                apiKey: `${subusername}`
             };
             try {
                 const response = await axios.delete(`https://rest.clicksend.com/v3/alpha-tags/${extract_tagid}`, {
@@ -414,8 +441,8 @@ router.post('/updateownnumber', async (req, res) => {
     const { id, label } = req.body; // Extract id and label from the request body
     console.log('Request body:', req.body); // Log the request body for debugging
     // ClickSend API credentials
-    const username = 'bluebirdintegrated@gmail.com';
-    const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+    const username = `${subapi}`;
+    const apiKey = `${subusername}`;
     const clickSendUrl = `https://rest.clicksend.com/v3/own-numbers/${id}`; // Use id in the URL
     try {
         // Make a PATCH request to ClickSend API to update the own number label
@@ -530,7 +557,7 @@ router.post("/getlist", async (req, res) => {
     const user = res.locals.user; // Modify as needed
     const userId = user._id;
     const clickSendUrl = 'https://rest.clicksend.com/v3/lists';
-    const auth = `Basic ${Buffer.from('bluebirdintegrated@gmail.com:EA26A5D0-7AAC-6631-478B-FC155CE94C99').toString('base64')}`;
+    const auth = `Basic ${Buffer.from(`${subusername}:${subapi}`).toString('base64')}`;
     try {
         // Fetch lists from ClickSend using axios
         const clickSendResponse = await axios.get(clickSendUrl, {
@@ -596,8 +623,8 @@ router.put('/listupdate', async (req, res) => {
                 list_name: newListName, // Send the new list name to ClickSend
             }, {
                 auth: {
-                    username: 'bluebirdintegrated@gmail.com', // Your ClickSend credentials
-                    password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99', // Your ClickSend API key
+                    username: `${subapi}`, // Your ClickSend credentials
+                    password: `${subusername}`, // Your ClickSend API key
                 },
             });
             if (clickSendResponse.status === 200) {
@@ -614,8 +641,8 @@ router.put('/listupdate', async (req, res) => {
             list_name: newListName, // Update the list name on ClickSend
         }, {
             auth: {
-                username: 'bluebirdintegrated@gmail.com', // Your ClickSend credentials
-                password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99', // Your ClickSend API key
+                username: `${subapi}`, // Your ClickSend credentials
+                password: `${subusername}`, // Your ClickSend API key
             },
         });
         if (clickSendResponse.status === 200) {
@@ -646,8 +673,8 @@ router.delete('/listdel', async (req, res) => {
             // Attempt to delete from ClickSend if it's not in the database
             const response = await axios.delete(`https://rest.clicksend.com/v3/lists/${listId}`, {
                 auth: {
-                    username: 'bluebirdintegrated@gmail.com',
-                    password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99',
+                    username: `${subapi}`,
+                    password: `${subusername}`,
                 },
             });
             if (response.status === 200) {
@@ -662,8 +689,8 @@ router.delete('/listdel', async (req, res) => {
         // If the list exists, attempt deletion from both ClickSend and local database
         const response = await axios.delete(`https://rest.clicksend.com/v3/lists/${listId}`, {
             auth: {
-                username: 'bluebirdintegrated@gmail.com',
-                password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99',
+                username: `${subapi}`,
+                password: `${subusername}`,
             },
         });
         if (response.status === 200) {
@@ -698,8 +725,8 @@ router.post("/addcontact", async (req, res) => {
     console.log('Formatted Phone Number:', formattedPhone);
     console.log('List ID:', userid);
     try {
-        const username = 'bluebirdintegrated@gmail.com';
-        const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+        const username = `${subapi}`;
+        const apiKey = `${subusername}`;
         const contactData = {
             first_name: firstName || '', // Optional
             last_name: lastName || '', // Optional
@@ -842,8 +869,8 @@ router.post('/bulksms', async (req, res) => {
         console.log('Sending campaign to ClickSend API at:', apiUrl);
         const response = await axios.post(apiUrl, campaignPayload, {
             auth: {
-                username: 'bluebirdintegrated@gmail.com',
-                password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99',
+                username: `${subapi}`,
+                password: `${subusername}`,
             },
         });
         console.log('ClickSend API response:', response.data);
@@ -979,8 +1006,8 @@ router.post('/update-user', async (req, res) => {
 router.post('/purchaseno', async (req, res) => {
     console.log(req.body); // This Console Is Received On req.body: { dedicated_number: '+436703094546' }
     const dedicatedNumber = req.body.dedicated_number; // Extract the dedicated number from the request body
-    const username = 'bluebirdintegrated@gmail.com'; // Replace with your ClickSend username
-    const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'; // Replace with your ClickSend API key
+    const username = `${subapi}`; // Replace with your ClickSend username
+    const apiKey = `${subusername}`; // Replace with your ClickSend API key
     const encodedAuth = Buffer.from(`${username}:${apiKey}`).toString('base64');
     try {
         // Log the encoded auth for debugging
@@ -1041,8 +1068,8 @@ router.post('/verifyownnumber', async (req, res) => {
     }
     const userId = user._id;
     // Replace with your ClickSend credentials
-    const username = 'bluebirdintegrated@gmail.com';
-    const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+    const username = `${subapi}`;
+    const apiKey = `${subusername}`;
     if (phone_number && label && country) {
         try {
             // Call the ClickSend API
@@ -1153,8 +1180,8 @@ router.post('/verifyownnumber', async (req, res) => {
 });
 router.post('/broughtnumbers', async (req, res) => {
     const apiUrl = 'https://rest.clicksend.com/v3/numbers'; // ClickSend API URL
-    const username = 'bluebirdintegrated@gmail.com'; // Replace with your ClickSend username
-    const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'; // Replace with your ClickSend API key
+    const username = `${subapi}`; // Replace with your ClickSend username
+    const apiKey = `${subusername}`; // Replace with your ClickSend API key
     try {
         // Make API request to ClickSend
         const response = await axios.get(apiUrl, {
@@ -1175,8 +1202,8 @@ router.post('/broughtnumbers', async (req, res) => {
 router.post('/ownnumbers', async (req, res) => {
     try {
         // Set up your API credentials
-        const apiUser = 'bluebirdintegrated@gmail.com';
-        const apiKey = 'EA26A5D0-7AAC-6631-478B-FC155CE94C99';
+        const apiUser = `${subapi}`;
+        const apiKey = `${subusername}`;
         // Make the request to the ClickSend API
         const response = await axios.get('https://rest.clicksend.com/v3/own-numbers', {
             auth: {
@@ -1330,8 +1357,8 @@ router.post('/view_campaigns', async (req, res) => {
         console.log('Sending GET request to ClickSend API to fetch SMS campaigns...');
         const response = await axios.get(apiUrl, {
             auth: {
-                username: 'bluebirdintegrated@gmail.com',
-                password: 'EA26A5D0-7AAC-6631-478B-FC155CE94C99'
+                username: `${subapi}`,
+                password: `${subusername}`
             }
         });
         console.log('API response data:', response.data);

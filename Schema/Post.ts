@@ -1,4 +1,32 @@
 import mongoose, { Document, Model, Schema, Types } from 'mongoose';
+interface ISubaccount extends Document {
+    username: string;
+    subaccount_id: number;
+    email: string;
+    password: string;
+    phonenumber: string;
+    first_name: string;
+    last_name: string;
+    api_key: string;
+    userId?: Types.ObjectId; // Reference to the parent user (SignModel)
+}
+
+const SubaccountSchema: Schema<ISubaccount> = new Schema(
+    {
+        subaccount_id: { type: Number, required: true, unique: true }, // Unique subaccount ID
+        username: { type: String, required: true },
+        email: { type: String, required: true, unique: true },
+        password: { type: String, required: true },
+        phonenumber: { type: String, required: true },
+        first_name: { type: String, required: true },
+        last_name: { type: String, required: true },
+        api_key: { type: String, required: true }, // API key for the subaccount
+        userId: { type: Schema.Types.ObjectId, ref: 'Sign', required: false } // Reference to the main user
+    },
+    { timestamps: true }
+);
+
+const SubaccountModel: Model<ISubaccount> = mongoose.model<ISubaccount>('Subaccount', SubaccountSchema);
 
 interface ICampaignMessage extends Document {
     userId: Types.ObjectId; // Reference to the User (SignModel)
@@ -106,54 +134,58 @@ const MessageModel: Model<IMessage> = mongoose.model<IMessage>('Message', Messag
 // Interface and Schema for User (SignModel)
 interface ISign extends Document {
     id?: string;
-    Name?: string; // User's name
-    Email: string; // User's email (required, unique)
-    Password?: string; // User's hashed password
-    PhoneNumber?: string; // User's phone number
-    Role?: string; // User role (e.g., admin, user)
-    Organization?: string; // User's organization (if applicable)
-    verificationToken?: string | null; // Token for email verification
-    verificationTokenExpiry?: Date | null; // Expiry date for verification token
-    isVerified: boolean; // Whether the user's email is verified
+    Name?: string;
+    Email: string;
+    Password?: string;
+    PhoneNumber?: string;
+    Role?: string;
+    Organization?: string;
+    verificationToken?: string | null;
+    verificationTokenExpiry?: Date | null;
+    isVerified: boolean;
     Details: {
-        PackageName?: string | null; // Name of the package the user subscribed to
-        PackageExpiry?: Date | null; // Package expiry date
-        Coins?: number | null; // Number of coins in user's account
-        Status?: string | null; // Additional status info
+        PackageName?: string | null;
+        PackageExpiry?: Date | null;
+        Coins?: number | null;
+        Status?: string | null;
     };
-    messages: Types.ObjectId[]; // Reference to MessageModel
-    package: Types.ObjectId[];  // Reference to PackageModel (if applicable)
-    lists: Types.ObjectId[];  // Reference to ListModel
-    verifiedNumbers: Types.ObjectId[]; // Reference to VerifiedNumberModel
-    alphaTags: Types.ObjectId[]; // Reference to AlphaTagModel
-    campaigns: Types.ObjectId[]; // Reference to VerifiedNumberModel
+    messages: Types.ObjectId[];
+    package: Types.ObjectId[];
+    lists: Types.ObjectId[];
+    verifiedNumbers: Types.ObjectId[];
+    alphaTags: Types.ObjectId[];
+    campaigns: Types.ObjectId[];
+    subaccounts: Types.ObjectId[]; // Reference to SubaccountModel
 }
 
-const SignSchema: Schema<ISign> = new Schema({
-    id: { type: String },
-    Name: { type: String }, // Optional user name
-    Email: { type: String, required: true, unique: true }, // Required and unique email
-    Password: { type: String }, // Hashed password
-    PhoneNumber: { type: String }, // Optional phone number
-    Role: { type: String }, // Optional role
-    Organization: { type: String }, // Optional organization field
-    verificationToken: { type: String, default: null }, // Default to null if not present
-    verificationTokenExpiry: { type: Date, default: null }, // Expiry date of token
-    isVerified: { type: Boolean, default: false }, // Default to unverified
-    Details: {
-        PackageName: { type: String, default: null }, // Default to null
-        PackageExpiry: { type: Date, default: null }, // Default to null
-        Coins: { type: Number, default: null }, // Default to null
-        Status: { type: String, default: null } // Default to null
+const SignSchema: Schema<ISign> = new Schema(
+    {
+        id: { type: String },
+        Name: { type: String },
+        Email: { type: String, required: true, unique: true },
+        Password: { type: String },
+        PhoneNumber: { type: String },
+        Role: { type: String },
+        Organization: { type: String },
+        verificationToken: { type: String, default: null },
+        verificationTokenExpiry: { type: Date, default: null },
+        isVerified: { type: Boolean, default: false },
+        Details: {
+            PackageName: { type: String, default: null },
+            PackageExpiry: { type: Date, default: null },
+            Coins: { type: Number, default: null },
+            Status: { type: String, default: null }
+        },
+        messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
+        package: [{ type: Schema.Types.ObjectId, ref: 'Package' }],
+        lists: [{ type: Schema.Types.ObjectId, ref: 'List' }],
+        verifiedNumbers: [{ type: Schema.Types.ObjectId, ref: 'VerifiedNumber' }],
+        alphaTags: [{ type: Schema.Types.ObjectId, ref: 'AlphaTag' }],
+        campaigns: [{ type: Schema.Types.ObjectId, ref: 'CampaignMessage' }],
+        subaccounts: [{ type: Schema.Types.ObjectId, ref: 'Subaccount' }] // Reference to subaccounts
     },
-    messages: [{ type: Schema.Types.ObjectId, ref: MessageModel }], // Array of message references
-    package: [{ type: Schema.Types.ObjectId, ref: 'PackageModel' }], // Array of package references
-    lists: [{ type: Schema.Types.ObjectId, ref: 'List' }], // Array of list references
-    verifiedNumbers: [{ type: Schema.Types.ObjectId, ref: VerifiedNumberModel }], // Array of verified number references
-    alphaTags: [{ type: Schema.Types.ObjectId, ref: AlphaTagModel }], // Array of alpha tag references
-    campaigns: [{ type: Schema.Types.ObjectId, ref: CampaignMessageModel }] // Array of campaign references
-}, { timestamps: true });
-
+    { timestamps: true }
+);
 const SignModel: Model<ISign> = mongoose.model<ISign>('Sign', SignSchema);
 
 // Interface for Contact
@@ -253,7 +285,9 @@ export {
     IVerifiedNumber,
     VerifiedNumberModel,
     ICampaignMessage,
-    CampaignMessageModel 
+    CampaignMessageModel,
+    SubaccountModel,
+    ISubaccount
 };
 
 

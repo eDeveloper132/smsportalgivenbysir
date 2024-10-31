@@ -5,7 +5,7 @@ import path from "path";
 import bcrypt from "bcrypt";
 import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
-import { ISign, SignModel, TokenModel } from "./Schema/Post.js";
+import { ISign, SignModel, TokenModel, SubaccountModel, ISubaccount } from "./Schema/Post.js";
 import MainRoute from "./Routes/Main.js";
 import SMSRoute from "./Routes/SMS.js";
 import connection from "./DB/db.js";
@@ -14,6 +14,7 @@ import sendVerificationEmail from "./emailService.js"; // Import the email servi
 import { lstat } from "fs";
 import SessionModel from "./Schema/Session.js";
 import cookieParser from "cookie-parser";
+import axios from "axios";
 import mongoose from "mongoose";
 import sendTemporaryCode from "./RecoverpassService.js";
 const PORT = process.env.PORT || 3437;
@@ -33,7 +34,7 @@ app.listen(PORT, () => {
 });
 
 await connection();
-mongoose.set('debug', true);
+// mongoose.set('debug', true);
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // app.use(express.static('profilephoto'));
@@ -97,52 +98,134 @@ const sessionMiddleware = async (
 };
 
 app.use(sessionMiddleware);
-
 app.get("/signup", (req: Request, res: Response) => {
   res.sendFile(path.resolve(__dirname, "./Views/signup.html"));
 });
 
+
 app.post("/signup", async (req: Request, res: Response) => {
-  const { Name, Email, Password, Role, Organization, PhoneNumber } = req.body;
+  const { UserName, Name, Email, Password, Role, Organization, PhoneNumber } = req.body;
 
   try {
-    if (
-      !Name ||
-      !Email ||
-      !Password ||
-      !Role ||
-      !Organization ||
-      !PhoneNumber
-    ) {
+    // Validate required fields
+    if (!Name || !Email || !Password || !Role || !Organization || !PhoneNumber) {
+      console.error("Error: Missing fields in request body.");
       return res.status(400).send("Error: Missing fields");
     }
 
-    const hashedPassword = await bcrypt.hash(Password, 10);
-    const token = uuidv4();
-    const hashed = await bcrypt.hash(token, 10);
+    console.log(`Received signup request with the following details:`);
+    console.log(`UserName: ${UserName}`);
+    console.log(`Name: ${Name}`);
+    console.log(`Email: ${Email}`);
+    console.log(`Password: ${Password}`);
+    console.log(`Role: ${Role}`);
+    console.log(`Organization: ${Organization}`);
+    console.log(`PhoneNumber: ${PhoneNumber}`);
 
-    const newUser = new SignModel({
-      id: uuidv4(),
-      Name,
-      Email,
-      Password: hashedPassword,
-      PhoneNumber,
-      Role,
-      Organization,
-      verificationToken: hashed,
-      verificationTokenExpiry: new Date(Date.now() + 3600000),
-      isVerified: false,
-    });
+    // Prepare ClickSend subaccount creation request
+    const clickSendData = {
+      api_username: UserName,
+      password: Password,
+      email: Email,
+      phone_number: PhoneNumber,
+      first_name: Name.split(" ")[0],
+      last_name: Name.split(" ")[1] || "", // Assuming Name has first and last
+    };
 
-    await newUser.save();
-    await sendVerificationEmail(Email, hashed);
-    console.log("A verification link has been sent to your email.");
-    res.redirect("/");
-  } catch (error) {
-    console.error("Error during signup:", error);
+    console.log("Sending request to ClickSend to create a subaccount...");
+
+    const clickSendResponse = await axios.post(
+      "https://rest.clicksend.com/v3/subaccounts",
+      clickSendData,
+      {
+        auth: {
+          username: "bluebirdintegrated@gmail.com",
+          password: "EA26A5D0-7AAC-6631-478B-FC155CE94C99",
+        },
+      }
+    );
+
+    console.log("Received response from ClickSend.");
+
+    // Check ClickSend response
+    if (clickSendResponse.data.response_code === "SUCCESS") {
+      console.log("ClickSend subaccount created successfully:", clickSendResponse.data.data);
+      const subaccount_id = clickSendResponse.data.data.subaccount_id;
+      const api_key = clickSendResponse.data.data.api_key;
+      console.log("API key:", api_key);
+      console.log("Subaccount ID:", subaccount_id);
+      // Save ClickSend subaccount details in SubaccountModel
+      const newSubaccount = new SubaccountModel({
+        subaccount_id: subaccount_id,
+        username: clickSendResponse.data.data.api_username,
+        email: Email,
+        password: Password, // Ensure password is populated
+        phonenumber: PhoneNumber, // Ensure phone number is populated
+        first_name: clickSendResponse.data.data.first_name,
+        last_name: clickSendResponse.data.data.last_name,
+        api_key: api_key,
+        userId: null, // To be updated after user creation
+      });
+
+      // Save the subaccount first
+      await newSubaccount.save();
+      console.log("Subaccount details saved successfully:", newSubaccount);
+
+      // Hash the password for the user
+      const hashedPassword = await bcrypt.hash(Password, 10);
+      console.log("Password hashed successfully.");
+      
+      const token = uuidv4();
+      console.log("Generated verification token:", token);
+
+      const hashedToken = await bcrypt.hash(token, 10);
+      console.log("Hashed verification token for storage.");
+
+      // Save the user in SignModel
+      const newUser = new SignModel({
+        id: uuidv4(),
+        Name,
+        Email,
+        Password: hashedPassword,
+        PhoneNumber,
+        Role,
+        Organization,
+        verificationToken: hashedToken,
+        verificationTokenExpiry: new Date(Date.now() + 3600000),
+        isVerified: false,
+        subaccounts: [newSubaccount._id], // Link to the saved subaccount
+      });
+
+      const savedUser = await newUser.save();
+      console.log("User saved successfully:", savedUser);
+
+      // Update the saved subaccount with the userId reference
+      newSubaccount.userId = savedUser._id as mongoose.Types.ObjectId; // Link the user ID
+      await newSubaccount.save(); // Save the updated subaccount
+      console.log("Subaccount updated with userId reference.");
+
+      // Send verification email
+      await sendVerificationEmail(Email, hashedToken);
+      console.log("A verification link has been sent to the user's email.");
+
+      res.redirect("/");
+    } else {
+      // Log the complete response for debugging
+      console.error("Failed to create ClickSend subaccount:", clickSendResponse.data.response_msg);
+      console.error("ClickSend Response:", clickSendResponse.data); // Log full response for analysis
+      res.status(400).send("Error: Failed to create ClickSend subaccount");
+    }
+
+  } catch (error: any) {
+    console.error("Error during signup:", error.response ? error.response.data : error.message);
     res.status(500).send("Internal Server Error");
   }
 });
+
+
+
+
+
 app.get("/signin", (req: Request, res: Response) => {
   res.sendFile(path.resolve(__dirname, "./Views/signin.html"));
 });
@@ -194,13 +277,18 @@ app.post("/reset-Session", async (req: Request, res: Response) => {
   }
   res.status(200).send("Session reset");
 });
-
+const datas : any[] = [];
 // Example of using req.user in protected routes
 app.post("/user", async (req: Request, res: AppRes) => {
   if (!res.locals.user) {
     return res.status(401).send("Unauthorized");
   }
   const user = res.locals.user as unknown as ISign;
+  const subaccount = await SubaccountModel.findOne({ userId: user._id });
+  const subaccountApikey = subaccount?.api_key;
+  const subaccountPassword = subaccount?.password;
+  const subaccountId = subaccount?._id;
+  const subaccountUserName = subaccount?.username;
   const data = {
     id: user._id,
     Name: user.Name,
@@ -210,9 +298,13 @@ app.post("/user", async (req: Request, res: AppRes) => {
     PackageName: user.Details?.PackageName,
     Coins: user.Details?.Coins,
     isVerified: user.isVerified,
-    messages: user.messages
+    messages: user.messages,
+    subaccountId: subaccountId,
+    subaccountPassword: subaccountPassword,
+    subaccountUserName: subaccountUserName,
+    subaccountApikey: subaccountApikey
   };
-
+  datas.push(subaccountApikey , subaccountUserName)
   res.send(data);
 });
 app.use("/", MainRoute);
@@ -392,5 +484,6 @@ app.post("/resend-verification", async (req, res) => {
 app.use("*", (req: Request, res: Response) => {
   res.status(404).sendFile(path.resolve(__dirname, "./Views/page-404.html"));
 });
+export { datas }
 lstat;
 export default app;

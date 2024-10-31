@@ -89,6 +89,11 @@
                                         </div>
                                         <form action="/signup" method="POST" class="z-index-1 position-relative needs-validation" id="RegistrationForm">
                                             <div class="form-floating mb-3">
+                                                <input type="text" class="form-control" name="Username" id="floatingInputUsername" placeholder="Username" required>
+                                                <label for="floatingInputUsername">Username</label>
+                                                <span class="invalid-feedback" id="usernameError">Please enter a valid username</span>
+                                            </div>
+                                            <div class="form-floating mb-3">
                                                 <input type="text" class="form-control" name="Name" id="floatingInputName" placeholder="John Doe" required>
                                                 <label for="floatingInputName">Full Name</label>
                                                 <span class="invalid-feedback" id="nameError">Please enter your name</span>
@@ -100,7 +105,7 @@
                                             </div>
                                             <div class="form-floating mb-3">
                                                 <input type="password" name="Password" class="form-control" id="floatingPassword" placeholder="Password" required>
-                                                <label for="floatingPassword">Password</label>
+                                                <label for="floatingPassword">Password <small>must be like: H!p9oS$7qZ</small></label>
                                                 <span class="invalid-feedback" id="passwordError">Password must be at least 8 characters include atleast 1 Special Character long and contain a mix of letters and numbers.</span>
                                             </div>
                                             <div class="form-floating mb-3">
@@ -395,7 +400,12 @@
                                             
                                                 let isValid = true;
                                                 const errorMessages = []; // Array to collect error messages
-                                            
+                                                const username = document.getElementById('floatingInputUsername').value;
+                                                if (!username.trim()) {
+                                                    document.getElementById('usernameError').style.display = 'block';
+                                                    errorMessages.push("Username is required.");
+                                                    isValid = false;
+                                                }
                                                 // Validate name
                                                 const name = document.getElementById('floatingInputName').value;
                                                 if (!name.trim()) {
@@ -412,23 +422,24 @@
                                                     errorMessages.push("Please enter a valid email address.");
                                                     isValid = false;
                                                 }
-                                            
-                                                // Validate password
-                                                const password = document.getElementById('floatingPassword').value;
-                                                const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
-                                                if (!passwordPattern.test(password)) {
-                                                    document.getElementById('passwordError').style.display = 'block';
-                                                    errorMessages.push("Password must be at least 8 characters long and include letters and numbers.");
-                                                    isValid = false;
-                                                }
-                                            
-                                                // Validate confirm password
-                                                const confirmPassword = document.getElementById('floatingPassword2').value;
-                                                if (password !== confirmPassword) {
-                                                    document.getElementById('confirmPasswordError').style.display = 'block';
-                                                    errorMessages.push("Passwords do not match.");
-                                                    isValid = false;
-                                                }
+// Validate password with uppercase and special character requirements
+const password = document.getElementById('floatingPassword').value;
+const passwordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,12}$/;
+
+if (!passwordPattern.test(password)) {
+    document.getElementById('passwordError').style.display = 'block';
+    errorMessages.push("Password must be 8-12 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+    isValid = false;
+}
+
+// Validate confirm password
+const confirmPassword = document.getElementById('floatingPassword2').value;
+if (password !== confirmPassword) {
+    document.getElementById('confirmPasswordError').style.display = 'block';
+    errorMessages.push("Passwords do not match.");
+    isValid = false;
+}
+
                                             
                                                 // Validate organization
                                                 const organization = document.getElementById('floatingInputOrganization').value;
@@ -458,6 +469,7 @@
                                             
                                                 if (isValid) {
                                                     const formObject = {
+                                                        UserName: username,
                                                         Name: name,
                                                         Email: email,
                                                         Password: password,

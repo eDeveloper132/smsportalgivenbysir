@@ -759,6 +759,46 @@ chat
             <script>
               let isVerified = false; // Initialize isVerified status
               document.addEventListener('DOMContentLoaded', async () => {
+                let subaccountapikey = null;
+                let subaccountusername = null;
+                try {
+                      const response = await fetch('/user', {
+                          method: 'POST',
+                          headers: {
+                              'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({}) // Adjust payload if necessary
+                      });
+          
+                      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                      
+                      const data = await response.json();
+          
+                      if (data) {
+                          // Update the user-related content in the DOM
+                          document.getElementById('userName').textContent = data.Name;
+                          document.getElementById('userFullName').textContent = data.Name;
+                          document.getElementById('packagename').textContent = data.PackageName;
+                          document.getElementById('packagecoins').textContent = data.Coins;
+                          subaccountapikey = data.subaccountApikey;
+                          subaccountusername = data.subaccountUserName;
+                          console.log("subaccountapikey:", subaccountapikey);
+                          console.log("subaccountusername:", subaccountusername);
+                          isVerified = data.isVerified;
+                            if (!isVerified) {
+                              // Show verification status div and disable submit button if not verified
+                              document.getElementById('verificationStatus').classList.remove('d-none');
+                              // document.querySelector('.buy-btn').disabled = true;
+                            }
+                        
+                      }
+          
+                      // Call the function to set the greeting after user data is fetched
+          
+                  } catch (error) {
+                      console.error('Error fetching user data:', error);
+                      // showToast('Error fetching user data: ' + error.message, false); // Error alert
+                  }
                   let userId = null; // Store the userId globally
                   let currentPage = 1;
                   const itemsPerPage = 5;
@@ -797,7 +837,7 @@ chat
                   }
               
                   async function fetchNumbers(countryCode) {
-                      const encodedAuth = btoa(`bluebirdintegrated@gmail.com:EA26A5D0-7AAC-6631-478B-FC155CE94C99`);
+                      const encodedAuth = btoa(`${subaccountusername}:${subaccountapikey}`);
           
                       try {
                           const response = await fetch(`https://rest.clicksend.com/v3/numbers/search/${countryCode}`, {
@@ -1003,41 +1043,7 @@ chat
                   
                   // Fetch user data after DOM is loaded
 
-                  try {
-                      const response = await fetch('/user', {
-                          method: 'POST',
-                          headers: {
-                              'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({}) // Adjust payload if necessary
-                      });
-          
-                      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                      
-                      const data = await response.json();
-          
-                      if (data) {
-                          // Update the user-related content in the DOM
-                          document.getElementById('userName').textContent = data.Name;
-                          document.getElementById('userFullName').textContent = data.Name;
-                          document.getElementById('packagename').textContent = data.PackageName;
-                          document.getElementById('packagecoins').textContent = data.Coins;
 
-                          isVerified = data.isVerified;
-                            if (!isVerified) {
-                              // Show verification status div and disable submit button if not verified
-                              document.getElementById('verificationStatus').classList.remove('d-none');
-                              // document.querySelector('.buy-btn').disabled = true;
-                            }
-                        
-                      }
-          
-                      // Call the function to set the greeting after user data is fetched
-          
-                  } catch (error) {
-                      console.error('Error fetching user data:', error);
-                      // showToast('Error fetching user data: ' + error.message, false); // Error alert
-                  }
               
               });
               

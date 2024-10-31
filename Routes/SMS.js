@@ -5,6 +5,7 @@ import path from "path";
 import axios from "axios";
 import { MessageModel } from "../Schema/Post.js";
 import { v4 as uuidv4 } from "uuid";
+import { datas } from "../index.js";
 import { SignModel } from "../Schema/Post.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,8 +52,8 @@ router.post("/", async (req, res) => {
             messages: [smsMessage],
         }, {
             auth: {
-                username: "bluebirdintegrated@gmail.com",
-                password: "EA26A5D0-7AAC-6631-478B-FC155CE94C99",
+                username: `${datas[0]}`,
+                password: `${datas[1]}`,
             },
         });
         console.log('Response from ClickSend:', response.data); // Log the response from ClickSend API

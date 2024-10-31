@@ -6,6 +6,7 @@ import axios from "axios";
 import { MessageModel } from "../Schema/Post.js";
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import {datas} from "../index.js"
 import { SignModel } from "../Schema/Post.js";
 import { AppRes } from "../index.js";
 
@@ -68,8 +69,8 @@ router.post("/", async (req: Request, res: Response) => {
       },
       {
         auth: {
-          username: "bluebirdintegrated@gmail.com",
-          password: "EA26A5D0-7AAC-6631-478B-FC155CE94C99",
+          username: `${datas[0]}`,
+          password: `${datas[1]}`,
         },
       }
     );

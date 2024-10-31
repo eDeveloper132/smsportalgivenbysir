@@ -1,4 +1,16 @@
 import mongoose, { Schema } from 'mongoose';
+const SubaccountSchema = new Schema({
+    subaccount_id: { type: Number, required: true, unique: true }, // Unique subaccount ID
+    username: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    phonenumber: { type: String, required: true },
+    first_name: { type: String, required: true },
+    last_name: { type: String, required: true },
+    api_key: { type: String, required: true }, // API key for the subaccount
+    userId: { type: Schema.Types.ObjectId, ref: 'Sign', required: false } // Reference to the main user
+}, { timestamps: true });
+const SubaccountModel = mongoose.model('Subaccount', SubaccountSchema);
 const CampaignMessageSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'Sign', required: true }, // Foreign key to the Sign (User) model
     sms_campaign_id: { type: String, required: true }, // Unique campaign ID
@@ -45,27 +57,28 @@ const MessageSchema = new Schema({
 const MessageModel = mongoose.model('Message', MessageSchema);
 const SignSchema = new Schema({
     id: { type: String },
-    Name: { type: String }, // Optional user name
-    Email: { type: String, required: true, unique: true }, // Required and unique email
-    Password: { type: String }, // Hashed password
-    PhoneNumber: { type: String }, // Optional phone number
-    Role: { type: String }, // Optional role
-    Organization: { type: String }, // Optional organization field
-    verificationToken: { type: String, default: null }, // Default to null if not present
-    verificationTokenExpiry: { type: Date, default: null }, // Expiry date of token
-    isVerified: { type: Boolean, default: false }, // Default to unverified
+    Name: { type: String },
+    Email: { type: String, required: true, unique: true },
+    Password: { type: String },
+    PhoneNumber: { type: String },
+    Role: { type: String },
+    Organization: { type: String },
+    verificationToken: { type: String, default: null },
+    verificationTokenExpiry: { type: Date, default: null },
+    isVerified: { type: Boolean, default: false },
     Details: {
-        PackageName: { type: String, default: null }, // Default to null
-        PackageExpiry: { type: Date, default: null }, // Default to null
-        Coins: { type: Number, default: null }, // Default to null
-        Status: { type: String, default: null } // Default to null
+        PackageName: { type: String, default: null },
+        PackageExpiry: { type: Date, default: null },
+        Coins: { type: Number, default: null },
+        Status: { type: String, default: null }
     },
-    messages: [{ type: Schema.Types.ObjectId, ref: MessageModel }], // Array of message references
-    package: [{ type: Schema.Types.ObjectId, ref: 'PackageModel' }], // Array of package references
-    lists: [{ type: Schema.Types.ObjectId, ref: 'List' }], // Array of list references
-    verifiedNumbers: [{ type: Schema.Types.ObjectId, ref: VerifiedNumberModel }], // Array of verified number references
-    alphaTags: [{ type: Schema.Types.ObjectId, ref: AlphaTagModel }], // Array of alpha tag references
-    campaigns: [{ type: Schema.Types.ObjectId, ref: CampaignMessageModel }] // Array of campaign references
+    messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
+    package: [{ type: Schema.Types.ObjectId, ref: 'Package' }],
+    lists: [{ type: Schema.Types.ObjectId, ref: 'List' }],
+    verifiedNumbers: [{ type: Schema.Types.ObjectId, ref: 'VerifiedNumber' }],
+    alphaTags: [{ type: Schema.Types.ObjectId, ref: 'AlphaTag' }],
+    campaigns: [{ type: Schema.Types.ObjectId, ref: 'CampaignMessage' }],
+    subaccounts: [{ type: Schema.Types.ObjectId, ref: 'Subaccount' }] // Reference to subaccounts
 }, { timestamps: true });
 const SignModel = mongoose.model('Sign', SignSchema);
 const ListSchema = new Schema({
@@ -101,7 +114,7 @@ const PhotoUrlSchema = new Schema({
 });
 const PhotoUrlModel = mongoose.model('PhotoUrl', PhotoUrlSchema);
 // Export models and interfaces
-export { MessageModel, SignModel, ListModel, AlphaTagModel, TokenModel, FileUrlModel, PhotoUrlModel, VerifiedNumberModel, CampaignMessageModel };
+export { MessageModel, SignModel, ListModel, AlphaTagModel, TokenModel, FileUrlModel, PhotoUrlModel, VerifiedNumberModel, CampaignMessageModel, SubaccountModel };
 // VerifiedNumberModel: Represents phone numbers that have been verified for a user. Each number has an associated userId, country code, and an optional label for categorization.
 // AlphaTagModel: Used for managing alpha tags, which are sender IDs registered with ClickSend. Each alpha tag is linked to a user and includes a status (e.g., pending, approved) and a reason for creation.
 // MessageModel: Represents messages sent by users. It stores details like the sender, recipient, content, message status, and scheduling options.
