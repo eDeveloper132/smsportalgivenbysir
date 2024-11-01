@@ -1506,14 +1506,15 @@ router.get('/verifyownnumber',(req:Request , res:Response)=>{
   res.sendFile(path.resolve(__dirname, '../Views/verifynumber.html'));
 })
 
-router.post('/verifyownnumber', async (req: Request, res: Response) => {
-  const { phone_number, label, country, verification_code } = req.body; // Extract phone number, label, and country from request body
-  console.log('Request body:', req.body);
-  const user = res.locals.user; // Get the user from middleware
 
+router.post('/verifyownnumber', async (req: Request, res: Response) => {
+  const { phone_number, label, country, verification_code } = req.body; // Extract fields from request body
+  console.log('Request body:', req.body);
+
+  const user = res.locals.user; // Get the user from middleware
   if (!user) {
-      console.error('User not authenticated');
-      return res.status(401).json({ message: 'User not authenticated' });
+    console.error('User not authenticated');
+    return res.status(401).json({ message: 'User not authenticated' });
   }
 
   const userId = user._id; 
@@ -1522,118 +1523,121 @@ router.post('/verifyownnumber', async (req: Request, res: Response) => {
     return res.status(404).json({ success: false, message: "Subaccount not found." });
   }
 
-  // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
-
+  // Extract ClickSend API credentials
+  const subaccountUsername = subaccount?.username;
+  const subaccountApiKey = subaccount?.api_key;
+  
+    if (!subaccountUsername || !subaccountApiKey) {
+      console.error("Missing username or API key");
+      return res.status(400).json({ message: 'Username or API key missing' });
+  }
   if (phone_number && label && country) {
-      try {
-          // Call the ClickSend API
-          const apiResponse = await fetch('https://rest.clicksend.com/v3/own-numbers/verifications', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64') // Basic Auth
-              },
-              body: JSON.stringify({
-                  phone_number: phone_number, // Required field
-                  label: label || 'Default Label', // Optional, set default if not provided
-                  country: country
-              })
+    try {
+      // Call the ClickSend API to send verification
+      const apiResponse = await fetch('https://rest.clicksend.com/v3/own-numbers/verifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64') // Basic Auth
+        },
+        body: JSON.stringify({
+          phone_number,
+          label: label || 'Default Label', // Default label if not provided
+          country
+        })
+      });
+
+      // Parse response from ClickSend API
+      const result = await apiResponse.json();
+      console.log('Response from ClickSend API:', result);
+
+      if (apiResponse.ok) {
+        // Save verified number to the database
+        const verifiedNumber = await VerifiedNumberModel.create({
+          userId,
+          number: phone_number,
+          own_numberid: result.id,
+          label,
+          country
+        });
+
+        // Update user's verified numbers
+        await SignModel.findByIdAndUpdate(userId, {
+          $push: { verifiedNumbers: verifiedNumber._id } // Add verified number ID to user's verifiedNumbers array
+        });
+
+        // Set a timeout to delete the verified number after 1 minute
+        setTimeout(async () => {
+          await VerifiedNumberModel.findByIdAndDelete(verifiedNumber._id); // Delete the verified number
+          await SignModel.findByIdAndUpdate(userId, {
+            $pull: { verifiedNumbers: verifiedNumber._id } // Remove verified number ID from user's verifiedNumbers array
           });
+          console.log(`Deleted verified number for user ${userId}:`, verifiedNumber._id);
+        }, 60 * 1000); // 60 seconds in milliseconds
 
-          // Parse the response from ClickSend API
-          const result = await apiResponse.json();
-          console.log('Response from ClickSend API:', result);
-          
-          // If successful, save the verified number and update the user's verifiedNumbers
-          if (apiResponse.ok) {
-              const verifiedNumber = await VerifiedNumberModel.create({
-                  userId: userId,
-                  number: phone_number,
-                  own_numberid: result.id,
-                  label: label,
-                  country: country
-              });
-
-              // Update the Sign model to include the verified number reference
-              await SignModel.findByIdAndUpdate(userId, {
-                  $push: { verifiedNumbers: verifiedNumber._id } // Add the verified number ID to the user's verifiedNumbers array
-              });
-
-              // Set a timeout to delete the verified number after 1 minute
-              setTimeout(async () => {
-                  await VerifiedNumberModel.findByIdAndDelete(verifiedNumber._id); // Delete the verified number
-                  await SignModel.findByIdAndUpdate(userId, {
-                      $pull: { verifiedNumbers: verifiedNumber._id } // Remove the verified number ID from the user's verifiedNumbers array
-                  });
-                  console.log(`Deleted verified number for user ${userId}:`, verifiedNumber._id);
-              }, 60 * 1000); // 60 seconds in milliseconds
-
-              res.status(200).json({ success: true, data: result, verifiedNumber }); // Respond with the verified number
-          } else {
-              // Handle error response from ClickSend API
-              console.error('Error from ClickSend API:', result);
-              res.status(apiResponse.status).json({
-                  success: false,
-                  error: result.message || 'Error verifying phone number'
-              });
-          }
-      } catch (error) {
-          console.error('Error fetching from ClickSend API:', error);
-          res.status(500).json({
-              success: false,
-              message: 'Server error occurred while verifying phone number'
-          });
+        res.status(200).json({ success: true, data: result, verifiedNumber }); // Respond with verified number
+      } else {
+        console.error('Error from ClickSend API:', result);
+        res.status(apiResponse.status).json({
+          success: false,
+          error: result.message || 'Error verifying phone number'
+        });
       }
+    } catch (error) {
+      console.error('Error fetching from ClickSend API:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error occurred while verifying phone number'
+      });
+    }
   } else if (verification_code) {
-      const find = await VerifiedNumberModel.findOne({ userId: userId });
-      if (!find) {
-          console.warn('No verified number record found for user:', userId);
-          return res.status(404).json({ message: 'Verification Code Expired' });
+    const find = await VerifiedNumberModel.findOne({ userId });
+    if (!find) {
+      console.warn('No verified number record found for user:', userId);
+      return res.status(404).json({ message: 'Verification Code Expired' });
+    }
+
+    const numberId = find.own_numberid;
+    const phone = find.number;
+    const countryCode = find.country;
+
+    try {
+      // Call ClickSend API to verify the number with the code
+      const apiResponse = await fetch(`https://rest.clicksend.com/v3/own-numbers/verifications/${numberId}/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64') // Basic Auth
+        },
+        body: JSON.stringify({
+          country: countryCode,
+          phone_number: phone, // Required field
+          code: verification_code
+        })
+      });
+
+      if (apiResponse.ok) {
+        const verificationResult = await apiResponse.json();
+        console.log('Phone number verified successfully:', verificationResult);
+        res.status(200).json({ success: true, message: 'Phone number verified successfully!', data: verificationResult });
+      } else {
+        console.error('Error verifying the verification code:', apiResponse);
+        const errorResult = await apiResponse.json();
+        res.status(apiResponse.status).json({
+          success: false,
+          error: errorResult.message || 'Error verifying the verification code'
+        });
       }
-
-      const numberId = find.own_numberid;
-      const phonr = find.number;
-      const countrye = find.country;
-
-      try {
-          // Call the ClickSend API
-          const apiResponse = await fetch(`https://rest.clicksend.com/v3/own-numbers/verifications/${numberId}/verify`, {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64') // Basic Auth
-              },
-              body: JSON.stringify({
-                  country: countrye,
-                  phone_number: phonr, // Required field
-                  code: verification_code
-              })
-          });
-
-          if (apiResponse.ok) {
-              const verificationResult = await apiResponse.json();
-              console.log('Phone number verified successfully:', verificationResult);
-              res.status(200).json({ success: true, message: 'Phone number verified successfully!', data: verificationResult });
-          } else {
-              console.error('Error verifying the verification code:', apiResponse);
-              const errorResult = await apiResponse.json();
-              res.status(apiResponse.status).json({
-                  success: false,
-                  error: errorResult.message || 'Error verifying the verification code'
-              });
-          }
-      } catch (error) {
-          console.error('Error verifying the code:', error);
-          res.status(500).json({
-              success: false,
-              message: 'Server error occurred while verifying the code'
-          });
-      }
+    } catch (error) {
+      console.error('Error verifying the code:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error occurred while verifying the code'
+      });
+    }
   } else {
-      console.log('Invalid request, no phone number or verification code provided');
-      res.status(400).json({ message: 'Invalid request. Please provide phone number, label, country, or verification code.' });
+    console.log('Invalid request, no phone number or verification code provided');
+    res.status(400).json({ message: 'Invalid request. Please provide phone number, label, country, or verification code.' });
   }
 });
 
@@ -1838,36 +1842,38 @@ router.get('/alphatags', async (req: Request, res: Response) => {
 });
 
 router.post('/view_campaigns', async (req: Request, res: Response) => {
-  const user = res.locals.user;
+  const user = res.locals.user; // Get the user from middleware
 
   if (!user) {
     return res.status(401).json({ message: 'User not authenticated' });
   }
 
-  const userId = user._id;
+  const userId = user._id; 
   const subaccount = await SubaccountModel.findOne({ userId });
   if (!subaccount) {
     return res.status(404).json({ success: false, message: "Subaccount not found." });
   }
 
-  // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
+  // Extract ClickSend API credentials from subaccount
+  const subaccountApiKey = subaccount.api_key; // This should be the API Key
+  const subaccountUsername = subaccount.username; // This should be the Username
   const apiUrl = 'https://rest.clicksend.com/v3/sms-campaigns';
 
   try {
     console.log('Sending GET request to ClickSend API to fetch SMS campaigns...');
+    console.log('Subaccount Username:', subaccountUsername);
+    console.log('Subaccount API Key:', subaccountApiKey); // Be cautious with sensitive data
 
     const response = await axios.get(apiUrl, {
       auth: {
-        username: `${subaccountUsername}`,
-        password: `${subaccountApiKey}`
+        username: `${subaccountUsername}`, // Use the correct username
+        password: `${subaccountApiKey}` // Use the correct API Key
       }
     });
 
     console.log('API response data:', response.data);
 
-    const campaigns = response.data.data.data || []; // Correctly access the campaigns list
+    const campaigns = response.data.data.data || []; // Access the campaigns list safely
 
     if (campaigns.length === 0) {
       return res.status(200).json({
@@ -1878,6 +1884,7 @@ router.post('/view_campaigns', async (req: Request, res: Response) => {
       });
     }
 
+    // Save the campaigns to the database
     const savedCampaigns = await Promise.all(
       campaigns.map(async (campaign: any) => {
         const newCampaign = new CampaignMessageModel({
@@ -1887,7 +1894,7 @@ router.post('/view_campaigns', async (req: Request, res: Response) => {
           list_id: campaign.list_id || null,
           from: campaign.from,
           body: campaign.body,
-          schedule: new Date(parseInt(campaign.schedule) * 1000),
+          schedule: new Date(parseInt(campaign.schedule) * 1000), // Convert schedule to Date
           status: campaign.status,
           total_count: campaign._total_count
         });
@@ -1904,6 +1911,7 @@ router.post('/view_campaigns', async (req: Request, res: Response) => {
       })
     );
 
+    // Update user's campaigns in the Sign model
     await SignModel.findByIdAndUpdate(userId, {
       $push: { campaigns: { $each: savedCampaigns.map(c => c.sms_campaign_id) } }
     });

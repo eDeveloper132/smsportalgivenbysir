@@ -74,10 +74,13 @@
                                         <div>
                                             <h2 class="mb-3">Redirecting...</h2>
                                             <p class="mb-5 text-muted">
-                                                Payment Successfull 
-                                                You will be redirected shortly.
+                                                Payment Successful. You will be redirected shortly.
                                             </p>
                                             <div id="timer" class="mb-4 fs-3">10</div>
+                                            <!-- Fallback Button -->
+                                            <button id="fallbackButton" onclick="window.location.href='/'" style="display: none;" class="btn btn-primary mt-4">
+                                                If you are facing redirection issues, click here
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -85,6 +88,7 @@
                         </div>
                     </div>
                 </div>
+                
                 <!-- Page content wrapper end -->
 
                 <!-- Page-footer -->
@@ -105,12 +109,12 @@
     <!-- Theme Core scripts Start -->
     <script src="/assets/js/theme.bundle.js"></script>
     <!-- Theme Core scripts End -->
-
     <script>
         // Countdown timer
         let countdown = 10;
         const timerElement = document.getElementById('timer');
-
+        const fallbackButton = document.getElementById('fallbackButton'); // Get the fallback button element
+    
         function updateTimer() {
             if (countdown > 0) {
                 countdown--;
@@ -129,17 +133,19 @@
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
                     }
-                    window.location.href = '/';
+                    window.location.href = '/'; // Redirect to home after successful POST
                 })
                 .catch(error => {
                     console.error('Error during POST request:', error);
-                    // Redirect to /signin even if the POST request fails
+                    // Show the fallback button if redirect fails
+                    fallbackButton.style.display = 'block';
                 });
             }
         }
-
+    
         updateTimer();
     </script>
+    
 </body>
 
 </html>

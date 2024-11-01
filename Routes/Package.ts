@@ -140,7 +140,7 @@ router.post("/succeed", async (req: Request, res: AppRes) => {
     oic = ["", "", "", 0, 0, 0, ""];
 
     // Assuming you have a session reset endpoint in your Express app
-    await axios.post('/reset-Session');
+    // await axios.post('/reset-Session');
 
     res.send(200);
   } catch (error: any) {
