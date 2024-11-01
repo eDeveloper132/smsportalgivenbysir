@@ -6,7 +6,7 @@ import axios from "axios";
 import { SignModel, ListModel, FileUrlModel, PhotoUrlModel, VerifiedNumberModel, AlphaTagModel, CampaignMessageModel, SubaccountModel } from "../Schema/Post.js";
 import SessionModel from '../Schema/Session.js';
 import multer from 'multer';
-import fs from 'fs';
+import * as fs from 'fs';
 import "dotenv/config";
 // Resolve file and directory paths   
 const __filename = fileURLToPath(import.meta.url);
@@ -70,9 +70,9 @@ router.post("/list", async (req, res) => {
     console.log(req.body); // Log the request body for debugging
     const { listName } = req.body; // Get the list name from the request body
     // Get the user from res.locals (should be set in a prior middleware)
-    const user = res.locals.user; // Assumes user info is set in res.locals
+    const user = res.locals.user;
     if (!user) {
-        return res.status(401).send("Unauthorized"); // Check authorization
+        return res.status(401).send("Unauthorized");
     }
     const userId = user._id;
     console.log("UserId:", userId); // Log userId for debugging
@@ -82,13 +82,17 @@ router.post("/list", async (req, res) => {
         if (!subaccount) {
             return res.status(404).json({ success: false, message: "Subaccount not found." });
         }
-        // Extract subaccount ClickSend API credentials
-        const subaccountApiKey = subaccount?.username;
-        const subaccountUsername = subaccount?.api_key;
-        // Construct the ClickSend API URL and credentials for authorization
+        // Correctly assign API credentials
+        const subaccountUsername = subaccount?.username;
+        const subaccountApiKey = subaccount?.api_key;
+        if (!subaccountUsername || !subaccountApiKey) {
+            console.error("Missing username or API key");
+            return res.status(400).json({ message: 'Username or API key missing' });
+        }
+        // Construct the ClickSend API URL and authorization header
         const clickSendUrl = 'https://rest.clicksend.com/v3/lists';
         const authHeader = `Basic ${Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64')}`;
-        // Make a POST request to the ClickSend API to create a contact list
+        // Make a POST request to ClickSend API to create a contact list
         const clickSendResponse = await axios.post(clickSendUrl, { list_name: listName }, // Payload for creating a list
         {
             headers: {
@@ -96,18 +100,18 @@ router.post("/list", async (req, res) => {
                 'Content-Type': 'application/json'
             }
         });
-        const responseBody = clickSendResponse.data; // Extract data from response
-        console.log('ClickSend API Response:', responseBody); // Log the response
+        const responseBody = clickSendResponse.data;
+        console.log('ClickSend API Response:', responseBody);
         // Check if the response contains the expected data (list_id)
         if (responseBody && responseBody.data && responseBody.data.list_id) {
             // Create a new List document in the database
             const newList = new ListModel({
                 listName: listName,
-                createdBy: userId, // Set createdBy as the user ID
-                listId: responseBody.data.list_id, // Use the list_id from ClickSend response
+                createdBy: userId,
+                listId: responseBody.data.list_id,
                 contacts: [] // Initialize contacts as an empty array
             });
-            await newList.save(); // Save the new list to the database
+            await newList.save();
             console.log('List saved to database:', newList);
             return res.status(200).json({
                 success: true,
@@ -553,6 +557,10 @@ router.post('/importContacts', upload1.single('file'), async (req, res) => {
     }
     const subaccountUsername = subaccount?.username;
     const subaccountApiKey = subaccount?.api_key;
+    if (!subaccountUsername || !subaccountApiKey) {
+        console.error("Missing username or API key");
+        return res.status(400).json({ message: 'Username or API key missing' });
+    }
     if (!file) {
         return res.status(400).json({ error: 'No file uploaded.' });
     }
@@ -631,7 +639,7 @@ router.get('/api/credentials', (req, res) => {
     });
 });
 router.post("/getlist", async (req, res) => {
-    const user = res.locals.user; // Get the user from middleware
+    const user = res.locals.user;
     if (!user) {
         console.error('User not authenticated');
         return res.status(401).json({ message: 'User not authenticated' });
@@ -641,34 +649,35 @@ router.post("/getlist", async (req, res) => {
     if (!subaccount) {
         return res.status(404).json({ success: false, message: "Subaccount not found." });
     }
-    // Extract subaccount ClickSend API credentials
-    const subaccountApiKey = subaccount?.username;
-    const subaccountUsername = subaccount?.api_key;
+    const subaccountUsername = subaccount?.username;
+    const subaccountApiKey = subaccount?.api_key;
+    if (!subaccountUsername || !subaccountApiKey) {
+        console.error("Missing username or API key");
+        return res.status(400).json({ message: 'Username or API key missing' });
+    }
     const clickSendUrl = 'https://rest.clicksend.com/v3/lists';
     const auth = `Basic ${Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64')}`;
+    console.log("Authorization Header:", auth);
     try {
-        // Fetch lists from ClickSend using axios
         const clickSendResponse = await axios.get(clickSendUrl, {
             headers: {
                 'Authorization': auth,
                 'Content-Type': 'application/json'
             },
             params: {
-                page: 1, // Page number
-                limit: 10 // Limit of results per page
+                page: 1,
+                limit: 10
             }
         });
-        const clickSendLists = clickSendResponse.data; // Extract lists from ClickSend response
+        const clickSendLists = clickSendResponse.data;
         console.log(clickSendLists);
-        // Optionally, fetch user-specific lists from your database
         const userLists = await ListModel.find({ createdBy: userId });
         console.log(userLists);
-        // Combine both lists if necessary, or send them separately
         res.json({ clickSendLists, userLists });
     }
     catch (error) {
-        console.error('Error fetching lists:', error.response ? error.response.data : error.message);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error('Error fetching lists:', error);
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
 router.post('/listview', async (req, res) => {
@@ -842,8 +851,12 @@ router.post("/addcontact", async (req, res) => {
         return res.status(404).json({ success: false, message: "Subaccount not found." });
     }
     // Extract subaccount ClickSend API credentials
-    const subaccountApiKey = subaccount?.username;
-    const subaccountUsername = subaccount?.api_key;
+    const subaccountUsername = subaccount?.username;
+    const subaccountApiKey = subaccount?.api_key;
+    if (!subaccountUsername || !subaccountApiKey) {
+        console.error("Missing username or API key");
+        return res.status(400).json({ message: 'Username or API key missing' });
+    }
     console.log('Request Body:', req.body);
     const { firstName, lastName, email, phone, code, userid } = req.body;
     const formattedPhone = `${code}${phone}`; // E.164 formatted phone number
