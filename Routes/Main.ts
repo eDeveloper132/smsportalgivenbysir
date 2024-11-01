@@ -181,222 +181,225 @@ router.post("/list", async (req: Request, res: Response) => {
 const upload1 = multer({ dest: 'uploads/' });
 
 // Function to send contacts to ClickSend
-const sendContactsToClickSend = async (listId: any, fileUrl: string, subaccountUsername: any, subaccountApiKey: any) => {
-    const url = `https://rest.clicksend.com/v3/lists/${listId}/import`;
+const sendContactsToClickSend = async (listId: any, filePath: string, subaccountUsername: any, subaccountApiKey: any) => {
+  const url = `https://rest.clicksend.com/v3/lists/${listId}/import`;
 
-    // Adjust fieldOrder to match your actual data
-    const fieldOrder = ['phone', 'first_name', 'last_name', 'email'];
-
-    // Prepare the request body
-    const fileData = {
-        file_url: fileUrl, // Send file URL instead of contacts
-        field_order: fieldOrder, // Specify the order of fields
-    };
-    console.log('File data being sent:', fileData);
-
-    try {
-        // Sending the POST request to ClickSend
-        const response = await axios.post(url, fileData, {
-            headers: {
-                'Content-Type': 'application/json', // Ensure Content-Type is JSON
-                'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64'), // Your credentials
-            },
-        });
-
-        console.log('Contacts successfully imported to ClickSend:', response.data);
-        return response.data;
-
-    } catch (error: any) {
-        console.error('Error importing contacts to ClickSend:', error.response?.data || error.message);
-        throw new Error('Failed to import contacts to ClickSend.');
-    }
-};
-
-router.delete('/deletecontact', async (req: Request, res: Response) => {
-  const contactId = req.body;
-
-  const user = res.locals.user; // Get the user from middleware
-
-  if (!user) {
-      console.error('User not authenticated');
-      return res.status(401).json({ message: 'User not authenticated' });
-  }
-
-  const userId = user._id; 
-  const subaccount = await SubaccountModel.findOne({ userId });
-  if (!subaccount) {
-    return res.status(404).json({ success: false, message: "Subaccount not found." });
-  }
-
-  // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
-
-
-  console.log('Received delete request for contact:', req.body);  // Log the entire body
-  console.log('User ID:', userId);
+  // Prepare form-data with file
+  const formData = new FormData();
+  formData.append('file', fs.createReadStream(filePath)); // Attach file as a stream
+  formData.append('field_order', JSON.stringify(['phone', 'first_name', 'last_name', 'email'])); // Specify field order as a JSON string
 
   try {
-      // Check if contactId is an object and extract its value
-      const parsedContactId = typeof contactId === 'object' && contactId.contactId 
-          ? parseInt(contactId.contactId) 
-          : parseInt(contactId);
-
-      console.log('Parsed contactId:', parsedContactId);
-
-      if (isNaN(parsedContactId)) {
-          console.error('Parsed contactId is NaN, invalid contactId:', contactId);
-          return res.status(400).json({ message: 'Invalid contactId provided.' });
-      }
-
-      // Find the list that contains the contact created by the user
-      const list = await ListModel.findOne({
-          createdBy: userId,
-          'contacts.contactid': parsedContactId  // Use parsed contactId
-      });
-
-      console.log('List found:', list);
-
-      if (!list) {
-          console.log('Contact not found in any list.');
-          return res.status(404).json({ message: 'Contact not found in any list.' });
-      }
-
-      // Find the index of the contact in the contacts array
-      const contactIndex = list.contacts.findIndex((contact: any) => contact.contactid === parsedContactId);
-      console.log('Contact index found:', contactIndex);
-
-      if (contactIndex === -1) {
-          console.log('Contact not found in the list.');
-          return res.status(404).json({ message: 'Contact not found.' });
-      }
-
-      const contactToDelete = list.contacts[contactIndex];
-      console.log('Contact to delete:', contactToDelete);
-
-      // Prepare ClickSend API endpoint with list_id and contact_id
-      const clickSendUrl = `https://rest.clicksend.com/v3/lists/${list.listId}/contacts/${contactToDelete.contactid}`;
-      console.log('ClickSend URL:', clickSendUrl);
-
-      // Make a request to ClickSend API to delete the contact
-      const response = await axios.delete(clickSendUrl, {
-          auth: {
-              username: `${subaccountUsername}`,  // Replace with your ClickSend username
-              password: `${subaccountApiKey}`  // Replace with your ClickSend API key
+      const response = await axios.post(url, formData, {
+          headers: {
+              ...formData.getHeaders(), // Set appropriate form-data headers
+              'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64'),
+          },
+          validateStatus: function (status) {
+              return status < 500; // Resolve only if the status code is less than 500
           }
       });
 
-      console.log('Response from ClickSend API:', response.status);
-
-      if (response.status === 200) {
-          // Remove the contact from your local database list
-          list.contacts.splice(contactIndex, 1);
-
-          // Save the updated list in your database
-          await list.save();
-          console.log('Contact deleted successfully from both ClickSend and your database.');
-
-          res.status(200).json({ message: 'Contact deleted successfully from both ClickSend and your database.' });
-      } else {
-          console.log(`Failed to delete contact from ClickSend. Status: ${response.status}`);
-          res.status(response.status).json({ message: `Failed to delete contact from ClickSend. Status: ${response.status}` });
+      // Check if response data is JSON
+      if (typeof response.data === 'string') {
+          try {
+              response.data = JSON.parse(response.data);
+          } catch (parseError) {
+              console.error('Failed to parse response as JSON:', response.data);
+              throw new Error('Unexpected response format from ClickSend.');
+          }
       }
+
+      console.log('Contacts successfully imported to ClickSend:', response.data);
+      return response.data;
+
+  } catch (error: any) {
+      console.error('Error importing contacts to ClickSend:', error.response?.data || error.message);
+      throw new Error('Failed to import contacts to ClickSend.');
+  }
+};
+router.delete('/deletecontact', async (req: Request, res: Response) => {
+  const contactId = req.body; // Assuming the contactId is passed directly in the body
+
+  const user = res.locals.user; // Get the user from middleware
+
+  // Check for authenticated user
+  if (!user) {
+    console.error('User not authenticated');
+    return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id;
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: 'Subaccount not found.' });
+  }
+
+  // Extract ClickSend API credentials
+  const { username: subaccountUsername, api_key: subaccountApiKey } = subaccount;
+
+  console.log('Received delete request for contact:', req.body);
+  console.log('User ID:', userId);
+
+  try {
+    // Check if contactId is an object and extract its value
+    const parsedContactId = typeof contactId === 'object' && contactId.contactId 
+      ? parseInt(contactId.contactId) 
+      : parseInt(contactId);
+
+    console.log('Parsed contactId:', parsedContactId);
+
+    if (isNaN(parsedContactId)) {
+      console.error('Parsed contactId is NaN, invalid contactId:', contactId);
+      return res.status(400).json({ message: 'Invalid contactId provided.' });
+    }
+
+    // Find the list that contains the contact created by the user
+    const list = await ListModel.findOne({
+      createdBy: userId,
+      'contacts.contactid': parsedContactId // Use parsed contactId
+    });
+
+    console.log('List found:', list);
+
+    if (!list) {
+      console.log('Contact not found in any list.');
+      return res.status(404).json({ message: 'Contact not found in any list.' });
+    }
+
+    // Find the index of the contact in the contacts array
+    const contactIndex = list.contacts.findIndex((contact: any) => contact.contactid === parsedContactId);
+    console.log('Contact index found:', contactIndex);
+
+    if (contactIndex === -1) {
+      console.log('Contact not found in the list.');
+      return res.status(404).json({ message: 'Contact not found.' });
+    }
+
+    const contactToDelete = list.contacts[contactIndex];
+    console.log('Contact to delete:', contactToDelete);
+
+    // Prepare ClickSend API endpoint with list_id and contact_id
+    const clickSendUrl = `https://rest.clicksend.com/v3/lists/${list.listId}/contacts/${contactToDelete.contactid}`;
+    console.log('ClickSend URL:', clickSendUrl);
+
+    // Make a request to ClickSend API to delete the contact
+    const response = await axios.delete(clickSendUrl, {
+      auth: {
+        username: subaccountUsername,
+        password: subaccountApiKey
+      }
+    });
+
+    console.log('Response from ClickSend API:', response.status);
+
+    if (response.status === 200) {
+      // Remove the contact from your local database list
+      list.contacts.splice(contactIndex, 1);
+
+      // Save the updated list in your database
+      await list.save();
+      console.log('Contact deleted successfully from both ClickSend and your database.');
+
+      return res.status(200).json({ message: 'Contact deleted successfully from both ClickSend and your database.' });
+    } else {
+      console.log(`Failed to delete contact from ClickSend. Status: ${response.status}`);
+      return res.status(response.status).json({ message: `Failed to delete contact from ClickSend. Status: ${response.status}` });
+    }
   } catch (error) {
-      console.error('Error deleting contact:', error);
-      res.status(500).json({ message: 'Failed to delete contact.' });
+    console.error('Error deleting contact:', error);
+    return res.status(500).json({ message: 'Failed to delete contact.' });
   }
 });
 
 router.put('/updatecontactnumber', async (req: Request, res: Response) => {
   const user = res.locals.user; // Get the user from middleware
 
+  // Check for authenticated user
   if (!user) {
-      console.error('User not authenticated');
-      return res.status(401).json({ message: 'User not authenticated' });
+    console.error('User not authenticated');
+    return res.status(401).json({ message: 'User not authenticated' });
   }
 
-  const userId = user._id; 
+  const userId = user._id;
   const subaccount = await SubaccountModel.findOne({ userId });
   if (!subaccount) {
-    return res.status(404).json({ success: false, message: "Subaccount not found." });
+    return res.status(404).json({ success: false, message: 'Subaccount not found.' });
   }
 
-  // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
+  // Extract ClickSend API credentials
+  const { username: subaccountUsername, api_key: subaccountApiKey } = subaccount;
 
   const contactId = req.body.contactId;
   const newNumber = req.body.newPhoneNumber;
   console.log(contactId, newNumber);
 
   try {
-      // Parse the contactId if it's an object
-      const parsedContactId = typeof contactId === 'object' && contactId.contactId
-          ? parseInt(contactId.contactId)
-          : parseInt(contactId);
+    // Parse the contactId
+    const parsedContactId = typeof contactId === 'object' && contactId.contactId
+      ? parseInt(contactId.contactId)
+      : parseInt(contactId);
 
-      if (isNaN(parsedContactId)) {
-          console.error('Parsed contactId is NaN, invalid contactId:', contactId);
-          return res.status(400).json({ message: 'Invalid contactId provided.' });
+    if (isNaN(parsedContactId)) {
+      console.error('Parsed contactId is NaN, invalid contactId:', contactId);
+      return res.status(400).json({ message: 'Invalid contactId provided.' });
+    }
+
+    // Find the list containing the contact
+    const list = await ListModel.findOne({
+      createdBy: userId,
+      'contacts.contactid': parsedContactId
+    });
+
+    if (!list) {
+      console.log('Contact not found in any list.');
+      return res.status(404).json({ message: 'Contact not found in any list.' });
+    }
+
+    // Get the listId
+    const listId = list.listId; // Adjust according to your actual field name for list ID
+
+    // Find the index of the contact in the contacts array
+    const contactIndex = list.contacts.findIndex((contact: any) => contact.contactid === parsedContactId);
+
+    if (contactIndex === -1) {
+      console.log('Contact not found in the list.');
+      return res.status(404).json({ message: 'Contact not found.' });
+    }
+
+    // Update the contact in ClickSend
+    const clickSendUrl = `https://rest.clicksend.com/v3/lists/${listId}/contacts/${parsedContactId}`;
+    
+    const clickSendResponse = await axios.put(clickSendUrl, {
+      phone_number: newNumber,
+      custom_1: 'updated' // Adjust if you need other fields
+    }, {
+      auth: {
+        username: subaccountUsername,
+        password: subaccountApiKey,
+      },
+      headers: {
+        'Content-Type': 'application/json'
       }
+    });
 
-      // Find the list that contains the contact created by the user
-      const list = await ListModel.findOne({
-          createdBy: userId,
-          'contacts.contactid': parsedContactId
-      });
+    if (clickSendResponse.status !== 200) {
+      console.error('Error updating contact in ClickSend:', clickSendResponse.data);
+      return res.status(clickSendResponse.status).json({ message: clickSendResponse.data.message || 'Failed to update contact in ClickSend.' });
+    }
 
-      if (!list) {
-          console.log('Contact not found in any list.');
-          return res.status(404).json({ message: 'Contact not found in any list.' });
-      }
+    // Update the local database
+    list.contacts[contactIndex].mix = newNumber; // Update the phone number locally
+    await list.save(); // Save changes to your database
 
-      // Get the listId
-      const listId = list.listId; // Adjust this line according to your actual field name for the list ID
-
-      // Find the index of the contact in the contacts array
-      const contactIndex = list.contacts.findIndex((contact: any) => contact.contactid === parsedContactId);
-
-      if (contactIndex === -1) {
-          console.log('Contact not found in the list.');
-          return res.status(404).json({ message: 'Contact not found.' });
-      }
-
-      // Now we need to update the contact in ClickSend
-      const clickSendUrl = `https://rest.clicksend.com/v3/lists/${listId}/contacts/${parsedContactId}`;
-
-      const clickSendResponse = await fetch(clickSendUrl, {
-          method: 'PUT',
-          headers: {
-              'Authorization': `Basic ${Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64')}`, // Replace with your ClickSend credentials
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-              // This assumes you want to update the phone number only
-              phone_number: newNumber,
-              custom_1: 'updated'
-          })
-      });
-
-      if (!clickSendResponse.ok) {
-          const errorData = await clickSendResponse.json();
-          console.error('Error updating contact in ClickSend:', errorData);
-          return res.status(clickSendResponse.status).json({ message: errorData.message || 'Failed to update contact in ClickSend.' });
-      }
-
-      // If the ClickSend update was successful, update your local database as well
-      list.contacts[contactIndex].mix = newNumber; // Update the phone number locally
-      await list.save(); // Save changes to your database
-
-      console.log('Contact updated successfully in ClickSend and locally');
-      res.status(200).json({ message: 'Contact updated successfully!' });
+    console.log('Contact updated successfully in ClickSend and locally');
+    return res.status(200).json({ message: 'Contact updated successfully!' });
 
   } catch (error) {
-      console.error('Error updating contact:', error);
-      res.status(500).json({ message: 'An error occurred while updating the contact.' });
+    console.error('Error updating contact:', error);
+    return res.status(500).json({ message: 'An error occurred while updating the contact.' });
   }
 });
-
 router.post('/removeduplicate', async (req: Request, res: Response) => {
   const { listId } = req.body;
   console.log('Received request to remove duplicates for listId:', listId);
@@ -777,7 +780,7 @@ router.post('/importContacts', upload1.single('file'), async (req: Request, res:
           }
 
           // Send contacts to ClickSend
-          await sendContactsToClickSend(listId, fileUrl, subaccountUsername, subaccountApiKey); // Call the function to send contacts
+          await sendContactsToClickSend(listId, file.path, subaccountUsername, subaccountApiKey);
 
           res.status(200).json({ message: 'Contacts imported successfully', contacts });
       });
@@ -877,88 +880,97 @@ router.post('/listview', async (req: Request, res: Response) => {
 
 
 
+
 router.put('/listupdate', async (req: Request, res: Response) => {
-  const { listId , newListName } = req.body;
+  const { listId, newListName } = req.body;
   const user = res.locals.user; // Get the user from middleware
 
+  // Check for authenticated user
   if (!user) {
-      console.error('User not authenticated');
-      return res.status(401).json({ message: 'User not authenticated' });
+    console.error('User not authenticated');
+    return res.status(401).json({ message: 'User not authenticated' });
   }
 
-  const userId = user._id; 
+  const userId = user._id;
   const subaccount = await SubaccountModel.findOne({ userId });
   if (!subaccount) {
-    return res.status(404).json({ success: false, message: "Subaccount not found." });
+    return res.status(404).json({ success: false, message: 'Subaccount not found.' });
   }
 
-  // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
+  // Extract ClickSend credentials from subaccount
+  const { username: subaccountUsername, api_key: subaccountApiKey } = subaccount;
 
-  if (!listId && !newListName) {
-    console.log('Server Error 400: Missing listId');
-    return res.status(400).json({ error: 'Missing listId' });
+  // Validate required fields
+  if (!listId || !newListName) {
+    console.log('Missing required fields: listId or newListName');
+    return res.status(400).json({ error: 'Missing required fields: listId or newListName' });
   }
 
   try {
-    // Step 1: Check and update the list in MongoDB
+    // Step 1: Update list in MongoDB
     const updatedList = await ListModel.findOneAndUpdate(
-      { listId: listId },
-      { listName: newListName }, // Update the name in your MongoDB schema
+      { listId },
+      { listName: newListName },
       { new: true }
     );
 
+    // If list is not found in MongoDB, try updating in ClickSend
     if (!updatedList) {
       console.log('List not found in database, checking ClickSend.');
 
-      // Step 2: Update the list in ClickSend if not found in MongoDB
+      try {
+        const clickSendResponse = await axios.put(
+          `https://rest.clicksend.com/v3/lists/${listId}`,
+          { list_name: newListName },
+          {
+            auth: {
+              username: subaccountUsername,
+              password: subaccountApiKey,
+            },
+          }
+        );
+
+        if (clickSendResponse.status === 200) {
+          console.log('List successfully updated in ClickSend.');
+          return res.status(200).json({ success: true, message: 'List updated successfully in ClickSend.' });
+        } else {
+          console.error(`ClickSend update failed: ${clickSendResponse.statusText}`);
+          return res.status(500).json({ error: true, message: 'Failed to update list in ClickSend.' });
+        }
+      } catch (error: any) {
+        console.error('Error updating list in ClickSend:', error.message);
+        return res.status(500).json({ error: true, message: 'Error updating list in ClickSend.' });
+      }
+    }
+
+    // If list is updated in MongoDB, also update in ClickSend
+    try {
       const clickSendResponse = await axios.put(
         `https://rest.clicksend.com/v3/lists/${listId}`,
-        {
-          list_name: newListName, // Send the new list name to ClickSend
-        },
+        { list_name: newListName },
         {
           auth: {
-            username: `${subaccountUsername}`, // Your ClickSend credentials
-            password: `${subaccountApiKey}`, // Your ClickSend API key
+            username: subaccountUsername,
+            password: subaccountApiKey,
           },
         }
       );
 
       if (clickSendResponse.status === 200) {
-        console.log('List successfully updated in ClickSend.');
-        return res.status(200).send({ success: true, message: 'List updated successfully in ClickSend.' });
+        console.log('List successfully updated in both MongoDB and ClickSend.');
+        return res.status(200).json({ success: true, message: 'List updated successfully in both MongoDB and ClickSend.' });
       } else {
         console.error(`ClickSend update failed: ${clickSendResponse.statusText}`);
-        return res.status(500).send({ error: true, message: 'Failed to update list in ClickSend.' });
+        return res.status(500).json({ error: true, message: 'Failed to update list in ClickSend.' });
       }
+    } catch (error: any) {
+      console.error('Error updating list in ClickSend:', error.message);
+      return res.status(500).json({ error: true, message: 'Error updating list in ClickSend.' });
     }
 
-    // If the list was updated in MongoDB, also update it in ClickSend
-    const clickSendResponse = await axios.put(
-      `https://rest.clicksend.com/v3/lists/${listId}`,
-      {
-        list_name: newListName, // Update the list name on ClickSend
-      },
-      {
-        auth: {
-          username: `${subaccountUsername}`, // Your ClickSend credentials
-          password: `${subaccountApiKey}`, // Your ClickSend API key
-        },
-      }
-    );
-
-    if (clickSendResponse.status === 200) {
-      console.log('List successfully updated in both MongoDB and ClickSend.');
-      return res.status(200).send({ success: true, message: 'List updated successfully in both MongoDB and ClickSend.' });
-    } else {
-      console.error(`ClickSend update failed: ${clickSendResponse.statusText}`);
-      return res.status(500).send({ error: true, message: 'Failed to update list in ClickSend.' });
-    }
   } catch (error: any) {
     console.error('Error occurred during the update process:', error.message);
-    return res.status(500).send({ error: true, message: 'Server error occurred during the update process.' });
+    return res.status(500).json({ error: true, message: 'Server error occurred during the update process.' });
   }
 });
 
@@ -967,37 +979,38 @@ router.delete('/listdel', async (req: Request, res: Response) => {
   const listId = req.body.listId;
   const user = res.locals.user; // Get the user from middleware
 
+  // Check for authenticated user
   if (!user) {
-      console.error('User not authenticated');
-      return res.status(401).json({ message: 'User not authenticated' });
+    console.error('User not authenticated');
+    return res.status(401).json({ message: 'User not authenticated' });
   }
 
-  const userId = user._id; 
+  const userId = user._id;
   const subaccount = await SubaccountModel.findOne({ userId });
   if (!subaccount) {
-    return res.status(404).json({ success: false, message: "Subaccount not found." });
+    return res.status(404).json({ success: false, message: 'Subaccount not found.' });
   }
 
-  // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
+  // Extract ClickSend API credentials from subaccount
+  const { username: subaccountUsername, api_key: subaccountApiKey } = subaccount;
 
+  // Validate listId
   if (!listId) {
     console.error('No listId provided.');
     return res.status(400).send({ error: true, message: 'Invalid Request: listId is missing.' });
   }
 
   try {
-    // Check if the list exists in the local database
+    // Step 1: Check if the list exists in the local database
     const list = await ListModel.findOne({ listId });
     if (!list) {
       console.log('List not found in database, checking ClickSend.');
 
-      // Attempt to delete from ClickSend if it's not in the database
+      // Attempt to delete from ClickSend if not found in the database
       const response = await axios.delete(`https://rest.clicksend.com/v3/lists/${listId}`, {
         auth: {
-          username: `${subaccountUsername}`,
-          password: `${subaccountApiKey}`,
+          username: subaccountUsername,
+          password: subaccountApiKey,
         },
       });
 
@@ -1010,18 +1023,18 @@ router.delete('/listdel', async (req: Request, res: Response) => {
       }
     }
 
-    // If the list exists, attempt deletion from both ClickSend and local database
+    // Step 2: If the list exists, attempt deletion from both ClickSend and the local database
     const response = await axios.delete(`https://rest.clicksend.com/v3/lists/${listId}`, {
       auth: {
-        username: `${subaccountUsername}`,
-        password: `${subaccountApiKey}`,
+        username: subaccountUsername,
+        password: subaccountApiKey,
       },
     });
 
     if (response.status === 200) {
       console.log('List successfully deleted from ClickSend.');
 
-      // Delete from local database
+      // Delete from the local database
       const deleteResult = await ListModel.findOneAndDelete({ listId });
       if (deleteResult) {
         console.log('List deleted from local database.');
