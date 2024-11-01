@@ -3,9 +3,8 @@ import "dotenv/config";
 import { fileURLToPath } from "url";
 import path from "path";
 import axios from "axios";
-import { MessageModel } from "../Schema/Post.js";
+import { MessageModel, SubaccountModel } from "../Schema/Post.js";
 import { v4 as uuidv4 } from "uuid";
-import { datas } from "../index.js";
 import { SignModel } from "../Schema/Post.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,8 +28,12 @@ router.post("/", async (req, res) => {
         console.log("Server Error 404: User not found"); // Log if user not found
         return res.status(404).send("User not found.");
     }
+    const id = user._id;
     const packageName = user?.Details?.PackageName;
     const coins = user?.Details?.Coins;
+    const getdata = await SubaccountModel.findOne({ userId: id });
+    const username = getdata?.username;
+    const api_key = getdata?.api_key;
     // Check for incomplete user package details
     if (!packageName || !coins) {
         console.log("Server Error 403: User package details are incomplete."); // Log the error
@@ -52,8 +55,8 @@ router.post("/", async (req, res) => {
             messages: [smsMessage],
         }, {
             auth: {
-                username: `${datas[0]}`,
-                password: `${datas[1]}`,
+                username: `${username}`,
+                password: `${api_key}`,
             },
         });
         console.log('Response from ClickSend:', response.data); // Log the response from ClickSend API

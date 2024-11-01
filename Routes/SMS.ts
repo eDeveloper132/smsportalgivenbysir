@@ -3,10 +3,9 @@ import "dotenv/config";
 import { fileURLToPath } from "url";
 import path from "path";
 import axios from "axios";
-import { MessageModel } from "../Schema/Post.js";
+import { MessageModel, SubaccountModel } from "../Schema/Post.js";
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-import {datas} from "../index.js"
 import { SignModel } from "../Schema/Post.js";
 import { AppRes } from "../index.js";
 
@@ -23,7 +22,6 @@ router.get("/", (req: Request, res: Response) => {
 // POST route to handle SMS sending
 router.post("/", async (req: Request, res: Response) => {
   const { phonecode, phonenumber, message } = req.body;
-
   // Check for missing required fields
   if (!phonecode || !phonenumber || !message) {
     console.log("Server Error 400: Missing required fields"); // Log the error
@@ -37,9 +35,12 @@ router.post("/", async (req: Request, res: Response) => {
     console.log("Server Error 404: User not found"); // Log if user not found
     return res.status(404).send("User not found.");
   }
-  
+  const id = user._id;  
   const packageName = user?.Details?.PackageName;
   const coins = user?.Details?.Coins;
+  const getdata = await SubaccountModel.findOne({ userId: id });
+  const username = getdata?.username;
+  const api_key = getdata?.api_key;
 
   // Check for incomplete user package details
   if (!packageName || !coins) {
@@ -69,8 +70,8 @@ router.post("/", async (req: Request, res: Response) => {
       },
       {
         auth: {
-          username: `${datas[0]}`,
-          password: `${datas[1]}`,
+          username: `${username}`,
+          password: `${api_key}`,
         },
       }
     );

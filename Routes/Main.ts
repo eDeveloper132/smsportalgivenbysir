@@ -9,9 +9,7 @@ import { AppRes } from "../index.js";
 import multer,{ FileFilterCallback } from 'multer';
 import fs from 'fs';
 import "dotenv/config";
-import { datas } from "../index.js";
-let subapi: any = datas[0];
-let subusername: any = datas[1];
+
 
 
 interface CampaignPayload {
@@ -117,8 +115,8 @@ router.post("/list", async (req: Request, res: Response) => {
     }
 
     // Extract subaccount ClickSend API credentials
-    const subaccountApiKey = subapi;
-    const subaccountUsername = subusername;
+    const subaccountApiKey = subaccount?.username;
+    const subaccountUsername = subaccount?.api_key;
 
 
     // Construct the ClickSend API URL and credentials for authorization
@@ -176,7 +174,7 @@ router.post("/list", async (req: Request, res: Response) => {
 const upload1 = multer({ dest: 'uploads/' });
 
 // Function to send contacts to ClickSend
-const sendContactsToClickSend = async (listId: any, fileUrl: string) => {
+const sendContactsToClickSend = async (listId: any, fileUrl: string, subaccountUsername: any, subaccountApiKey: any) => {
     const url = `https://rest.clicksend.com/v3/lists/${listId}/import`;
 
     // Adjust fieldOrder to match your actual data
@@ -194,7 +192,7 @@ const sendContactsToClickSend = async (listId: any, fileUrl: string) => {
         const response = await axios.post(url, fileData, {
             headers: {
                 'Content-Type': 'application/json', // Ensure Content-Type is JSON
-                'Authorization': 'Basic ' + Buffer.from(`${subusername}:${subapi}`).toString('base64'), // Your credentials
+                'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64'), // Your credentials
             },
         });
 
@@ -210,8 +208,23 @@ const sendContactsToClickSend = async (listId: any, fileUrl: string) => {
 router.delete('/deletecontact', async (req: Request, res: Response) => {
   const contactId = req.body;
 
-  const user = res.locals.user;  // Assuming you have middleware that sets the logged-in user in res.locals
-  const userId = user._id;  // Get the user ID of the logged-in user
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
+
 
   console.log('Received delete request for contact:', req.body);  // Log the entire body
   console.log('User ID:', userId);
@@ -261,8 +274,8 @@ router.delete('/deletecontact', async (req: Request, res: Response) => {
       // Make a request to ClickSend API to delete the contact
       const response = await axios.delete(clickSendUrl, {
           auth: {
-              username: `${subapi}`,  // Replace with your ClickSend username
-              password: `${subusername}`  // Replace with your ClickSend API key
+              username: `${subaccountUsername}`,  // Replace with your ClickSend username
+              password: `${subaccountApiKey}`  // Replace with your ClickSend API key
           }
       });
 
@@ -288,8 +301,23 @@ router.delete('/deletecontact', async (req: Request, res: Response) => {
 });
 
 router.put('/updatecontactnumber', async (req: Request, res: Response) => {
-  const user = res.locals.user;
-  const userId = user._id;
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
+
   const contactId = req.body.contactId;
   const newNumber = req.body.newPhoneNumber;
   console.log(contactId, newNumber);
@@ -333,7 +361,7 @@ router.put('/updatecontactnumber', async (req: Request, res: Response) => {
       const clickSendResponse = await fetch(clickSendUrl, {
           method: 'PUT',
           headers: {
-              'Authorization': `Basic ${Buffer.from(`${subusername}:${subapi}`).toString('base64')}`, // Replace with your ClickSend credentials
+              'Authorization': `Basic ${Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64')}`, // Replace with your ClickSend credentials
               'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -365,6 +393,22 @@ router.put('/updatecontactnumber', async (req: Request, res: Response) => {
 router.post('/removeduplicate', async (req: Request, res: Response) => {
   const { listId } = req.body;
   console.log('Received request to remove duplicates for listId:', listId);
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
 
   try {
       // Find the list by listId in your database
@@ -403,7 +447,7 @@ router.post('/removeduplicate', async (req: Request, res: Response) => {
       const clickSendResponse = await fetch(clickSendUrl, {
           method: 'PUT',
           headers: {
-              'Authorization': `Basic ${Buffer.from(`${subusername}:${subapi}`).toString('base64')}`, // Replace with your ClickSend credentials
+              'Authorization': `Basic ${Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64')}`, // Replace with your ClickSend credentials
               'Content-Type': 'application/json',
           }
       });
@@ -438,12 +482,28 @@ router.post('/deleteownnumber', async (req: Request, res: Response) => {
     console.log('Number ID is missing in the request.');
     return res.status(400).json({ success: false, message: 'Number ID is required.' });
   }
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
 
   try {
     // Replace with your ClickSend credentials
     const clickSendAuth = {
-      username: `${subapi}`,
-      apiKey: `${subusername}`
+      username: `${subaccountUsername}`,
+      apiKey: `${subaccountApiKey}`
     };
 
     console.log(`Sending DELETE request to ClickSend for number ID: ${id}`);
@@ -480,6 +540,22 @@ router.post('/deletetag', async (req: Request, res: Response) => {
     console.error('No ID provided'); 
     return res.status(400).json({ success: false, message: 'Alpha tag ID is required.' });
   }
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
 
   try {
     // Find the alpha tag by _id
@@ -501,8 +577,8 @@ router.post('/deletetag', async (req: Request, res: Response) => {
       console.log(`Attempting to delete alpha tag with ClickSend ID: ${extract_tagid}`);
       
       const clickSendAuth = {
-        username: `${subapi}`,
-        apiKey: `${subusername}`
+        username: `${subaccountUsername}`,
+        apiKey: `${subaccountApiKey}`
       };
 
       try {
@@ -549,10 +625,26 @@ router.post('/updateownnumber', async (req: Request, res: Response) => {
   const { id, label } = req.body; // Extract id and label from the request body
 
   console.log('Request body:', req.body); // Log the request body for debugging
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
 
   // ClickSend API credentials
-  const username = `${subapi}`;
-  const apiKey = `${subusername}`;
+  const username = `${subaccountUsername}`;
+  const apiKey = `${subaccountApiKey}`;
   const clickSendUrl = `https://rest.clicksend.com/v3/own-numbers/${id}`; // Use id in the URL
 
   try {
@@ -595,7 +687,13 @@ router.post('/importContacts', upload1.single('file'), async (req: Request, res:
   const user = res.locals.user;
   const userId = user._id; // Assuming this gets the authenticated user's ID
   const file = req.file;
+  const subaccount = await SubaccountModel.findOne({ userId });
 
+  if (!subaccount) {
+    return res.status(401).json({ success: false, message: 'Unauthorized: No subaccount found.' });
+  }
+  const subaccountUsername = subaccount?.username;
+  const subaccountApiKey = subaccount?.api_key;
   if (!file) {
       return res.status(400).json({ error: 'No file uploaded.' });
   }
@@ -668,7 +766,7 @@ router.post('/importContacts', upload1.single('file'), async (req: Request, res:
           }
 
           // Send contacts to ClickSend
-          await sendContactsToClickSend(listId, fileUrl); // Call the function to send contacts
+          await sendContactsToClickSend(listId, fileUrl, subaccountUsername, subaccountApiKey); // Call the function to send contacts
 
           res.status(200).json({ message: 'Contacts imported successfully', contacts });
       });
@@ -686,11 +784,25 @@ router.get('/api/credentials', (req:Request, res:Response) => {
 });
 
 router.post("/getlist", async (req: Request, res: Response) => {
-  const user = res.locals.user; // Modify as needed
-  const userId = user._id;
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
 
   const clickSendUrl = 'https://rest.clicksend.com/v3/lists';
-  const auth = `Basic ${Buffer.from(`${subusername}:${subapi}`).toString('base64')}`;
+  const auth = `Basic ${Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64')}`;
 
   try {
       // Fetch lists from ClickSend using axios
@@ -753,6 +865,22 @@ router.post('/listview', async (req: Request, res: Response) => {
 
 router.put('/listupdate', async (req: Request, res: Response) => {
   const { listId , newListName } = req.body;
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
 
   if (!listId && !newListName) {
     console.log('Server Error 400: Missing listId');
@@ -778,8 +906,8 @@ router.put('/listupdate', async (req: Request, res: Response) => {
         },
         {
           auth: {
-            username: `${subapi}`, // Your ClickSend credentials
-            password: `${subusername}`, // Your ClickSend API key
+            username: `${subaccountUsername}`, // Your ClickSend credentials
+            password: `${subaccountApiKey}`, // Your ClickSend API key
           },
         }
       );
@@ -801,8 +929,8 @@ router.put('/listupdate', async (req: Request, res: Response) => {
       },
       {
         auth: {
-          username: `${subapi}`, // Your ClickSend credentials
-          password: `${subusername}`, // Your ClickSend API key
+          username: `${subaccountUsername}`, // Your ClickSend credentials
+          password: `${subaccountApiKey}`, // Your ClickSend API key
         },
       }
     );
@@ -823,6 +951,22 @@ router.put('/listupdate', async (req: Request, res: Response) => {
 
 router.delete('/listdel', async (req: Request, res: Response) => {
   const listId = req.body.listId;
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
 
   if (!listId) {
     console.error('No listId provided.');
@@ -838,8 +982,8 @@ router.delete('/listdel', async (req: Request, res: Response) => {
       // Attempt to delete from ClickSend if it's not in the database
       const response = await axios.delete(`https://rest.clicksend.com/v3/lists/${listId}`, {
         auth: {
-          username: `${subapi}`,
-          password: `${subusername}`,
+          username: `${subaccountUsername}`,
+          password: `${subaccountApiKey}`,
         },
       });
 
@@ -855,8 +999,8 @@ router.delete('/listdel', async (req: Request, res: Response) => {
     // If the list exists, attempt deletion from both ClickSend and local database
     const response = await axios.delete(`https://rest.clicksend.com/v3/lists/${listId}`, {
       auth: {
-        username: `${subapi}`,
-        password: `${subusername}`,
+        username: `${subaccountUsername}`,
+        password: `${subaccountApiKey}`,
       },
     });
 
@@ -884,8 +1028,22 @@ router.delete('/listdel', async (req: Request, res: Response) => {
 
 
 router.post("/addcontact", async (req: Request, res: Response) => {
-  const user = res.locals.user;
-  const userId = user._id;
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
 
   console.log('Request Body:', req.body);
 
@@ -895,8 +1053,8 @@ router.post("/addcontact", async (req: Request, res: Response) => {
   console.log('List ID:', userid);
 
   try {
-    const username = `${subapi}`;
-    const apiKey = `${subusername}`;
+    const username = `${subaccountUsername}`;
+    const apiKey = `${subaccountApiKey}`;
 
     const contactData = {
       first_name: firstName || '',  // Optional
@@ -1024,11 +1182,23 @@ router.post('/bulksms', async (req: Request, res: Response) => {
     });
   }
 
-  const user = res.locals.user;
-  console.log('User from res.locals:', user);
-  
-  const userId = user._id;
-  console.log('User ID:', userId);
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
+
   
   const { PackageName, Coins } = user?.Details || {};
   console.log('User package and coins:', { PackageName, Coins });
@@ -1067,8 +1237,8 @@ router.post('/bulksms', async (req: Request, res: Response) => {
 
     const response = await axios.post(apiUrl, campaignPayload, {
       auth: {
-        username: `${subapi}`,
-        password: `${subusername}`,
+        username: `${subaccountUsername}`,
+        password: `${subaccountApiKey}`,
       },
     });
 
@@ -1234,9 +1404,24 @@ router.post('/purchaseno', async (req: Request, res: Response) => {
   console.log(req.body); // This Console Is Received On req.body: { dedicated_number: '+436703094546' }
   
   const dedicatedNumber = req.body.dedicated_number; // Extract the dedicated number from the request body
-  const username = `${subapi}`; // Replace with your ClickSend username
-  const apiKey = `${subusername}`; // Replace with your ClickSend API key
-  const encodedAuth = Buffer.from(`${username}:${apiKey}`).toString('base64');
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+      console.error('User not authenticated');
+      return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id; 
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
+ // Replace with your ClickSend API key
+  const encodedAuth = Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64');
 
   try {
       // Log the encoded auth for debugging
@@ -1300,9 +1485,14 @@ router.post('/verifyownnumber', async (req: Request, res: Response) => {
   }
 
   const userId = user._id; 
-  // Replace with your ClickSend credentials
-  const username = `${subapi}`; 
-  const apiKey = `${subusername}`;
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
 
   if (phone_number && label && country) {
       try {
@@ -1311,7 +1501,7 @@ router.post('/verifyownnumber', async (req: Request, res: Response) => {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': 'Basic ' + Buffer.from(`${username}:${apiKey}`).toString('base64') // Basic Auth
+                  'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64') // Basic Auth
               },
               body: JSON.stringify({
                   phone_number: phone_number, // Required field
@@ -1381,7 +1571,7 @@ router.post('/verifyownnumber', async (req: Request, res: Response) => {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': 'Basic ' + Buffer.from(`${username}:${apiKey}`).toString('base64') // Basic Auth
+                  'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64') // Basic Auth
               },
               body: JSON.stringify({
                   country: countrye,
@@ -1417,15 +1607,21 @@ router.post('/verifyownnumber', async (req: Request, res: Response) => {
 
 router.post('/broughtnumbers', async (req: Request, res: Response) => {
   const apiUrl = 'https://rest.clicksend.com/v3/numbers';  // ClickSend API URL
-  const username = `${subapi}`;  // Replace with your ClickSend username
-  const apiKey = `${subusername}`;    // Replace with your ClickSend API key
+  const userId = res.locals.user._id;
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
 
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
   try {
     // Make API request to ClickSend
     const response = await axios.get(apiUrl, {
       auth: {
-        username: username,
-        password: apiKey,  // ClickSend API key as password
+        username: subaccountUsername,
+        password: subaccountApiKey,  // ClickSend API key as password
       }
     });
 
@@ -1440,15 +1636,23 @@ router.post('/broughtnumbers', async (req: Request, res: Response) => {
 
 router.post('/ownnumbers', async (req: Request, res: Response) => {
   try {
-      // Set up your API credentials
-      const apiUser = `${subapi}`;
-      const apiKey = `${subusername}`;
+
+    const userId = res.locals.user._id;
+    const subaccount = await SubaccountModel.findOne({ userId });
+    if (!subaccount) {
+      return res.status(404).json({ success: false, message: "Subaccount not found." });
+    }
+
+    // Extract subaccount ClickSend API credentials
+    const subaccountApiKey = subaccount?.username;
+    const subaccountUsername = subaccount?.api_key;
+
 
       // Make the request to the ClickSend API
       const response = await axios.get('https://rest.clicksend.com/v3/own-numbers', {
           auth: {
-              username: apiUser,
-              password: apiKey,
+              username: subaccountUsername,
+              password: subaccountApiKey,
           },
       });
 
@@ -1609,6 +1813,14 @@ router.post('/view_campaigns', async (req: Request, res: Response) => {
   }
 
   const userId = user._id;
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: "Subaccount not found." });
+  }
+
+  // Extract subaccount ClickSend API credentials
+  const subaccountApiKey = subaccount?.username;
+  const subaccountUsername = subaccount?.api_key;
   const apiUrl = 'https://rest.clicksend.com/v3/sms-campaigns';
 
   try {
@@ -1616,8 +1828,8 @@ router.post('/view_campaigns', async (req: Request, res: Response) => {
 
     const response = await axios.get(apiUrl, {
       auth: {
-        username: `${subapi}`,
-        password: `${subusername}`
+        username: `${subaccountUsername}`,
+        password: `${subaccountApiKey}`
       }
     });
 

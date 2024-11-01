@@ -277,7 +277,6 @@ app.post("/reset-Session", async (req: Request, res: Response) => {
   }
   res.status(200).send("Session reset");
 });
-const datas : any[] = [];
 // Example of using req.user in protected routes
 app.post("/user", async (req: Request, res: AppRes) => {
   if (!res.locals.user) {
@@ -304,7 +303,6 @@ app.post("/user", async (req: Request, res: AppRes) => {
     subaccountUserName: subaccountUserName,
     subaccountApikey: subaccountApikey
   };
-  datas.push(subaccountApikey , subaccountUserName)
   res.send(data);
 });
 app.use("/", MainRoute);
@@ -484,6 +482,5 @@ app.post("/resend-verification", async (req, res) => {
 app.use("*", (req: Request, res: Response) => {
   res.status(404).sendFile(path.resolve(__dirname, "./Views/page-404.html"));
 });
-export { datas }
 lstat;
 export default app;
