@@ -1467,19 +1467,19 @@ router.post('/alphatag', async (req, res) => {
         return res.status(400).json({ message: 'Invalid alpha tag. Must be between 3-11 characters and contain at least one letter.' });
     }
     try {
-        // Save the alpha tag data to MongoDB (without ClickSend)
-        const saver = await AlphaTagModel.create({
+        // Save the alpha tag data to MongoDB
+        const newAlphaTag = new AlphaTagModel({
             user_id: userId,
             alpha_tag: alpha_tag,
             status: 'PENDING', // Example status
             reason: reason
         });
-        await saver.save();
-        console.log(saver);
+        const savedAlphaTag = await newAlphaTag.save(); // Save and await for the operation
+        console.log('Saved Alpha Tag:', savedAlphaTag);
         res.status(200).json({
             success: true,
             message: 'Alpha tag created and saved successfully',
-            data: saver,
+            data: savedAlphaTag,
             user: user // Return current user's data in response
         });
     }

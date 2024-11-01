@@ -1739,12 +1739,11 @@ router.post('/getalpha', async (req: Request, res: Response) => {
   }
 });
 
-
 router.post('/alphatag', async (req: Request, res: Response) => {
   const { alpha_tag, reason } = req.body; // Extract alpha_tag and reason from the request body
   console.log(req.body); // Log the request body to verify data is being received correctly
+  
   const user = res.locals.user; // Get the user from middleware
-
   if (!user) {
     console.error('User not authenticated');
     return res.status(401).json({ message: 'User not authenticated' });
@@ -1758,20 +1757,21 @@ router.post('/alphatag', async (req: Request, res: Response) => {
   }
 
   try {
-    // Save the alpha tag data to MongoDB (without ClickSend)
-    const saver = await AlphaTagModel.create({
+    // Save the alpha tag data to MongoDB
+    const newAlphaTag = new AlphaTagModel({
       user_id: userId,
       alpha_tag: alpha_tag,
       status: 'PENDING', // Example status
       reason: reason
     });
-    await saver.save();
 
-    console.log(saver);
+    const savedAlphaTag = await newAlphaTag.save(); // Save and await for the operation
+
+    console.log('Saved Alpha Tag:', savedAlphaTag);
     res.status(200).json({
       success: true,
       message: 'Alpha tag created and saved successfully',
-      data: saver,
+      data: savedAlphaTag,
       user: user // Return current user's data in response
     });
   } catch (error: any) {
