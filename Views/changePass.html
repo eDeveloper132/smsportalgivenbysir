@@ -843,24 +843,30 @@
 
                         document.getElementById('change-password-form').addEventListener('submit', async function(event) {
                             event.preventDefault(); // Prevent the default form submission
-                        
-                            // Get the form data
                             const current_password = document.getElementById('current_password').value.trim();
-                            const new_password = document.getElementById('new_password').value.trim();
-                            const confirm_password = document.getElementById('confirm_password').value.trim();
-                        
-                            // Basic validation checks
-                            if (!current_password || !new_password || !confirm_password) {
-                                showToast('toast-error', 'All fields are required.');
-                                return;
-                            }
-                        
-                            // Validate new password and confirm password match
-                            if (new_password !== confirm_password) {
-                                showToast('toast-error', 'New passwords do not match.');
-                                return;
-                            }
-                        
+const new_password = document.getElementById('new_password').value.trim();
+const confirm_password = document.getElementById('confirm_password').value.trim();
+
+// Basic validation checks
+if (!current_password || !new_password || !confirm_password) {
+    showToast('toast-error', 'All fields are required.');
+    return;
+}
+
+// Validate new password and confirm password match
+if (new_password !== confirm_password) {
+    showToast('toast-error', 'New passwords do not match.');
+    return;
+}
+
+// Define the password pattern
+const passwordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,12}$/;
+
+// Validate new password against the pattern
+if (!passwordPattern.test(new_password)) {
+    showToast('toast-error', 'New password must be 8-12 characters long and include at least one uppercase letter, one lowercase letter, one digit, and one special character.');
+    return;
+}
                             try {
                                 // Send the data using fetch
                                 const response = await fetch('/changepass', {
