@@ -947,11 +947,22 @@ router.get("/changepass", (req, res) => {
 router.post("/changepass", async (req, res) => {
     const { current_password, new_password, confirm_password } = req.body;
     console.log(req.body);
+    // Basic validation checks
     if (!current_password || !new_password || !confirm_password) {
         return res.status(400).send("All fields are required.");
     }
-    // Fetch user details from FetchUserDetails
-    const user = res.locals.user; // Modify as needed
+    // Validate that new_password and confirm_password match
+    if (new_password !== confirm_password) {
+        return res.status(400).send("New passwords do not match.");
+    }
+    // Define the password pattern
+    const passwordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,12}$/;
+    // Validate new password against the pattern
+    if (!passwordPattern.test(new_password)) {
+        return res.status(400).send("New password must be 8-12 characters long and include at least one uppercase letter, one lowercase letter, one digit, and one special character.");
+    }
+    // Fetch user details
+    const user = res.locals.user; // Ensure this is set by middleware beforehand
     try {
         // Verify current password
         const match = await bcrypt.compare(current_password, user?.Password);
@@ -965,13 +976,17 @@ router.post("/changepass", async (req, res) => {
         };
         // Update user password
         await findAndUpdateUserById(user?._id, updated_data);
+        // Update password in SubaccountModel if necessary
+        let updatedPass = await SubaccountModel.findOne({ userId: user?._id });
+        if (updatedPass) {
+            updatedPass.password = new_password; // Update with plain new password
+            await updatedPass.save();
+        }
         res.send("Password changed successfully.");
     }
     catch (error) {
         console.error("Error changing password:", error);
-        res
-            .status(500)
-            .send({ error: "Error changing password: " + error.message });
+        res.status(500).send({ error: "Error changing password: " + error.message });
     }
 });
 router.get('/bulksms', (req, res) => {
