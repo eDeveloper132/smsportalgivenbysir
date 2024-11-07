@@ -702,43 +702,47 @@ chat
                       </div>
                   </div>
               </div><!-- Page Content -->
-              <div class="content pt-5 px-4 px-lg-6 d-flex flex-column-fluid">
-                <div class="container p-5 shadow rounded">
+              <div class="content d-flex justify-content-center align-items-center min-vh-100 bg-light">
+                <div class="container p-4 shadow rounded bg-white" style="max-width: 500px;">
+                    <!-- Toast Container -->
                     <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
+            
+                    <!-- Verification Status Alert -->
                     <div id="verificationStatus" class="alert alert-warning text-center d-none" role="alert">
-                      <h4>You are not verified, Please click here to verify your account:</h4> 
-                      <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
+                        <h4>You are not verified. Please click here to verify your account:</h4>
+                        <button id="resendVerificationButton" class="btn btn-info rounded-pill btn-sm">Send Verification Link</button>
                     </div>
+            
                     <!-- Form Title -->
-                    <h2 class="h2 text-center mb-4">Bulk SMS Campaign</h2>
+                    <h2 class="text-center mb-4 text-primary">Bulk SMS Campaign</h2>
             
                     <!-- Form Fields -->
-                    <form id="bulkSmsForm">
-                        <div class="mb-3">
+                    <form id="bulkSmsForm" class="needs-validation" novalidate>
+                        <div class="form-group mb-3">
                             <label for="campaignName" class="form-label">Campaign Name</label>
-                            <input type="text" class="form-control" id="campaignName" placeholder="Enter Campaign Name" required />
+                            <input type="text" class="form-control rounded-pill shadow-sm" id="campaignName" placeholder="Enter Campaign Name" required />
                         </div>
             
-                        <div class="mb-3">
+                        <div class="form-group mb-3">
                             <label for="senderIdDropdown" class="form-label">Sender ID</label>
-                            <select id="senderIdDropdown" class="form-select" required>
+                            <select id="senderIdDropdown" class="form-select rounded-pill shadow-sm" required>
                                 <option value="" selected>Select Sender ID</option>
                             </select>
                         </div>
-
-                        <div class="mb-3">
-                          <label for="contactListDropdown" class="form-label">Select Contact List</label>
-                          <select id="contactListDropdown" class="form-select" required>
-                              <option value="" selected>Select Contact List</option>
-                          </select>
-                      </div>
             
-                        <div class="mb-3">
-                            <label for="additionalInfo" class="form-label">Message</label>
-                            <textarea id="additionalInfo" name="message" rows="5" class="form-control" placeholder="Type your message here" required></textarea>
+                        <div class="form-group mb-3">
+                            <label for="contactListDropdown" class="form-label">Select Contact List</label>
+                            <select id="contactListDropdown" class="form-select rounded-pill shadow-sm" required>
+                                <option value="" selected>Select Contact List</option>
+                            </select>
                         </div>
             
-                        <div class="mb-3">
+                        <div class="form-group mb-3">
+                            <label for="additionalInfo" class="form-label">Message</label>
+                            <textarea id="additionalInfo" name="message" rows="4" class="form-control shadow-sm" placeholder="Type your message here" required></textarea>
+                        </div>
+            
+                        <div class="form-group mb-3">
                             <label class="form-label">Send Option</label>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="sendOption" id="sendNow" value="now" checked />
@@ -750,28 +754,29 @@ chat
                             </div>
                         </div>
             
-                        <div id="scheduleSection" class="mb-3" style="display: none;">
-                            <label class="form-label">Select Date & Time</label>
-                            <div class="row">
-                                <div class="col">
-                                    <input type="date" class="form-control" id="scheduleDate" />
-                                </div>
-                                <div class="col">
-                                    <input type="time" class="form-control" id="scheduleTime" />
-                                </div>
-                            </div>
-                        </div>
+                        <div id="scheduleSection" class="form-group mb-3" style="display: none;">
+                          <label class="form-label">Select Date & Time</label>
+                          <div class="row">
+                              <div class="col">
+                                  <input type="date" class="form-control shadow-sm" id="scheduleDate" />
+                              </div>
+                              <div class="col">
+                                  <input type="time" id="scheduleTime" class="form-control shadow-sm" />
+                              </div>
+                          </div>
+                      </div>
                     </form>
             
-                    <!-- Contact List Dropdown -->
-
-                    
                     <!-- Send Button -->
-                    <div class="text-center">
-                        <button id="sendButton" class="btn btn-primary" onclick="sendMessageFromDropdown()">Send Message</button>
+                    <div class="text-center mt-3">
+                        <button id="sendButton" class="btn btn-primary btn-lg rounded-pill shadow-sm" onclick="sendMessageFromDropdown()">Send Message</button>
                     </div>
                 </div>
             </div>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+            
             
             <!-- Include Bootstrap CSS in your HTML head -->
             
@@ -790,8 +795,22 @@ chat
                 }
             
                 setupSendOptionListener();
+                initializeDateTimePickers(); // Initialize the date and time pickers
               });
-            
+              function initializeDateTimePickers() {
+    flatpickr("#scheduleDate", {
+      dateFormat: "Y-m-d",
+      minDate: "today" // Ensure date cannot be set in the past
+    });
+
+    flatpickr("#scheduleTime", {
+      enableTime: true,
+      noCalendar: true,
+      dateFormat: "H:i",
+      time_24hr: true
+    });
+  }
+
               // Fetch user data and update UI
               async function fetchUserData() {
                 try {

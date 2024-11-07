@@ -195,19 +195,15 @@ app.post("/signup", async (req: Request, res: Response) => {
         isVerified: false,
         subaccounts: [newSubaccount._id], // Link to the saved subaccount
       });
-
       const savedUser = await newUser.save();
       console.log("User saved successfully:", savedUser);
-
       // Update the saved subaccount with the userId reference
       newSubaccount.userId = savedUser._id as mongoose.Types.ObjectId; // Link the user ID
       await newSubaccount.save(); // Save the updated subaccount
       console.log("Subaccount updated with userId reference.");
-
       // Send verification email
       await sendVerificationEmail(Email, hashedToken);
       console.log("A verification link has been sent to the user's email.");
-
       res.redirect("/");
     } else {
       // Log the complete response for debugging
@@ -215,7 +211,6 @@ app.post("/signup", async (req: Request, res: Response) => {
       console.error("ClickSend Response:", clickSendResponse.data); // Log full response for analysis
       res.status(400).send("Error: Failed to create ClickSend subaccount");
     }
-
   } catch (error: any) {
     console.error("Error during signup:", error.response ? error.response.data : error.message);
     res.status(500).send("Internal Server Error");
