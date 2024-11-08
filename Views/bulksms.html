@@ -718,32 +718,32 @@ chat
             
                     <!-- Form Fields -->
                     <form id="bulkSmsForm" class="needs-validation" novalidate>
-                        <div class="form-group mb-3">
-                            <label for="campaignName" class="form-label">Campaign Name</label>
-                            <input type="text" class="form-control rounded-pill shadow-sm" id="campaignName" placeholder="Enter Campaign Name" required />
-                        </div>
+                        <div class="form-group mb-3 row align-items-center">
+                            <label for="campaignName" class="form-label col-12" style="font-weight: 600;">Campaign Name</label>
+                            <input type="text" class="form-control rounded-lg shadow-sm" id="campaignName" placeholder="Enter Campaign Name" required />
+                        </div> 
             
-                        <div class="form-group mb-3">
-                            <label for="senderIdDropdown" class="form-label">Sender ID</label>
-                            <select id="senderIdDropdown" class="form-select rounded-pill shadow-sm" required>
+                        <div class="form-group mb-3 row align-items-center">
+                            <label for="senderIdDropdown" class="form-label col-12" style="font-weight: 600;">Sender ID</label>
+                            <select id="senderIdDropdown" class="form-select rounded-lg shadow-sm" required>
                                 <option value="" selected>Select Sender ID</option>
                             </select>
                         </div>
             
-                        <div class="form-group mb-3">
-                            <label for="contactListDropdown" class="form-label">Select Contact List</label>
-                            <select id="contactListDropdown" class="form-select rounded-pill shadow-sm" required>
+                        <div class="form-group mb-3 row align-items-center">
+                            <label for="contactListDropdown" class="form-label col-12" style="font-weight: 600;">Select Contact List</label>
+                            <select id="contactListDropdown" class="form-select rounded-lg shadow-sm" required>
                                 <option value="" selected>Select Contact List</option>
                             </select>
                         </div>
             
-                        <div class="form-group mb-3">
-                            <label for="additionalInfo" class="form-label">Message</label>
+                        <div class="form-group mb-3 row align-items-center">
+                            <label for="additionalInfo" class="form-label col-12" style="font-weight: 600;">Message</label>
                             <textarea id="additionalInfo" name="message" rows="4" class="form-control shadow-sm" placeholder="Type your message here" required></textarea>
                         </div>
             
-                        <div class="form-group mb-3">
-                            <label class="form-label">Send Option</label>
+                        <div class="form-group mb-3 row align-items-center">
+                            <label class="form-label col-12" style="font-weight: 600;">Send Option</label>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="sendOption" id="sendNow" value="now" checked />
                                 <label class="form-check-label" for="sendNow">Now</label>
@@ -755,7 +755,7 @@ chat
                         </div>
             
                         <div id="scheduleSection" class="form-group mb-3" style="display: none;">
-                          <label class="form-label">Select Date & Time</label>
+                          <label class="form-label" style="font-weight: 600;">Select Date & Time</label>
                           <div class="row">
                               <div class="col">
                                   <input type="date" class="form-control shadow-sm" id="scheduleDate" />

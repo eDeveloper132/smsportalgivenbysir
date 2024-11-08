@@ -715,41 +715,71 @@ chat
     <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
   </div>
                     <!-- Existing Form for Verifying Number -->
-                    <form id="verifyNumberForm">
-                        <div class="mb-3">
-                            <label for="phoneNumber" class="form-label">Phone Number</label>
-                            <input type="text" class="form-control" id="phoneNumber" placeholder="Number must be like : +1234567890" required>
-                        </div>
-            
-                        <div class="mb-3">
-                            <label for="country" class="form-label">Select Country</label>
-                            <select class="form-select" id="country" required>
-                                <option selected disabled>Choose a country</option>
-                                <!-- Options will be populated by JavaScript -->
-                            </select>
-                        </div>
-            
-                        <div class="mb-3">
-                            <label for="label" class="form-label">Label</label>
-                            <input type="text" class="form-control" id="label" placeholder="Organization Name" required>
-                        </div>
-            
-                        <button type="submit" class="btn btn-primary">Verify Number</button>
-                    </form>
-            
-                    <!-- New Form for Entering Verification Code -->
-                    <form id="verificationCodeForm" style="display: none;">
-                        <div class="mb-3">
-                            <label for="verificationCode" class="form-label">Verification Code</label>
-                            <input type="text" class="form-control" id="verificationCode" placeholder="Enter verification code" required>
-                        </div>
-                        <button type="submit" class="btn btn-success">Submit Verification Code</button>
-                    </form>
-            
-                    <div class="mb-3 mt-3">
-                      <input type="text" id="searchInput" class="form-control" placeholder="Search by phone number..." onkeyup="filterTable()">
+
+                  
+                  <!-- Verify Number Modal -->
+                  <div class="modal fade" id="verifyNumberModal" tabindex="-1" aria-labelledby="verifyNumberModalLabel" aria-hidden="true">
+                      <div class="modal-dialog">
+                          <div class="modal-content">
+                              <div class="modal-header">
+                                  <h5 class="modal-title" id="verifyNumberModalLabel">Verify Phone Number</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                  <form id="verifyNumberForm">
+                                      <div class="mb-3">
+                                          <label for="phoneNumber" class="form-label">Phone Number</label>
+                                          <input type="text" class="form-control" id="phoneNumber" placeholder="Number must be like : +1234567890" required>
+                                      </div>
+                  
+                                      <div class="mb-3">
+                                          <label for="country" class="form-label">Select Country</label>
+                                          <select class="form-select" id="country" required>
+                                              <option selected disabled>Choose a country</option>
+                                              <!-- Options will be populated by JavaScript -->
+                                          </select>
+                                      </div>
+                  
+                                      <div class="mb-3">
+                                          <label for="label" class="form-label">Label</label>
+                                          <input type="text" class="form-control" id="label" placeholder="Organization Name" required>
+                                      </div>
+                  
+                                      <button type="submit" class="btn btn-primary">Verify Number</button>
+                                  </form>
+                              </div>
+                          </div>
+                      </div>
                   </div>
-          
+                  
+                  <!-- Verification Code Modal -->
+                  <div class="modal fade" id="verificationCodeModal" tabindex="-1" aria-labelledby="verificationCodeModalLabel" aria-hidden="true">
+                      <div class="modal-dialog">
+                          <div class="modal-content">
+                              <div class="modal-header">
+                                  <h5 class="modal-title" id="verificationCodeModalLabel">Enter Verification Code</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                  <form id="verificationCodeForm">
+                                      <div class="mb-3">
+                                          <label for="verificationCode" class="form-label">Verification Code</label>
+                                          <input type="text" class="form-control" id="verificationCode" placeholder="Enter verification code" required>
+                                      </div>
+                                      <button type="submit" class="btn btn-success">Submit Verification Code</button>
+                                  </form>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="d-flex justify-content-between my-3">
+                    <div>
+                      <input type="text" id="searchInput" class="form-control" placeholder="Search..." onkeyup="filterTable()">
+                  </div>
+                  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#verifyNumberModal">
+                    Verify Phone Number
+                </button>
+              </div>
                   <!-- Table to display fetched own numbers -->
                   <div class="mt-4">
                       <table class="table table-bordered table-hover table-striped">
@@ -982,87 +1012,82 @@ function displayOwnNumbers(numbers) {
 
                     // Verify Number Form Submission
                     document.getElementById('verifyNumberForm').addEventListener('submit', async function(event) {
-                        event.preventDefault(); // Prevent default form submission
-            
-                        const phoneNumber = document.getElementById('phoneNumber').value;
-                        const label = document.getElementById('label').value;
-                        const country = document.getElementById('country').value;
-            
-                        // Validate that the phone number and country are not empty
-                        if (!phoneNumber || !country) {
-                            showToast('Please enter a phone number and select a country.', false);
-                            return;
-                        }
-            
-                        try {
-                            // Make a POST request to the /verifyownnumber route
-                            const response = await fetch('/verifyownnumber', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    phone_number: phoneNumber,
-                                    label: label,
-                                    country: country
-                                }),
-                            });
-            
-                            const result = await response.json();
-            
-                            if (response.ok) {
-                                showToast('Verification code sent to your number!', true); // Success message
-                                document.getElementById('verifyNumberForm').style.display = 'none'; // Hide the verification number form
-                                document.getElementById('verificationCodeForm').style.display = 'block'; // Show the verification code form
-                            } else {
-                                showToast(result.error || 'Failed to send verification code.', false); // Error message
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            showToast('An error occurred while sending the code: ' + error.message, false);
-                        }
-                    });
-            
-                    // Verification Code Form Submission
-                    document.getElementById('verificationCodeForm').addEventListener('submit', async function(event) {
-                        event.preventDefault(); // Prevent default form submission
-            
-                        const verificationCode = document.getElementById('verificationCode').value;
-            
-                        // Validate that the verification code is not empty
-                        if (!verificationCode) {
-                            showToast('Please enter the verification code.', false);
-                            return;
-                        }
-            
-                        try {
-                            // Make a POST request to the verification endpoint
-                            const response = await fetch('/verifyownnumber', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    verification_code: verificationCode // Adjust if your API expects a different key
-                                }),
-                            });
-            
-                            const result = await response.json();
-            
-                            if (response.ok) {
-                                showToast('Verification successful!', true); // Success message
-                                document.getElementById('verificationCodeForm').reset(); // Reset the form
-                                document.getElementById('verifyNumberForm').style.display = 'block'; // Show the verification number form again
-                                document.getElementById('verificationCodeForm').style.display = 'none'; // Hide the verification code form
-                            } else {
-                                showToast(result.error || 'Verification failed.', false); // Error message
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            showToast('An error occurred during verification: ' + error.message, false);
-                        }
-                    });
-            
+        event.preventDefault();
+
+        const phoneNumber = document.getElementById('phoneNumber').value;
+        const label = document.getElementById('label').value;
+        const country = document.getElementById('country').value;
+
+        if (!phoneNumber || !country) {
+            showToast('Please enter a phone number and select a country.', false);
+            return;
+        }
+
+        try {
+            const response = await fetch('/verifyownnumber', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    phone_number: phoneNumber,
+                    label: label,
+                    country: country
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showToast('Verification code sent to your number!', true);
+                const verifyNumberModal = bootstrap.Modal.getInstance(document.getElementById('verifyNumberModal'));
+                verifyNumberModal.hide(); // Hide the verify number modal
+                const verificationCodeModal = new bootstrap.Modal(document.getElementById('verificationCodeModal'));
+                verificationCodeModal.show(); // Show the verification code modal
+            } else {
+                showToast(result.error || 'Failed to send verification code.', false);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('An error occurred while sending the code: ' + error.message, false);
+        }
+    });
+
+    // Handle verification code form submission
+    document.getElementById('verificationCodeForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const verificationCode = document.getElementById('verificationCode').value;
+
+        if (!verificationCode) {
+            showToast('Please enter the verification code.', false);
+            return;
+        }
+
+        try {
+            const response = await fetch('/verifyownnumber', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    verification_code: verificationCode
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showToast('Verification successful!', true);
+                window.location.reload();
+            } else {
+                showToast(result.error || 'Verification failed.', false);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('An error occurred during verification: ' + error.message, false);
+        }
+    });           
                     function getGreeting() {
                         const now = new Date();
                         const hours = now.getHours();

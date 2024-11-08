@@ -719,21 +719,43 @@
     <h4>You are not verified, Please click here to verify your account:</h4> 
     <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
   </div>
-                        <form id="contactListForm" class="my-3">
-                          <div class="mb-3">
-                              <label for="listName" class="form-label">Contact List Name</label>
-                              <input type="text" class="form-control" id="listName" required>
-                          </div>
-                          <button type="submit" class="btn btn-success">Create Contact List</button>
-                      </form>
+<!-- Button to Open Modal -->
+
+
+<!-- Modal Structure -->
+<div class="modal fade" id="contactListModal" tabindex="-1" aria-labelledby="contactListModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contactListModalLabel">Create Contact List</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Form Inside Modal -->
+                <form id="contactListForm" class="my-3">
+                    <div class="mb-3">
+                        <label for="listName" class="form-label">Contact List Name</label>
+                        <input type="text" class="form-control" id="listName" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Create Contact List</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 
                           <!-- Full-width Search Bar -->
-                          <div class="row mb-3">
+                        <div class="d-flex justify-content-between mb-3">
+                          <div class="w-25">
                               <div class="col-12">
-                                  <input type="text" id="searchInput" class="form-control" placeholder="Search by List Name or Contacts Count" onkeyup="filterTable()">
+                                  <input type="text" id="searchInput" class="form-control" placeholder="Search....." onkeyup="filterTable()">
                               </div>
                           </div>
-                  
+                          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#contactListModal">
+                            Create Contact List
+                        </button>
+                    </div>
                           <!-- Table to display lists -->
                           <div class="table-responsive">
                               <table class="table table-striped table-hover table-bordered mt-2">
@@ -1538,36 +1560,40 @@ function displayContacts(contacts) {
     `;
     contactDetailsContent.appendChild(contactsTable);
 }
-const form = document.getElementById('contactListForm');
-                          form.addEventListener('submit', async (event) => {
-                              event.preventDefault(); // Prevent the default form submission                     
-                              const listName = document.getElementById('listName').value;
-                              if (!listName) {
-                                  showToast('List name cannot be empty.',false);
-                                  return;
-                              }
-                              try {
-                                  const response = await fetch('/list', {
-                                      method: 'POST',
-                                      headers: {
-                                          'Content-Type': 'application/json',
-                                      },
-                                      body: JSON.stringify({ listName }), // Send the list name to the server
-                                  });
-                                  const data = await response.json();
-                                  console.log('API Response:', data);
-                                  if (response.ok) {
-                                      showToast('Contact list created successfully!',true);
-                                      window.location.reload();
-                                  } else {
-                                      showToast( data.message || 'Failed to create contact list.',false);
-                                      window.location.reload();
-                                  }
-                              } catch (error) {
-                                  console.error('Error creating contact list:', error);
-                                  showToast('Failed to create contact list.',false);
-                              }
-                          });
+document.getElementById('contactListForm').addEventListener('submit', async (event) => {
+    event.preventDefault(); // Prevent default form submission
+
+    const listName = document.getElementById('listName').value;
+    if (!listName) {
+        showToast('List name cannot be empty.', false);
+        return;
+    }
+
+    try {
+        const response = await fetch('/list', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ listName }), // Send the list name to the server
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            showToast('Contact list created successfully!', true);
+            // Close the modal
+            const contactListModal = new bootstrap.Modal(document.getElementById('contactListModal'));
+            contactListModal.hide();
+            // Optionally reload the page or update the UI
+            window.location.reload();
+        } else {
+            showToast(data.message || 'Failed to create contact list.', false);
+        }
+    } catch (error) {
+        console.error('Error creating contact list:', error);
+        showToast('Failed to create contact list.', false);
+    }
+});
 async function deleteList(listId) {
     if (!isVerified) {
         showToast('You are not verified to perform this operation', false);

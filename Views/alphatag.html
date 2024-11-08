@@ -693,43 +693,64 @@ chat
   <h4>You are not verified, Please click here to verify your account:</h4> 
   <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
 </div>
-                    <form id="alphaTagForm">
-                        <div class="mb-3">
-                            <label for="alphaTag" class="form-label">Alpha Tag</label>
-                            <input type="text" class="form-control" id="alphaTag" placeholder="Enter Alpha Tag" required>
-                            <div id="alphaTagFeedback" class="invalid-feedback">
-                                Alpha tag must be 3-11 characters long and contain at least one letter.
-                            </div>
-                        </div>
-            
-                        <div class="mb-3">
-                            <label for="reason" class="form-label">Reason</label>
-                            <select class="form-select" id="reason" required>
-                                <option value="" selected disabled>Select a reason</option>
-                                <option value="Sole Trader Name">Sole Trader Name</option>
-                                <option value="Company Name">Company Name</option>
-                                <option value="Partnership Name">Partnership Name</option>
-                                <option value="Registered Trust Name">Registered Trust Name</option>
-                                <option value="Co-Operative Name">Co-Operative Name</option>
-                                <option value="Indigenous Corporation Name">Indigenous Corporation Name</option>
-                                <option value="Registered Organisation Name">Registered Organisation Name</option>
-                                <option value="Personal Name">Personal Name</option>
-                                <option value="Trademark">Trademark</option>
-                                <option value="Government Agency or Entity">Government Agency or Entity</option>
-                                <option value="Product or Service Name">Product or Service Name</option>
-                                <option value="Acronym/Initialism">Acronym/Initialism</option>
-                                <option value="Contraction of Name">Contraction of Name</option>
-                                <option value="Third Party">Third Party</option>
-                            </select>
-                        </div>
-            
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                    </form>
+<div class="d-flex justify-content-end">
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#alphaTagModal">
+  Create Alpha Tag
+</button>
+</div>
+
+<!-- Modal Structure -->
+<div class="modal fade" id="alphaTagModal" tabindex="-1" aria-labelledby="alphaTagModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="alphaTagModalLabel">Create Alpha Tag</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <form id="alphaTagForm" class="needs-validation" novalidate>
+                  <div class="form-group mb-3">
+                      <label for="alphaTag" class="form-label">Alpha Tag</label>
+                      <input type="text" class="form-control shadow-sm rounded" id="alphaTag" placeholder="Enter Alpha Tag" required aria-label="Alpha Tag">
+                      <div id="alphaTagFeedback" class="invalid-feedback">
+                          Alpha tag must be 3-11 characters long and contain at least one letter.
+                      </div>
+                  </div>
+
+                  <div class="form-group mb-3">
+                      <label for="reason" class="form-label">Reason</label>
+                      <select class="form-select shadow-sm rounded" id="reason" required aria-label="Reason">
+                          <option value="" selected disabled>Select a reason</option>
+                          <option value="Sole Trader Name">Sole Trader Name</option>
+                          <option value="Company Name">Company Name</option>
+                          <option value="Partnership Name">Partnership Name</option>
+                          <option value="Registered Trust Name">Registered Trust Name</option>
+                          <option value="Co-Operative Name">Co-Operative Name</option>
+                          <option value="Indigenous Corporation Name">Indigenous Corporation Name</option>
+                          <option value="Registered Organisation Name">Registered Organisation Name</option>
+                          <option value="Personal Name">Personal Name</option>
+                          <option value="Trademark">Trademark</option>
+                          <option value="Government Agency or Entity">Government Agency or Entity</option>
+                          <option value="Product or Service Name">Product or Service Name</option>
+                          <option value="Acronym/Initialism">Acronym/Initialism</option>
+                          <option value="Contraction of Name">Contraction of Name</option>
+                          <option value="Third Party">Third Party</option>
+                      </select>
+                  </div>
+
+                  <div class="text-center mt-3">
+                      <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm">Submit</button>
+                  </div>
+              </form>
+          </div>
+      </div>
+  </div>
+</div>
 
                     <!-- Table to display fetched alpha tags -->
                     <div class="mt-4">
                         <table class="table table-striped">
-                            <thead>
+                            <thead class="thead-dark bg-dark text-white">
                                 <tr>
                                     <th scope="col">Alpha Tag</th>
                                     <th scope="col">Status</th>
@@ -788,48 +809,47 @@ chat
                     await fetchAlphaTags();
             
                     document.getElementById('alphaTagForm').addEventListener('submit', async function (event) {
-                        event.preventDefault();
-            
-                        const alphaTag = document.getElementById('alphaTag').value;
-                        const reason = document.getElementById('reason').value;
-            
-                        // Validate Alpha Tag (3-11 chars, at least one letter)
-                        if (!alphaTag || alphaTag.length < 3 || alphaTag.length > 11 || !/[A-Za-z]+/.test(alphaTag)) {
-                            document.getElementById('alphaTag').classList.add('is-invalid');
-                            showToast('Invalid alpha tag. Must be 3-11 characters and contain at least one letter.', false);
-                            return;
-                        } else {
-                            document.getElementById('alphaTag').classList.remove('is-invalid');
-                        }
-            
-                        try {
-                            // Send the POST request to /alphatag route
-                            const response = await fetch('/alphatag', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    alpha_tag: alphaTag,
-                                    reason: reason
-                                })
-                            });
-            
-                            const result = await response.json();
-            
-                            if (response.ok) {
-                                showToast('Alpha tag created successfully!', true);
-                                // Automatically fetch alpha tags after creating a new one
-                                await fetchAlphaTags();
-                            } else {
-                                showToast(result.error || 'Failed to create alpha tag.', false);
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            showToast('An error occurred while creating the alpha tag.', false);
-                        }
-                    });
+    event.preventDefault();
 
+    const alphaTag = document.getElementById('alphaTag').value;
+    const reason = document.getElementById('reason').value;
+
+    // Validate Alpha Tag (3-11 chars, at least one letter)
+    if (!alphaTag || alphaTag.length < 3 || alphaTag.length > 11 || !/[A-Za-z]+/.test(alphaTag)) {
+        document.getElementById('alphaTag').classList.add('is-invalid');
+        showToast('Invalid alpha tag. Must be 3-11 characters and contain at least one letter.', false);
+        return;
+    } else {
+        document.getElementById('alphaTag').classList.remove('is-invalid');
+    }
+
+    try {
+        // Send the POST request to /alphatag route
+        const response = await fetch('/alphatag', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                alpha_tag: alphaTag,
+                reason: reason
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showToast('Alpha tag created successfully!', true);
+            window.location.reload();
+
+        } else {
+            showToast(result.error || 'Failed to create alpha tag.', false);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('An error occurred while creating the alpha tag.', false);
+    }
+});
 // Function to open the delete confirmation modal
             
 // Function to fetch alpha tags

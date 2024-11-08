@@ -1413,11 +1413,16 @@ router.post('/ownnumbers', async (req, res) => {
         // Extract subaccount ClickSend API credentials
         const subaccountApiKey = subaccount?.username;
         const subaccountUsername = subaccount?.api_key;
+        console.log(subaccountApiKey, subaccountUsername);
+        if (!subaccountUsername || !subaccountApiKey) {
+            console.error("Missing username or API key");
+            return res.status(400).json({ message: 'Username or API key missing' });
+        }
         // Make the request to the ClickSend API
         const response = await axios.get('https://rest.clicksend.com/v3/own-numbers', {
             auth: {
-                username: subaccountUsername,
-                password: subaccountApiKey,
+                username: subaccountApiKey,
+                password: subaccountUsername,
             },
         });
         // Send the response data back to the client
