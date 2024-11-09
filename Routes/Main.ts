@@ -417,8 +417,8 @@ router.post('/removeduplicate', async (req: Request, res: Response) => {
   }
 
   // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
+  const subaccountUsername = subaccount?.username;
+  const subaccountApiKey = subaccount?.api_key;
 
   try {
       // Find the list by listId in your database
@@ -512,8 +512,8 @@ router.post('/deleteownnumber', async (req: Request, res: Response) => {
   try {
     // Replace with your ClickSend credentials
     const clickSendAuth = {
-      username: `${subaccountUsername}`,
-      apiKey: `${subaccountApiKey}`
+      username: `${subaccountApiKey}`,
+      apiKey: `${subaccountUsername}`
     };
 
     console.log(`Sending DELETE request to ClickSend for number ID: ${id}`);
@@ -564,8 +564,8 @@ router.post('/deletetag', async (req: Request, res: Response) => {
   }
 
   // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
+  const subaccountUsername = subaccount?.username;
+  const subaccountApiKey = subaccount?.api_key;
 
   try {
     // Find the alpha tag by _id
@@ -649,8 +649,8 @@ router.post('/updateownnumber', async (req: Request, res: Response) => {
   }
 
   // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
+  const subaccountUsername = subaccount?.username;
+  const subaccountApiKey = subaccount?.api_key;
 
   // ClickSend API credentials
   const username = `${subaccountUsername}`;
@@ -1248,8 +1248,8 @@ router.post('/bulksms', async (req: Request, res: Response) => {
   }
 
   // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
+  const subaccountUsername = subaccount?.username;
+  const subaccountApiKey = subaccount?.api_key;
 
   
   const { PackageName, Coins } = user?.Details || {};
@@ -1470,8 +1470,8 @@ router.post('/purchaseno', async (req: Request, res: Response) => {
   }
 
   // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
+  const subaccountUsername = subaccount?.username;
+  const subaccountApiKey = subaccount?.api_key;
  // Replace with your ClickSend API key
   const encodedAuth = Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64');
 
@@ -1670,8 +1670,8 @@ router.post('/broughtnumbers', async (req: Request, res: Response) => {
   }
 
   // Extract subaccount ClickSend API credentials
-  const subaccountApiKey = subaccount?.username;
-  const subaccountUsername = subaccount?.api_key;
+  const subaccountUsername = subaccount?.username;
+  const subaccountApiKey = subaccount?.api_key;
   try {
     // Make API request to ClickSend
     const response = await axios.get(apiUrl, {

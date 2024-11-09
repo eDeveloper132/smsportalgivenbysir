@@ -330,8 +330,8 @@ router.post('/removeduplicate', async (req, res) => {
         return res.status(404).json({ success: false, message: "Subaccount not found." });
     }
     // Extract subaccount ClickSend API credentials
-    const subaccountApiKey = subaccount?.username;
-    const subaccountUsername = subaccount?.api_key;
+    const subaccountUsername = subaccount?.username;
+    const subaccountApiKey = subaccount?.api_key;
     try {
         // Find the list by listId in your database
         const listFound = await ListModel.findOne({ listId: listId });
@@ -408,8 +408,8 @@ router.post('/deleteownnumber', async (req, res) => {
     try {
         // Replace with your ClickSend credentials
         const clickSendAuth = {
-            username: `${subaccountUsername}`,
-            apiKey: `${subaccountApiKey}`
+            username: `${subaccountApiKey}`,
+            apiKey: `${subaccountUsername}`
         };
         console.log(`Sending DELETE request to ClickSend for number ID: ${id}`);
         // Make DELETE request to ClickSend API
@@ -453,8 +453,8 @@ router.post('/deletetag', async (req, res) => {
         return res.status(404).json({ success: false, message: "Subaccount not found." });
     }
     // Extract subaccount ClickSend API credentials
-    const subaccountApiKey = subaccount?.username;
-    const subaccountUsername = subaccount?.api_key;
+    const subaccountUsername = subaccount?.username;
+    const subaccountApiKey = subaccount?.api_key;
     try {
         // Find the alpha tag by _id
         console.log(`Searching for alpha tag associated with _id: ${id}`);
@@ -521,8 +521,8 @@ router.post('/updateownnumber', async (req, res) => {
         return res.status(404).json({ success: false, message: "Subaccount not found." });
     }
     // Extract subaccount ClickSend API credentials
-    const subaccountApiKey = subaccount?.username;
-    const subaccountUsername = subaccount?.api_key;
+    const subaccountUsername = subaccount?.username;
+    const subaccountApiKey = subaccount?.api_key;
     // ClickSend API credentials
     const username = `${subaccountUsername}`;
     const apiKey = `${subaccountApiKey}`;
@@ -1016,8 +1016,8 @@ router.post('/bulksms', async (req, res) => {
         return res.status(404).json({ success: false, message: "Subaccount not found." });
     }
     // Extract subaccount ClickSend API credentials
-    const subaccountApiKey = subaccount?.username;
-    const subaccountUsername = subaccount?.api_key;
+    const subaccountUsername = subaccount?.username;
+    const subaccountApiKey = subaccount?.api_key;
     const { PackageName, Coins } = user?.Details || {};
     console.log('User package and coins:', { PackageName, Coins });
     if (!PackageName || typeof Coins !== 'number') {
@@ -1196,8 +1196,8 @@ router.post('/purchaseno', async (req, res) => {
         return res.status(404).json({ success: false, message: "Subaccount not found." });
     }
     // Extract subaccount ClickSend API credentials
-    const subaccountApiKey = subaccount?.username;
-    const subaccountUsername = subaccount?.api_key;
+    const subaccountUsername = subaccount?.username;
+    const subaccountApiKey = subaccount?.api_key;
     // Replace with your ClickSend API key
     const encodedAuth = Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64');
     try {
@@ -1384,8 +1384,8 @@ router.post('/broughtnumbers', async (req, res) => {
         return res.status(404).json({ success: false, message: "Subaccount not found." });
     }
     // Extract subaccount ClickSend API credentials
-    const subaccountApiKey = subaccount?.username;
-    const subaccountUsername = subaccount?.api_key;
+    const subaccountUsername = subaccount?.username;
+    const subaccountApiKey = subaccount?.api_key;
     try {
         // Make API request to ClickSend
         const response = await axios.get(apiUrl, {
