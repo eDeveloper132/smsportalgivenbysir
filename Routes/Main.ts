@@ -11,8 +11,6 @@ import * as fs from 'fs';
 import FormData from 'form-data';
 import "dotenv/config";
 
-
-
 interface CampaignPayload {
   list_id: number;
   name: string;
