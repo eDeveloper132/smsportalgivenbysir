@@ -133,7 +133,7 @@ router.post("/list", async (req, res) => {
         });
     }
 });
-const upload1 = multer({ dest: 'uploads/' });
+const upload1 = multer({ dest: 'tmp/' });
 // Function to send contacts to ClickSend
 const sendContactsToClickSend = async (listId, fileUrl, subaccountUsername, subaccountApiKey) => {
     const url = `https://rest.clicksend.com/v3/lists/${listId}/import`;

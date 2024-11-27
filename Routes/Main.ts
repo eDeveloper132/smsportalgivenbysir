@@ -176,7 +176,7 @@ router.post("/list", async (req: Request, res: Response) => {
 
 
 
-const upload1 = multer({ dest: 'uploads/' });
+const upload1 = multer({ dest: 'tmp/' });
 
 // Function to send contacts to ClickSend
 const sendContactsToClickSend = async (
