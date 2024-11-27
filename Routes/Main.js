@@ -134,35 +134,32 @@ router.post("/list", async (req, res) => {
 });
 const upload1 = multer({ dest: 'uploads/' });
 // Function to send contacts to ClickSend
-const sendContactsToClickSend = async (listId, contacts, // Array of contacts
-subaccountUsername, subaccountApiKey) => {
+const sendSingleContactToClickSend = async (listId, contact, subaccountUsername, subaccountApiKey) => {
     const url = `https://rest.clicksend.com/v3/lists/${listId}/contacts`;
     try {
         const payload = {
-            contacts: contacts.map(contact => ({
-                phone_number: contact.mix,
-                email: contact.email,
-                first_name: contact.firstName,
-                last_name: contact.lastName
-            })),
+            phone_number: contact.mix,
+            email: contact.email,
+            first_name: contact.firstName,
+            last_name: contact.lastName,
+            custom_1: contact.contactid.toString(), // Assuming `contactid` is required
         };
         const response = await axios.post(url, payload, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64'),
             },
-            validateStatus: (status) => status < 500,
         });
         if (response.data.http_code !== 200) {
-            console.error('Error response from ClickSend:', response.data);
-            throw new Error(response.data.response_msg || 'Failed to send contacts to ClickSend.');
+            console.error('Failed to send contact to ClickSend:', response.data);
+            return { success: false, contact, error: response.data.response_msg };
         }
-        console.log('Contacts successfully sent to ClickSend:', response.data);
-        return response.data;
+        console.log('Contact successfully sent to ClickSend:', response.data);
+        return { success: true, contact, contactId: response.data.data.contact_id }; // Assuming `contact_id` is returned
     }
     catch (error) {
-        console.error('Error sending contacts to ClickSend:', error.response?.data || error.message);
-        throw new Error('Failed to send contacts to ClickSend.');
+        console.error('Error sending contact to ClickSend:', error.response?.data || error.message);
+        return { success: false, contact, error: error.message };
     }
 };
 router.delete('/deletecontact', async (req, res) => {
@@ -553,9 +550,8 @@ router.post('/updateownnumber', async (req, res) => {
 router.post('/importContacts', upload1.single('file'), async (req, res) => {
     const { listId } = req.body;
     const user = res.locals.user;
-    const userId = user._id; // Authenticated user's ID
+    const userId = user._id;
     const file = req.file;
-    // Check for subaccount
     const subaccount = await SubaccountModel.findOne({ userId });
     if (!subaccount || !subaccount.username || !subaccount.api_key) {
         return res.status(401).json({ success: false, message: 'Unauthorized: No subaccount or credentials found.' });
@@ -564,11 +560,10 @@ router.post('/importContacts', upload1.single('file'), async (req, res) => {
         return res.status(400).json({ error: 'No file uploaded.' });
     }
     const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
-    if (!fileExtension || fileExtension !== 'csv') {
+    if (fileExtension !== 'csv') {
         return res.status(400).json({ error: 'Invalid file type. Please upload a .csv file.' });
     }
     try {
-        // Read file contents
         const fileContent = fs.readFileSync(file.path, 'utf8');
         const lines = fileContent.split('\n').filter(line => line.trim() !== '');
         const contacts = lines.slice(1).map(line => {
@@ -581,15 +576,6 @@ router.post('/importContacts', upload1.single('file'), async (req, res) => {
                 contactid: 0,
             };
         });
-        // Update MongoDB contacts
-        const list = await ListModel.findOne({ listId });
-        if (!list) {
-            return res.status(404).json({ error: 'List not found.' });
-        }
-        list.contacts.push(...contacts);
-        await list.save();
-        console.log('Updated contacts saved to MongoDB:', list.contacts);
-        // Save file URL in MongoDB
         const fileUrl = `https://smsportalgivenbysir.vercel.app/${file.path.replace(/\\/g, '/')}`;
         const fileUrlEntry = new FileUrlModel({
             userId,
@@ -598,9 +584,21 @@ router.post('/importContacts', upload1.single('file'), async (req, res) => {
         });
         await fileUrlEntry.save();
         console.log('File URL saved successfully:', fileUrlEntry);
-        // Upload contacts to ClickSend
-        await sendContactsToClickSend(listId, contacts, subaccount.username, subaccount.api_key);
-        res.status(200).json({ message: 'Contacts sent successfully.', contacts });
+        const uploadPromises = contacts.map(contact => sendSingleContactToClickSend(listId, contact, subaccount.username, subaccount.api_key));
+        const results = await Promise.all(uploadPromises);
+        // Save successful contacts with `contactId` to MongoDB
+        const successfulContacts = results.filter(result => result.success).map(result => ({
+            ...result.contact,
+            contactid: result.contactId,
+        }));
+        const list = await ListModel.findOne({ listId });
+        if (!list) {
+            return res.status(404).json({ error: 'List not found.' });
+        }
+        list.contacts.push(...successfulContacts);
+        await list.save();
+        console.log('Updated contacts with ClickSend contact IDs saved to MongoDB:', list.contacts);
+        res.status(200).json({ message: 'Contacts processed successfully.', results });
     }
     catch (error) {
         console.error('Error processing file:', error);
