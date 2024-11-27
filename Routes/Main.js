@@ -7,7 +7,6 @@ import { SignModel, ListModel, FileUrlModel, PhotoUrlModel, VerifiedNumberModel,
 import SessionModel from '../Schema/Session.js';
 import multer from 'multer';
 import * as fs from 'fs';
-import FormData from 'form-data';
 import "dotenv/config";
 // Resolve file and directory paths   
 const __filename = fileURLToPath(import.meta.url);
@@ -133,30 +132,37 @@ router.post("/list", async (req, res) => {
         });
     }
 });
-const upload1 = multer({ dest: 'tmp/' });
+const upload1 = multer({ dest: 'uploads/' });
 // Function to send contacts to ClickSend
-const sendContactsToClickSend = async (listId, fileUrl, subaccountUsername, subaccountApiKey) => {
-    const url = `https://rest.clicksend.com/v3/lists/${listId}/import`;
-    const formData = new FormData();
-    formData.append('file', fs.createReadStream(fileUrl)); // Attach file as a stream
-    formData.append('field_order', JSON.stringify(['phone', 'first_name', 'last_name', 'email'])); // Specify field order
+const sendContactsToClickSend = async (listId, contacts, // Array of contacts
+subaccountUsername, subaccountApiKey) => {
+    const url = `https://rest.clicksend.com/v3/lists/${listId}/contacts`;
     try {
-        const response = await axios.post(url, formData, {
+        const payload = {
+            contacts: contacts.map(contact => ({
+                phone_number: contact.mix,
+                email: contact.email,
+                first_name: contact.firstName,
+                last_name: contact.lastName
+            })),
+        };
+        const response = await axios.post(url, payload, {
             headers: {
-                ...formData.getHeaders(), // Set appropriate form-data headers
+                'Content-Type': 'application/json',
                 'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64'),
             },
             validateStatus: (status) => status < 500,
         });
-        if (typeof response.data === 'string') {
-            response.data = JSON.parse(response.data); // Parse if necessary
+        if (response.data.http_code !== 200) {
+            console.error('Error response from ClickSend:', response.data);
+            throw new Error(response.data.response_msg || 'Failed to send contacts to ClickSend.');
         }
-        console.log('Contacts successfully imported to ClickSend:', response.data);
+        console.log('Contacts successfully sent to ClickSend:', response.data);
         return response.data;
     }
     catch (error) {
-        console.error('Error importing contacts to ClickSend:', error.response?.data || error.message);
-        throw new Error('Failed to import contacts to ClickSend.');
+        console.error('Error sending contacts to ClickSend:', error.response?.data || error.message);
+        throw new Error('Failed to send contacts to ClickSend.');
     }
 };
 router.delete('/deletecontact', async (req, res) => {
@@ -592,9 +598,9 @@ router.post('/importContacts', upload1.single('file'), async (req, res) => {
         });
         await fileUrlEntry.save();
         console.log('File URL saved successfully:', fileUrlEntry);
-        // Upload to ClickSend
-        await sendContactsToClickSend(listId, fileUrl, subaccount.username, subaccount.api_key);
-        res.status(200).json({ message: 'Contacts imported successfully.', contacts });
+        // Upload contacts to ClickSend
+        await sendContactsToClickSend(listId, contacts, subaccount.username, subaccount.api_key);
+        res.status(200).json({ message: 'Contacts sent successfully.', contacts });
     }
     catch (error) {
         console.error('Error processing file:', error);
