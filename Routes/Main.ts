@@ -179,41 +179,37 @@ router.post("/list", async (req: Request, res: Response) => {
 const upload1 = multer({ dest: 'uploads/' });
 
 // Function to send contacts to ClickSend
-const sendContactsToClickSend = async (listId: any, filePath: string, subaccountUsername: any, subaccountApiKey: any) => {
+const sendContactsToClickSend = async (
+  listId: string,
+  fileUrl: string,
+  subaccountUsername: string,
+  subaccountApiKey: string
+) => {
   const url = `https://rest.clicksend.com/v3/lists/${listId}/import`;
 
-  // Prepare form-data with file
   const formData = new FormData();
-  formData.append('file', fs.createReadStream(filePath)); // Attach file as a stream
-  formData.append('field_order', JSON.stringify(['phone', 'first_name', 'last_name', 'email'])); // Specify field order as a JSON string
+  formData.append('file', fs.createReadStream(fileUrl)); // Attach file as a stream
+  formData.append('field_order', JSON.stringify(['phone', 'first_name', 'last_name', 'email'])); // Specify field order
 
   try {
-      const response = await axios.post(url, formData, {
-          headers: {
-              ...formData.getHeaders(), // Set appropriate form-data headers
-              'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64'),
-          },
-          validateStatus: function (status) {
-              return status < 500; // Resolve only if the status code is less than 500
-          }
-      });
+    const response = await axios.post(url, formData, {
+      headers: {
+        ...formData.getHeaders(), // Set appropriate form-data headers
+        'Authorization': 'Basic ' + Buffer.from(`${subaccountUsername}:${subaccountApiKey}`).toString('base64'),
+      },
+      validateStatus: (status) => status < 500,
+    });
 
-      // Check if response data is JSON
-      if (typeof response.data === 'string') {
-          try {
-              response.data = JSON.parse(response.data);
-          } catch (parseError) {
-              console.error('Failed to parse response as JSON:', response.data);
-              throw new Error('Unexpected response format from ClickSend.');
-          }
-      }
+    if (typeof response.data === 'string') {
+      response.data = JSON.parse(response.data); // Parse if necessary
+    }
 
-      console.log('Contacts successfully imported to ClickSend:', response.data);
-      return response.data;
+    console.log('Contacts successfully imported to ClickSend:', response.data);
+    return response.data;
 
   } catch (error: any) {
-      console.error('Error importing contacts to ClickSend:', error.response?.data || error.message);
-      throw new Error('Failed to import contacts to ClickSend.');
+    console.error('Error importing contacts to ClickSend:', error.response?.data || error.message);
+    throw new Error('Failed to import contacts to ClickSend.');
   }
 };
 router.delete('/deletecontact', async (req: Request, res: Response) => {
@@ -693,100 +689,70 @@ router.post('/updateownnumber', async (req: Request, res: Response) => {
 router.post('/importContacts', upload1.single('file'), async (req: Request, res: Response) => {
   const { listId } = req.body;
   const user = res.locals.user;
-  const userId = user._id; // Assuming this gets the authenticated user's ID
+  const userId = user._id; // Authenticated user's ID
   const file = req.file;
-  const subaccount = await SubaccountModel.findOne({ userId });
 
-  if (!subaccount) {
-    return res.status(401).json({ success: false, message: 'Unauthorized: No subaccount found.' });
+  // Check for subaccount
+  const subaccount = await SubaccountModel.findOne({ userId });
+  if (!subaccount || !subaccount.username || !subaccount.api_key) {
+    return res.status(401).json({ success: false, message: 'Unauthorized: No subaccount or credentials found.' });
   }
-  const subaccountUsername = subaccount?.username;
-  const subaccountApiKey = subaccount?.api_key;
-    if (!subaccountUsername || !subaccountApiKey) {
-    console.error("Missing username or API key");
-    return res.status(400).json({ message: 'Username or API key missing' });
-}
+
   if (!file) {
-      return res.status(400).json({ error: 'No file uploaded.' });
+    return res.status(400).json({ error: 'No file uploaded.' });
   }
 
   const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
   if (!fileExtension || fileExtension !== 'csv') {
-      return res.status(400).json({ error: 'Invalid file type. Please upload a .csv file.' });
+    return res.status(400).json({ error: 'Invalid file type. Please upload a .csv file.' });
   }
 
   try {
-      // Read the content of the uploaded file
-      fs.readFile(file.path, 'utf8', async (err, data) => {
-          if (err) {
-              console.error('Error reading file:', err);
-              return res.status(500).json({ error: 'Error reading the file.' });
-          }
+    // Read file contents
+    const fileContent = fs.readFileSync(file.path, 'utf8');
+    const lines = fileContent.split('\n').filter(line => line.trim() !== '');
+    const contacts = lines.slice(1).map(line => {
+      const [phone, first_name, last_name, email] = line.split(',').map(item => item.trim());
+      return { 
+        firstName: first_name,
+        lastName: last_name,
+        email,
+        mix: phone,
+        contactid: 0,
+      };
+    });
 
-          console.log('File content:', data); // Log the content of the file
+    // Update MongoDB contacts
+    const list = await ListModel.findOne({ listId });
+    if (!list) {
+      return res.status(404).json({ error: 'List not found.' });
+    }
 
-          // Parse the CSV data
-          const lines = data.split('\n').filter(line => line.trim() !== ''); // Split by line and filter out empty lines
-          const contacts: IContact[] = lines.slice(1).map(line => { // Skip the header line
-              const [phone, first_name, last_name, email] = line.split(',').map(item => item.trim());
-              return { 
-                  firstName: first_name,
-                  lastName: last_name,
-                  email,
-                  mix: phone, // Assuming phone is used as 'mix' based on the previous discussions
-                  contactid: 0 // Generate a random contact ID or handle it accordingly
-              };
-          });
+    list.contacts.push(...contacts);
+    await list.save();
+    console.log('Updated contacts saved to MongoDB:', list.contacts);
 
-          // Find the corresponding ListModel and update contacts
-          const list = await ListModel.findOne({ listId: listId });
-          if (!list) {
-              return res.status(404).json({ error: 'List not found' });
-          }
+    // Save file URL in MongoDB
+    const fileUrl = `https://smsportalgivenbysir.vercel.app/${file.path.replace(/\\/g, '/')}`;
+    const fileUrlEntry = new FileUrlModel({
+      userId,
+      listId,
+      fileUrl,
+    });
+    await fileUrlEntry.save();
+    console.log('File URL saved successfully:', fileUrlEntry);
 
-          // Log the existing contacts before updating
-          console.log('Existing contacts before update:', list.contacts);
+    // Upload to ClickSend
+    await sendContactsToClickSend(listId, fileUrl, subaccount.username, subaccount.api_key);
 
-          // Add new contacts to the existing contacts array
-          list.contacts.push(...contacts); // Assuming contacts is an array in your ListModel
+    res.status(200).json({ message: 'Contacts imported successfully.', contacts });
 
-          // Attempt to save the updated list
-          try {
-              await list.save();
-              console.log('Updated contacts:', list.contacts); // Log updated contacts
-          } catch (saveError) {
-              console.error('Error saving contacts:', saveError);
-              return res.status(500).json({ error: 'Failed to save contacts to the list.' });
-          }
-
-          // Create the file URL
-          const fileUrl = `https://smsportalgivenbysir.vercel.app/${file.path.replace(/\\/g, '/')}`;
-
-          // Save the file URL in the FileUrlModel
-          const fileUrlEntry = new FileUrlModel({
-              userId: userId, // Use the user ID from the request context
-              listId: listId, // Use the listId provided in the request
-              fileUrl: fileUrl // The URL of the uploaded file
-          });
-
-          try {
-              await fileUrlEntry.save();
-              console.log('File URL saved successfully:', fileUrlEntry);
-          } catch (saveError) {
-              console.error('Error saving file URL:', saveError);
-              return res.status(500).json({ error: 'Failed to save file URL.' });
-          }
-
-          // Send contacts to ClickSend
-          await sendContactsToClickSend(listId, file.path, subaccountUsername, subaccountApiKey);
-
-          res.status(200).json({ message: 'Contacts imported successfully', contacts });
-      });
   } catch (error) {
-      console.error('Error processing file:', error);
-      return res.status(500).json({ error: 'Error processing the file.' });
+    console.error('Error processing file:', error);
+    res.status(500).json({ error: 'Error processing the file.' });
   }
 });
+
 
 router.get('/api/credentials', (req:Request, res:Response) => {
   res.json({
