@@ -701,7 +701,6 @@
                           <table class="table table-striped table-hover table-bordered">
                             <thead class="table-dark">
                               <tr>
-                                <th scope="col">From</th>
                                 <th scope="col">To</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Message</th>
@@ -866,7 +865,6 @@
                               const item = document.createElement('tr');
                               item.className = 'data-item';
                               item.innerHTML = `
-                                <td>${doc.from || 'N/A'}</td>
                                 <td>${doc.to || 'N/A'}</td>
                                 <td>${doc.status || 'N/A'}</td>
                                 <td class="message-truncate">${doc.message || 'N/A'}</td>
