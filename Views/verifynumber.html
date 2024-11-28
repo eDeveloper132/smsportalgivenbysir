@@ -863,7 +863,7 @@ function displayOwnNumbers(numbers) {
     paginationControls.innerHTML = ''; // Clear previous pagination
 
     if (!Array.isArray(numbers) || numbers.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="3" class="text-center">No own numbers found.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center opacity-75">No numbers found.</td></tr>';
         return;
     }
 

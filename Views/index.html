@@ -705,6 +705,7 @@
                                 <th scope="col">To</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Message</th>
+                                <th scope="col">Timestamp</th>
                               </tr>
                             </thead>
                             <tbody id="data-container">
@@ -869,6 +870,7 @@
                                 <td>${doc.to || 'N/A'}</td>
                                 <td>${doc.status || 'N/A'}</td>
                                 <td class="message-truncate">${doc.message || 'N/A'}</td>
+                                <td>${doc.date || 'N/A'}</td>
                               `;
                               container.appendChild(item);
                     

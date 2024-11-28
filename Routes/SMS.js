@@ -28,6 +28,7 @@ router.post("/", async (req, res) => {
         console.log("Server Error 404: User not found"); // Log if user not found
         return res.status(404).send("User not found.");
     }
+    const date = new Date().toISOString(); // ISO 8601 format
     const id = user._id;
     const packageName = user?.Details?.PackageName;
     const coins = user?.Details?.Coins;
@@ -93,6 +94,7 @@ router.post("/", async (req, res) => {
             m_count: response.data.data.total_count,
             m_schedule: "NOT PROVIDED",
             status: response.data.response_code,
+            date: date
         });
         // Cast newMessage._id to ObjectId
         const messageId = newMessage._id;

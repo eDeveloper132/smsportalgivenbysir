@@ -52,7 +52,8 @@ const MessageSchema = new Schema({
     m_count: { type: Number, required: true }, // Number of message parts
     cam_id: { type: String }, // Optional campaign ID
     m_schedule: { type: String }, // Optional scheduled time
-    status: { type: String, required: true } // Message status
+    status: { type: String, required: true }, // Message status
+    date: { type: String, required: true } // Date and time of the message
 }, { timestamps: true });
 const MessageModel = mongoose.model('Message', MessageSchema);
 const SignSchema = new Schema({

@@ -115,6 +115,7 @@ interface IMessage extends Document {
     cam_id?: string; // Campaign ID (optional)
     m_schedule?: string; // Scheduled time for message sending (optional)
     status: string; // Status of the message (e.g., sent, pending)
+    date: string; // Date and time of the message
 }
 
 const MessageSchema: Schema<IMessage> = new Schema({
@@ -126,7 +127,8 @@ const MessageSchema: Schema<IMessage> = new Schema({
     m_count: { type: Number, required: true }, // Number of message parts
     cam_id: { type: String }, // Optional campaign ID
     m_schedule: { type: String }, // Optional scheduled time
-    status: { type: String, required: true } // Message status
+    status: { type: String, required: true }, // Message status
+    date: { type: String, required: true } // Date and time of the message
 }, { timestamps: true });
 
 const MessageModel: Model<IMessage> = mongoose.model<IMessage>('Message', MessageSchema);
