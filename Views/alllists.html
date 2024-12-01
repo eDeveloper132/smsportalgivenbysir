@@ -1474,7 +1474,7 @@ async function viewList(listId) {
             const result = await response.json();
             // console.log('List retrieved successfully:', result.list);
             displayContacts(result.list.contacts); // Call to display the contacts
-            showToast('List retrieved successfully!',true);
+            // showToast('List retrieved successfully!',true);
             loader.style.display = 'none';
             const contactDetailsModal = new bootstrap.Modal(document.getElementById('contactDetailsModal'));
             contactDetailsModal.show();
