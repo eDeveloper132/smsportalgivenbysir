@@ -167,7 +167,8 @@
                                                     document.getElementById('passwordError').style.display = 'block';
                                                     isValid = false;
                                                 }
-                                        
+                                                const loader = document.getElementById('loader'); // Loader element
+                                                loader.style.display = 'block';
                                                 if (isValid) {
                                                     const formObject = {
                                                         Email: email,
@@ -175,8 +176,7 @@
                                                     };
                                         
                                                     try {
-                                                        const loader = document.getElementById('loader'); // Loader element
-                                                        loader.style.display = 'block';
+   
                                                         const response = await fetch('/signin', {
                                                             method: 'POST',
                                                             headers: {

@@ -4,6 +4,22 @@
   .dH{
     float: left;
   }
+  #loader {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure loader is above other content */
+  }
   .aside-logo {
             display: flex;
             align-items: center; /* Align items vertically */
@@ -194,7 +210,23 @@
   </div>
 </div>
 <!--////////////////// /.PreLoader END//////////////////////-->
-
+<div id="loader" style="display: none;">
+  <div class="d-flex flex-column flex-root">
+      <div class="page d-flex flex-row flex-column-fluid">
+        <div class="page-content ps-0 ms-0 d-flex flex-column flex-row-fluid">
+          <div
+            class="content flex-column p-4 pb-0 d-flex justify-content-center align-items-center flex-column-fluid position-relative">
+            <div class="w-100 h-100 position-relative d-flex align-items-center justify-content-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-loader anim-spinner me-2"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
+            <div>
+              <span>Loading...</span>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
               </div>
             </div>
             </div>
@@ -685,11 +717,15 @@ chat
                             
                                 // Event listener for logout button click
                                 document.getElementById('logoutButton').addEventListener('click', async () => {
+                                  const loader = document.getElementById('loader'); // Loader element
+                                  loader.style.display = 'block';
                                     try {
                                         await resetSession();
+                                        loader.style.display = 'none';
                                         window.location.href = '/signin';
                                     } catch (error) {
                                         console.error('Error during logout:', error);
+                                        loader.style.display = 'none';
                                     }
                                 });
                             
@@ -789,7 +825,7 @@ chat
                   await fetchUserData();
                   await fetchContactLists();
                   await fetchAlphaTags(); // Fetch AlphaTags to populate sender ID dropdown
-                  showToast("Application initialized successfully.", true);
+                  // showToast("Application initialized successfully.", true);
                 } catch (error) {
                   showToast(`Initialization error: ${error.message}`, false);
                 }
@@ -893,6 +929,8 @@ chat
                 });
               }
               document.getElementById('resendVerificationButton').addEventListener('click', async () => {
+                const loader = document.getElementById('loader'); // Loader element
+                loader.style.display = 'block';
             try {
               const response = await fetch('/resend-verification', {
                 method: 'POST',
@@ -901,9 +939,11 @@ chat
               });
               if (!response.ok) throw new Error('Failed to send verification link.');
               showToast('Verification link sent successfully to your email!', true);
+              loader.style.display = 'none';
             } catch (error) {
               console.error('Error sending verification link:', error);
               showToast('Error sending verification link: ' + error.message, false);
+              loader.style.display = 'none';
             }
           });
 
@@ -948,19 +988,26 @@ chat
                   scheduleDateTime,
                   selectedListId
                 };
-            
+                const loader = document.getElementById('loader'); // Loader element
+                loader.style.display = 'block';
                 try {
                   const response = await fetch('/bulksms', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(sendData)
                   });
-                  if (!response.ok) throw new Error(`Failed to send message. Status: ${response.status}`);
+                  if (!response.ok) {
+                    loader.style.display = 'none';
+                    throw new Error(`Failed to send message. Status: ${response.status}`) 
+                  };
             
                   const result = await response.json();
                   showToast("Bulk SMS sent successfully!", true);
+                  loader.style.display = 'none';
+                  window.location.reload();
                 } catch (error) {
                   showToast(`Missing required params: ${error.message}`, false);
+                  loader.style.display = 'none';
                 }
               }
             

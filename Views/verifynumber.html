@@ -647,11 +647,15 @@ chat
                             
                                 // Event listener for logout button click
                                 document.getElementById('logoutButton').addEventListener('click', async () => {
+                                    const loader = document.getElementById('loader'); // Loader element
+                                    loader.style.display = 'block';
                                     try {
                                         await resetSession();
+                                        loader.style.display = 'none';
                                         window.location.href = '/signin';
                                     } catch (error) {
                                         console.error('Error during logout:', error);
+                                        loader.style.display = 'none';
                                     }
                                 });
                             
