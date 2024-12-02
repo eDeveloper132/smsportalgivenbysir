@@ -12,11 +12,12 @@ import FormData from 'form-data';
 import "dotenv/config";
 
 interface CampaignPayload {
-  list_id: number;
-  name: string;
-  body: string;
-  from: string;
-  schedule?: number; // Optional
+  campaignName?: string;
+  senderId?: string;
+  message?: string;
+  sendOption: string;
+  scheduleDateTime?: string;
+  selectedListId?: string; // Optional
 }
 
 // Resolve file and directory paths   
@@ -1199,13 +1200,14 @@ router.get('/purchaseno',(req:Request , res:Response)=>{
 router.post('/bulksms', async (req: Request, res: Response) => {
   console.log('Incoming bulk SMS request');
 
-  const { list_id, name, body, from, schedule } = req.body;
+  const { campaignName, senderId, message, sendOption, scheduleDateTime, selectedListId } = req.body;
   console.log('Request body:', req.body);
 
-  if (!body || !from || !name || !list_id) {
+  // Check for missing required fields
+  if (!campaignName || !senderId || !message || !sendOption || !selectedListId) {
     console.log('Server Error 400: Missing required fields');
     return res.status(400).json({
-      error: 'Please provide all required fields: body, from, name, and list_id.'
+      error: 'Please provide all required fields: campaignName, senderId, message, sendOption, and selectedListId.'
     });
   }
 
@@ -1216,83 +1218,103 @@ router.post('/bulksms', async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'User not authenticated' });
   }
 
-  const userId = user._id; 
-  const subaccount = await SubaccountModel.findOne({ userId });
-  if (!subaccount) {
-    return res.status(404).json({ success: false, message: "Subaccount not found." });
-  }
-
-  // Extract subaccount ClickSend API credentials
-  const subaccountUsername = subaccount?.username;
-  const subaccountApiKey = subaccount?.api_key;
-
+  const userId = user._id;
   
-  const { PackageName, Coins } = user?.Details || {};
-  console.log('User package and coins:', { PackageName, Coins });
-
-  if (!PackageName || typeof Coins !== 'number') {
-    console.log('Server Error 403: No package or coins invalid');
-    return res.status(403).json({
-      error: 'You cannot send SMS. Please buy our package first.'
-    });
-  }
-
-  console.log('Fetching list of numbers for list_id:', list_id);
-
   try {
-    console.log('Fetching user from the database with userId:', userId);
+    const subaccount = await SubaccountModel.findOne({ userId });
+    if (!subaccount) {
+      return res.status(404).json({ success: false, message: "Subaccount not found." });
+    }
+
+    const subaccountUsername = subaccount.username;
+    const subaccountApiKey = subaccount.api_key;
+
+    const { PackageName, Coins } = user.Details || {};
+    console.log('User package and coins:', { PackageName, Coins });
+
+    if (!PackageName || typeof Coins !== 'number') {
+      console.log('Server Error 403: No package or invalid coins');
+      return res.status(403).json({
+        error: 'You cannot send SMS. Please buy a package first.'
+      });
+    }
+
+    console.log('Fetching list of numbers for list_id:', selectedListId);
     const dbUser = await SignModel.findById(userId);
-    console.log('Fetched user:', dbUser);
 
     if (!dbUser || typeof dbUser.Details?.Coins !== 'number') {
       console.log('Server Error 400: User details not found or invalid');
       return res.status(400).send('User details not found or invalid.');
     }
 
-    console.log('Preparing campaign payload');
-    const campaignPayload: CampaignPayload = {
-      list_id,
-      name,
-      body,
-      from,
-      schedule, // Optional: Included only if provided
+    const campaignPayload = {
+      list_id: selectedListId,
+      name: campaignName,
+      from: senderId,
+      body: message,
+      schedule: scheduleDateTime,
     };
-    console.log('Campaign payload:', campaignPayload);
 
     const apiUrl = 'https://rest.clicksend.com/v3/sms-campaigns/send';
     console.log('Sending campaign to ClickSend API at:', apiUrl);
 
     const response = await axios.post(apiUrl, campaignPayload, {
       auth: {
-        username: `${subaccountUsername}`,
-        password: `${subaccountApiKey}`,
+        username: subaccountUsername,
+        password: subaccountApiKey,
       },
     });
 
     console.log('ClickSend API response:', response.data);
+
     const { http_code, response_code, response_msg, data } = response.data;
 
     if (http_code === 200 && response_code === 'SUCCESS') {
       console.log('Campaign sent successfully');
-      const { sms_campaign_id, name, from, body, status, _total_count } = data;
+      const { total_count } = data;
+      const {sms_campaign_id, name, from, body, status} = data.sms_campaign
+      console.log('Deducting coins:', total_count);
+// Validate if Coins is a valid number
+const { Coins } = dbUser.Details || {};
 
-      // Deduct coins for all messages
-      console.log('Deducting coins:', _total_count);
-      dbUser.Details.Coins -= _total_count;
-      await dbUser.save();
+// Check if Coins is a valid number, otherwise set it to 0 or handle as required
+if (typeof Coins !== 'number' || isNaN(Coins)) {
+  console.log('Coins value is invalid or NaN, resetting to 0');
+} else {
+  console.log('Coins before deduction:', Coins);
+}
+
+// Now deduct coins after validation
+dbUser.Details.Coins -= total_count;
+await dbUser.save();
+console.log('Updated user coins:', dbUser.Details.Coins);
+      const list = await ListModel.findOne({ listId: selectedListId });
       console.log('Updated user coins:', dbUser.Details.Coins);
+      const Campaign = new CampaignMessageModel({
+        userId: userId,
+        sms_campaign_id: sms_campaign_id,
+        campaign_name: name,
+        list_id: list?._id,
+        from: from,
+        body: body,
+        schedule: scheduleDateTime,
+        status: status,
+        total_count: total_count
+      })
 
+      const savedCampaign = await Campaign.save();
+      console.log('Campaign saved successfully:', savedCampaign);
+
+      const find = await CampaignMessageModel.findOne({ userId })
+      const finded = await SignModel.findByIdAndUpdate(userId, {
+        $push: { campaigns: { $each: [find?._id] } } // Wrap _id in an array
+      });
+      
+      const saved = await finded?.save()
+      console.log('Campaign saved successfully:', saved);
       res.status(200).json({
         message: response_msg,
-        campaignDetails: {
-          campaignId: sms_campaign_id,
-          campaignName: name,
-          sender: from,
-          messageBody: body,
-          status,
-          totalMessages: _total_count,
-        },
-      });
+      })
     } else {
       console.log('Server Error 500: Failed to send campaign');
       res.status(500).json({
@@ -1304,6 +1326,7 @@ router.post('/bulksms', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to send SMS. Please try again later.' });
   }
 });
+
 
 
 
@@ -1713,34 +1736,84 @@ router.post('/getalpha', async (req: Request, res: Response) => {
   console.log('Received request to fetch all alpha tags for user:', res.locals.user._id); // Log user ID
 
   try {
-    // Attempt to find all alpha tags for the user
-    const results = await AlphaTagModel.find({ user_id: res.locals.user._id });
-    console.log('Alpha tag query results:', results); // Log the results of the query
+    const userId = res.locals.user._id;
 
-    if (results && results.length > 0) {
-      console.log('Alpha tags found, responding with data...'); // Log successful find
-      // Respond with the results if the request is successful
-      res.status(200).json({
+    // Find the subaccount associated with the user
+    const subaccount = await SubaccountModel.findOne({ userId });
+    if (!subaccount) {
+      console.warn('Subaccount not found for user:', userId);
+      return res.status(404).json({ success: false, message: "Subaccount not found." });
+    }
+
+    const subaccountUsername = subaccount.username;
+    const subaccountApiKey = subaccount.api_key;
+
+    console.log('Subaccount credentials:', {
+      username: subaccountUsername,
+      apiKey: subaccountApiKey ? "Provided" : "Not Provided",
+    });
+
+    if (!subaccountUsername || !subaccountApiKey) {
+      console.error("Missing username or API key");
+      return res.status(400).json({ success: false, message: 'Username or API key missing' });
+    }
+
+    // Find all alpha tags for the user
+    const results = await AlphaTagModel.find({ user_id: userId });
+    console.log('Alpha tag query results:', results);
+
+    // Filter out tags without `user_id_clicksend`
+    const filteredResults = results.filter(tag => tag.user_id_clicksend);
+    console.log('Filtered results with user_id_clicksend:', filteredResults);
+
+    if (filteredResults.length > 0) {
+      // Fetch details from ClickSend and update statuses in the database
+      for (const tag of filteredResults) {
+        console.log("Fetching alpha tag with PID:", tag.pid);
+
+        try {
+          const response = await axios.get(`https://rest.clicksend.com/v3/alpha-tags/${tag.pid}`, {
+            auth: {
+              username: subaccountUsername,
+              password: subaccountApiKey,
+            },
+          });
+
+          console.log(`ClickSend response for alpha tag ${tag.alpha_tag}:`, response.data);
+
+          // Update the alpha tag status in the database
+          await AlphaTagModel.findOneAndUpdate(
+            { pid: response.data.id },
+            { $set: { status: response.data.status } }
+          );
+        } catch (fetchError: any) {
+          console.error(`Error fetching details for alpha tag ${tag.alpha_tag}:`, fetchError.message || fetchError);
+        }
+      }
+
+      console.log('Alpha tags successfully fetched and updated.');
+      return res.status(200).json({
         success: true,
         message: 'Alpha tags fetched successfully',
-        data: results
+        data: filteredResults,
       });
     } else {
-      console.warn('No alpha tags found for user:', res.locals.user._id); // Warn if no data found
-      res.json({
+      console.warn('No alpha tags found for user:', userId);
+      return res.json({
         success: false,
         error: 'No alpha tags found for this user',
-        details: []
+        details: [],
       });
     }
   } catch (error: any) {
-    console.error('Error fetching alpha tags:', error.message || error); // Log error details
+    console.error('Error fetching alpha tags:', error.message || error);
     res.status(500).json({
       success: false,
-      message: 'Server error occurred while fetching alpha tags'
+      message: 'Server error occurred while fetching alpha tags',
     });
   }
 });
+
 
 router.post('/alphatag', async (req: Request, res: Response) => {
   const { alpha_tag, reason } = req.body; // Extract alpha_tag and reason from the request body
@@ -1871,6 +1944,7 @@ router.post('/view_campaigns', async (req: Request, res: Response) => {
     });
 
     console.log('API response data:', response.data);
+    console.log('Campaigns:', response.data.data); // Log the entire campaign data
 
     const campaigns = response.data.data.data || []; // Access the campaigns list safely
 
@@ -1882,50 +1956,22 @@ router.post('/view_campaigns', async (req: Request, res: Response) => {
         data: []
       });
     }
-
-    // Save the campaigns to the database
-    const savedCampaigns = await Promise.all(
-      campaigns.map(async (campaign: any) => {
-        const newCampaign = new CampaignMessageModel({
-          userId: userId,
-          sms_campaign_id: campaign.sms_campaign_id,
-          campaign_name: campaign.name,
-          list_id: campaign.list_id || null,
-          from: campaign.from,
-          body: campaign.body,
-          schedule: new Date(parseInt(campaign.schedule) * 1000), // Convert schedule to Date
-          status: campaign.status,
-          total_count: campaign._total_count
-        });
-
-        const savedCampaign = await newCampaign.save();
-        return {
-          sms_campaign_id: savedCampaign.sms_campaign_id,
-          name: savedCampaign.campaign_name,
-          from: savedCampaign.from,
-          body: savedCampaign.body,
-          schedule: savedCampaign.schedule,
-          status: savedCampaign.status
-        };
-      })
-    );
-
-    // Update user's campaigns in the Sign model
-    await SignModel.findByIdAndUpdate(userId, {
-      $push: { campaigns: { $each: savedCampaigns.map(c => c.sms_campaign_id) } }
-    });
+    console.log('Campaigns by ClickSend API:', campaigns);
+    const savedCampaigns = await CampaignMessageModel.find({ userId });
+    console.log('Saved Campaigns:', savedCampaigns);
 
     res.status(200).json({
       http_code: 200,
       response_code: 'SUCCESS',
       response_msg: 'Here are your SMS campaigns.',
-      data: savedCampaigns
+      data: campaigns
     });
   } catch (error: any) {
     console.error('Error fetching campaigns:', error.response?.data || error.message);
     res.status(500).json({ error: 'Failed to retrieve campaigns. Please try again later.' });
   }
 });
+
 
 
 router.get('/campaigns',(req:Request , res:Response)=>{
@@ -1935,6 +1981,67 @@ router.get('/campaigns',(req:Request , res:Response)=>{
 router.get('/recaver',(req:Request , res:Response)=>{
   res.sendFile(path.resolve(__dirname, '../Views/recover.html'));
 })
+
+
+router.post('/cancelcampaign', async (req: Request, res: Response) => {
+  const { sms_campaign_id } = req.body;
+  console.log('Received request to cancel campaign:', sms_campaign_id);
+
+  const user = res.locals.user; // Get the user from middleware
+
+  if (!user) {
+    return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  const userId = user._id;
+  const subaccount = await SubaccountModel.findOne({ userId });
+
+  if (!subaccount) {
+    return res.status(404).json({ success: false, message: 'Subaccount not found.' });
+  }
+
+  // Extract ClickSend API credentials from subaccount
+  const subaccountApiKey = subaccount.api_key;
+  const subaccountUsername = subaccount.username;
+
+  const apiUrl = `https://rest.clicksend.com/v3/sms-campaigns/${sms_campaign_id}/cancel`;
+
+  try {
+    // Make the axios request to ClickSend API
+    const response = await axios.post(
+      apiUrl,
+      {},
+      {
+        auth: {
+          username: subaccountUsername,
+          password: subaccountApiKey,
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      console.log('Campaign cancellation successful:', response.data);
+      return res.status(200).json({
+        success: true,
+        message: 'Campaign canceled successfully.',
+        data: response.data,
+      });
+    } else {
+      console.error('Unexpected response from ClickSend API:', response.data);
+      return res.status(response.status).json({
+        success: false,
+        message: 'Failed to cancel the campaign.',
+        data: response.data,
+      });
+    }
+  } catch (error: any) {
+    console.error('Error canceling campaign:', error.response?.data || error.message);
+    return res.status(error.response?.status || 500).json({
+      success: false,
+      message: error.response?.data?.message || 'An error occurred while canceling the campaign.',
+    });
+  }
+});
 
 
 export default router;

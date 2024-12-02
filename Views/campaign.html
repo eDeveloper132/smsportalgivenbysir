@@ -741,36 +741,71 @@ loader.style.display = 'block';
               </div><!-- Page Content -->
               <div class="content pt-2 px-4 px-lg-6 d-flex flex-column-fluid">
                 <div class="container p-5">
-                  <h2 class="mb-4 text-center">SMS Campaigns</h2>
+                  <!-- Cancel Modal -->
+                  <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog" aria-labelledby="cancelModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="cancelModalLabel">Confirm Cancellation</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          Are you sure you want to cancel this campaign?
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                          <button type="button" class="btn btn-danger" id="confirmCancelButton">Yes, Cancel</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+            
+                  <!-- Verification Status -->
                   <div id="verificationStatus" class="alert alert-warning text-center d-none" role="alert">
-                    <h4>You are not verified, Please click here to verify your account:</h4> 
+                    <h4>You are not verified, Please click here to verify your account:</h4>
                     <button id="resendVerificationButton" class="btn btn-info">Send Verification Link</button>
                   </div>
+            
+                  <!-- Search Bar -->
+                  <div class="mb-3 w-25">
+                    <input type="text" id="campaignSearch" class="form-control" placeholder="Search...">
+                  </div>
+            
+                  <!-- Campaign Table -->
                   <table class="table table-hover table-bordered">
                     <thead class="thead-dark bg-dark text-white">
                       <tr>
-                        <th>Campaign ID</th>
                         <th>Name</th>
                         <th>From</th>
                         <th>Message</th>
                         <th>Schedule</th>
                         <th>Status</th>
-                        <th>Date Added</th>
-                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody id="campaignTableBody">
                       <!-- Dynamic rows will be inserted here -->
                     </tbody>
                   </table>
+            
+                  <!-- Pagination -->
+                  <nav>
+                    <ul class="pagination justify-content-center" id="paginationControls">
+                      <!-- Pagination buttons will be dynamically added here -->
+                    </ul>
+                  </nav>
                 </div>
               </div>
             
               <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
             
-            
+              <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
               <script>
                 let isVerified = false;
+                let currentPage = 1;
+                const rowsPerPage = 5;
+                let selectedCampaignId = null;
+                let campaigns = [];
+                
                 document.addEventListener('DOMContentLoaded', async () => {
                   try {
                     await fetchUserData();
@@ -779,8 +814,7 @@ loader.style.display = 'block';
                     showToast(`Error during initialization: ${error.message}`, false);
                   }
                 });
-              
-                // Fetch user data and update the UI
+                
                 async function fetchUserData() {
                   try {
                     const response = await fetch('/user', {
@@ -793,25 +827,28 @@ loader.style.display = 'block';
                     const data = await response.json();
                     updateUserData(data);
                   } catch (error) {
-                    console.error(error.message)
-                    // showToast(`Error loading user details: ${error.message}`, false);
+                    console.error(error.message);
                   }
                 }
               
                 function updateUserData(data) {
                   document.getElementById('userName').textContent = data.Name;
-                  document.getElementById('userFullName').textContent = data.Name;
-                  document.getElementById('packagename').textContent = data.PackageName || 'N/A';
-                  document.getElementById('packagecoins').textContent = data.Coins || 'N/A';
+                    document.getElementById('userFullName').textContent = data.Name;
+                    document.getElementById('packagename').textContent = data.PackageName;
+                    document.getElementById('packagecoins').textContent = data.Coins;
+                    packagename = data.PackageName;
                   isVerified = data.isVerified;
-                            if (!isVerified) {
-                              // Show verification status div and disable submit button if not verified
-                              document.getElementById('verificationStatus').classList.remove('d-none');
-                              // document.querySelector('#verifyNumberForm button[type="submit"]').disabled = true;
-                            }
+                  if (!isVerified) {
+                    document.getElementById('verificationStatus').classList.remove('d-none');
+                  }
                 }
               
-                // Fetch and populate campaigns
+                function cancelCampaign(campaignId) {
+                  selectedCampaignId = campaignId;
+                  const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+                  cancelModal.show();
+                }
+              
                 async function fetchCampaigns() {
                   try {
                     const response = await fetch('/view_campaigns', {
@@ -822,61 +859,147 @@ loader.style.display = 'block';
                     if (!response.ok) throw new Error(`Failed to fetch campaigns. Status: ${response.status}`);
               
                     const result = await response.json();
-                    const campaigns = result.data || [];
-              
-                    const campaignTableBody = document.getElementById('campaignTableBody');
-                    campaignTableBody.innerHTML = ''; // Clear existing rows
-              
-                    if (campaigns.length === 0) {
-                      const row = document.createElement('tr');
-                      row.innerHTML = `<td colspan="8" class="text-center">No campaigns available</td>`;
-                      campaignTableBody.appendChild(row);
-                    } else {
-                      campaigns.forEach(campaign => {
-                        const dateAdded = new Date(campaign.date_added).toLocaleString();
-                        const schedule = new Date(campaign.schedule).toLocaleString();
-              
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                          <td>${campaign.sms_campaign_id}</td>
-                          <td>${campaign.name}</td>
-                          <td>${campaign.from}</td>
-                          <td>${campaign.body}</td>
-                          <td>${schedule}</td>
-                          <td>${campaign.status}</td>
-                          <td>${dateAdded}</td>
-                          <td>
-                            <button class="btn btn-success btn-sm" onclick="updateCampaign(${campaign.sms_campaign_id})">Update</button>
-                            <button class="btn btn-danger btn-sm" onclick="cancelCampaign(${campaign.sms_campaign_id})">Cancel</button>
-                          </td>
-                        `;
-                        campaignTableBody.appendChild(row);
-                      });
-                    }
+                    campaigns = result.data || [];
+                    currentPage = 1;
+                    displayCampaigns();
+                    setupPagination();
                   } catch (error) {
                     console.error('Error fetching campaigns:', error);
                     showToast(`Failed to load campaigns: ${error.message}`, false);
                   }
                 }
-                document.getElementById('resendVerificationButton').addEventListener('click', async () => {
-                  const loader = document.getElementById('loader'); // Loader element
-loader.style.display = 'block';
-            try {
-              const response = await fetch('/resend-verification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
-              });
-              if (!response.ok) throw new Error('Failed to send verification link.');
-              showToast('Verification link sent successfully to your email!', true);
-              loader.style.display = 'none';
-            } catch (error) {
-              console.error('Error sending verification link:', error);
-              showToast('Error sending verification link: ' + error.message, false);
-              loader.style.display = 'none';
-            }
-          });
-
+              
+                function displayCampaigns() {
+                  const campaignTableBody = document.getElementById('campaignTableBody');
+                  campaignTableBody.innerHTML = '';
+              
+                  const start = (currentPage - 1) * rowsPerPage;
+                  const end = start + rowsPerPage;
+                  const campaignsToShow = campaigns.slice(start, end);
+              
+                  if (campaignsToShow.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="6" class="text-center">No campaigns available</td>`;
+                    campaignTableBody.appendChild(row);
+                  } else {
+                    campaignsToShow.forEach(campaign => {
+                      const schedule = new Date(campaign.schedule).toLocaleString();
+              
+                      const row = document.createElement('tr');
+                      row.innerHTML = `
+                        <td>${campaign.name}</td>
+                        <td>${campaign.from}</td>
+                        <td>${campaign.body}</td>
+                        <td>${schedule}</td>
+                        <td>${campaign.status}</td>
+                      `;
+                      campaignTableBody.appendChild(row);
+                    });
+                  }
+                }
+                // <td>
+                //         <button class="btn btn-danger btn-sm" onclick="cancelCampaign(${campaign.sms_campaign_id})">Cancel</button>
+                //       </td>
+                function setupPagination() {
+                  const totalPages = Math.ceil(campaigns.length / rowsPerPage);
+                  const paginationControls = document.getElementById('paginationControls');
+                  paginationControls.innerHTML = '';
+              
+                  for (let i = 1; i <= totalPages; i++) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                    li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                    li.addEventListener('click', () => {
+                      currentPage = i;
+                      displayCampaigns();
+                      setupPagination();
+                    });
+                    paginationControls.appendChild(li);
+                  }
+                }
+              
+                document.getElementById('campaignSearch').addEventListener('input', debounce(function () {
+                  const filter = this.value.toLowerCase();
+                  if (filter.trim() === "") {
+                    fetchCampaigns();
+                    return;
+                  }
+                  const filteredCampaigns = campaigns.filter(campaign =>
+                    campaign.name.toLowerCase().includes(filter) ||
+                    campaign.from.toLowerCase().includes(filter) ||
+                    campaign.body.toLowerCase().includes(filter) ||
+                    campaign.status.toLowerCase().includes(filter)
+                  );
+                  displayFilteredCampaigns(filteredCampaigns, filter);
+                  setupPagination(filteredCampaigns);
+                }, 300));
+              
+                function debounce(func, delay) {
+                  let timer;
+                  return function (...args) {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => func.apply(this, args), delay);
+                  };
+                }
+              
+                function displayFilteredCampaigns(filteredCampaigns, filter) {
+                  const campaignTableBody = document.getElementById('campaignTableBody');
+                  campaignTableBody.innerHTML = '';
+              
+                  if (filteredCampaigns.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="6" class="text-center">No matching campaigns found</td>`;
+                    campaignTableBody.appendChild(row);
+                    return;
+                  }
+              
+                  filteredCampaigns.forEach(campaign => {
+                    const schedule = new Date(campaign.schedule).toLocaleString();
+                    const highlight = (text, filter) => text.replace(new RegExp(`(${filter})`, "gi"), match => `<mark>${match}</mark>`);
+              
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                      <td>${highlight(campaign.name, filter)}</td>
+                      <td>${highlight(campaign.from, filter)}</td>
+                      <td>${highlight(campaign.body, filter)}</td>
+                      <td>${schedule}</td>
+                      <td>${highlight(campaign.status, filter)}</td>
+                    `;
+                    campaignTableBody.appendChild(row);
+                  });
+                }
+                // <td>
+                //         <button class="btn btn-danger btn-sm" onclick="cancelCampaign(${campaign.sms_campaign_id})">Cancel</button>
+                //       </td>
+                document.getElementById('confirmCancelButton').addEventListener('click', async () => {
+                  if (!selectedCampaignId) return;
+              
+                  try {
+                    const response = await fetch('/cancelcampaign', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ sms_campaign_id: selectedCampaignId })
+                    });
+              
+                    if (!response.ok) throw new Error(`Failed to cancel campaign. Status: ${response.status}`);
+              
+                    const result = await response.json();
+              
+                    if (result.success) {
+                      showToast('Campaign canceled successfully!', true);
+                      fetchCampaigns();
+                    } else {
+                      showToast(result.message || 'Failed to cancel campaign.', false);
+                    }
+                  } catch (error) {
+                    showToast(`Error: ${error.message}`, false);
+                  } finally {
+                    selectedCampaignId = null;
+                    const cancelModal = bootstrap.Modal.getInstance(document.getElementById('cancelModal'));
+                    cancelModal.hide();
+                  }
+                });
+              
                 function showToast(message, isSuccess) {
                   const toastContainer = document.getElementById('toastContainer');
                   const toast = document.createElement('div');
@@ -892,16 +1015,8 @@ loader.style.display = 'block';
                     toastContainer.removeChild(toast);
                   });
                 }
-              
-                // Placeholder functions for update and cancel actions
-                function updateCampaign(id) {
-                  showToast(`Update campaign ${id}`, true);
-                }
-              
-                function cancelCampaign(id) {
-                  showToast(`Cancel campaign ${id}`, false);
-                }
               </script>
+              
               
           
             

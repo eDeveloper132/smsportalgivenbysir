@@ -888,31 +888,76 @@ chat
                   showToast(`Error loading contact lists: ${error.message}`, false);
                 }
               }
-            
+              async function fetchOwnNumbers() {
+  try {
+    // Make the POST request to fetch data from the server
+    const response = await fetch('/ownnumbers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Add additional headers if needed, like authentication tokens
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch own numbers. Status: ${response.status}`);
+    }
+
+    // Parse the response as JSON
+    const data = await response.json();
+    console.log("Own numbers data:", data);
+
+    // Check if 'own_numbers' array exists in the data
+    const ownNumbers = data.own_numbers || []; // Fallback to empty array if 'own_numbers' is undefined
+    console.log(ownNumbers)
+    // Check if data is received
+    const dropdown = document.getElementById('senderIdDropdown');
+    if (ownNumbers.length > 0) {
+      ownNumbers.forEach(number => {
+        const option = document.createElement('option');
+        option.value = number.phone_number;
+        option.textContent = number.label;
+        dropdown.appendChild(option);
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching own numbers:", error.message);
+    showToast(`Error loading Numbers`, false);
+
+  }
+}
+
+// Call the function to fetch own numbers when the page loads
+fetchOwnNumbers();
+
               // Fetch AlphaTags and populate the sender ID dropdown
               async function fetchAlphaTags() {
-                try {
-                  const response = await fetch('/alphatags', { method: 'GET' });
-                  if (!response.ok) throw new Error(`Failed to fetch AlphaTags. Status: ${response.status}`);
-            
-                  const data = await response.json();
-                  const filteredData = data.filter(tag => tag.user_id_clicksend !== null); // Filter out records with null user_id_clicksend
-                  populateSenderIdDropdown(filteredData);
-                  // showToast("AlphaTags loaded successfully.", true);
-                } catch (error) {
-                  console.log(error , error.message)
-                  // showToast(`Error loading AlphaTags`, false);
-                }
-              }
+  try {
+    const response = await fetch('/alphatags', { method: 'GET' });
+    if (!response.ok) throw new Error(`Failed to fetch AlphaTags. Status: ${response.status}`);
+
+    const data = await response.json();
+    const filteredData = data.filter(  tag => tag.user_id_clicksend !== null && tag.status && tag.status.toUpperCase() !== 'REJECTED'); // Filter out records with null user_id_clicksend
+
+    // Log the filtered data with more clarity
+    console.log("Filtered Data Count:", filteredData.length);
+    console.table(filteredData); // Displays data in a table format in the console
+
+    populateSenderIdDropdown(filteredData);
+    // showToast("AlphaTags loaded successfully.", true);
+  } catch (error) {
+    console.error("Error:", error.message);
+    showToast(`Error loading AlphaTags`, false);
+  }
+}
             
               function populateSenderIdDropdown(alphaTags) {
                 const dropdown = document.getElementById('senderIdDropdown');
-                dropdown.innerHTML = '<option value="" selected>Select Sender ID</option>'; // Reset dropdown
             
                 alphaTags.forEach(tag => {
                   const option = document.createElement('option');
                   option.value = tag.senderId;
-                  option.textContent = tag.alpha_tag;
+                  option.textContent = tag.tagname;
                   dropdown.appendChild(option);
                 });
               }
@@ -996,14 +1041,12 @@ chat
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(sendData)
                   });
-                  if (!response.ok) {
-                    loader.style.display = 'none';
-                    throw new Error(`Failed to send message. Status: ${response.status}`) 
-                  };
+                  if (!response.ok) throw new Error(`Failed to send message. Status: ${response.status}`) 
             
                   const result = await response.json();
                   showToast("Bulk SMS sent successfully!", true);
                   loader.style.display = 'none';
+
                   window.location.reload();
                 } catch (error) {
                   showToast(`Missing required params: ${error.message}`, false);

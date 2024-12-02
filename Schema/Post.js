@@ -18,8 +18,7 @@ const CampaignMessageSchema = new Schema({
     list_id: { type: Schema.Types.ObjectId, ref: 'List', required: true }, // Contact list reference
     from: { type: String, required: true }, // Sender's ID or alpha tag
     body: { type: String, required: true }, // Message content
-    schedule: { type: Date, required: true }, // Scheduled time
-    status: { type: String, enum: ['pending', 'sent', 'failed'], default: 'pending' }, // Status of the campaign
+    schedule: { type: String, required: false, default: () => new Date().toISOString() },
     total_count: { type: Number, required: true }, // Total recipients count
 }, { timestamps: true } // Automatically manage createdAt and updatedAt fields
 );

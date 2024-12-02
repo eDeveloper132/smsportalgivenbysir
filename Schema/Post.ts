@@ -35,11 +35,10 @@ interface ICampaignMessage extends Document {
     list_id: Types.ObjectId; // Reference to the contact list (ListModel)
     from: string; // Sender's identifier or alpha tag
     body: string; // Content of the message
-    schedule: Date; // Scheduled time for sending the campaign
+    schedule?: string; // Scheduled time for sending the campaign
     status: string; // Campaign status (e.g., pending, sent, failed)
     total_count: number; // Total number of recipients in the campaign
 }
-
 const CampaignMessageSchema: Schema<ICampaignMessage> = new Schema(
     {
         userId: { type: Schema.Types.ObjectId, ref: 'Sign', required: true }, // Foreign key to the Sign (User) model
@@ -48,8 +47,7 @@ const CampaignMessageSchema: Schema<ICampaignMessage> = new Schema(
         list_id: { type: Schema.Types.ObjectId, ref: 'List', required: true }, // Contact list reference
         from: { type: String, required: true }, // Sender's ID or alpha tag
         body: { type: String, required: true }, // Message content
-        schedule: { type: Date, required: true }, // Scheduled time
-        status: { type: String, enum: ['pending', 'sent', 'failed'], default: 'pending' }, // Status of the campaign
+        schedule: { type: String, required: false, default: () => new Date().toISOString() },
         total_count: { type: Number, required: true }, // Total recipients count
     },
     { timestamps: true } // Automatically manage createdAt and updatedAt fields
