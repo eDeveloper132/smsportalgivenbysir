@@ -780,6 +780,8 @@ loader.style.display = 'block';
                         <th>Message</th>
                         <th>Schedule</th>
                         <th>Status</th>
+                        <th>List_Name</th>
+                        <th>Total_Count</th>
                       </tr>
                     </thead>
                     <tbody id="campaignTableBody">
@@ -892,6 +894,8 @@ loader.style.display = 'block';
                         <td>${campaign.body}</td>
                         <td>${schedule}</td>
                         <td>${campaign.status}</td>
+                        <td>${campaign._list_name}</td>
+                        <td>${campaign._total_count}</td>
                       `;
                       campaignTableBody.appendChild(row);
                     });
@@ -964,6 +968,8 @@ loader.style.display = 'block';
                       <td>${highlight(campaign.body, filter)}</td>
                       <td>${schedule}</td>
                       <td>${highlight(campaign.status, filter)}</td>
+                      <td>${highlight(campaign._list_name, filter)}</td>
+                      <td>${highlight(campaign._total_count, filter)}</td>
                     `;
                     campaignTableBody.appendChild(row);
                   });
