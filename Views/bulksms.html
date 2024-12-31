@@ -827,7 +827,7 @@ chat
                   await fetchAlphaTags(); // Fetch AlphaTags to populate sender ID dropdown
                   // showToast("Application initialized successfully.", true);
                 } catch (error) {
-                  showToast(`Initialization error: ${error.message}`, false);
+                  // showToast(`Initialization error: ${error.message}`, false);
                 }
             
                 setupSendOptionListener();
@@ -947,7 +947,7 @@ fetchOwnNumbers();
     // showToast("AlphaTags loaded successfully.", true);
   } catch (error) {
     console.error("Error:", error.message);
-    showToast(`Error loading AlphaTags`, false);
+    // showToast(`Error loading AlphaTags`, false);
   }
 }
             
